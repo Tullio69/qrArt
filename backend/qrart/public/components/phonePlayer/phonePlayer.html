@@ -1,0 +1,31 @@
+<div ng-switch="vm.callState" class="phone-container">
+	<!-- Stato 'waiting' -->
+	<div ng-switch-when="waiting" class="full-screen" style="background-color: white;">
+		<div class="language-selector">
+			<language-selector on-select-language="vm.selectLanguage(language)"></language-selector>
+		</div>
+	</div>
+	
+	<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
+	<div ng-switch-default class="full-screen" ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+		<div class="phone-top" ng-show="vm.callState !== 'ended'">
+			<div class="caller-info">
+				<h1>{{ vm.caller.name }}</h1>
+				<h2>Mobile</h2>
+			</div>
+			<div class="caller-avatar">
+				<img ng-src="{{ vm.caller.avatar }}" alt="Avatar del Chiamante">
+			</div>
+		</div>
+		
+		<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
+			<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag on-drag-end="handleDragEnd($event)"></i>
+			<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag on-drag-end="handleDragEnd($event)"></i>
+			<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-click="vm.endCall()" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag on-drag-end="handleDragEnd($event)"></i>
+		</div>
+		
+		<div ng-show="vm.callState === 'ended'">
+			<p>Chiamata terminata.</p>
+		</div>
+	</div>
+</div>
