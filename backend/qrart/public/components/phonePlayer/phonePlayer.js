@@ -8,19 +8,21 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
     var vm = this;
 
     // Stati iniziali
-    vm.callState = 'waiting'; // Stati possibili: 'waiting', 'incoming', 'inCall', 'ended'
-    vm.caller = {
-        name: 'Nome del Chiamante',
-        number: '123-456-7890',
-        avatar: 'path/to/avatar.png' // Assicurati che il percorso dell'avatar sia corretto
-    };
+    vm.caller = {}; // Dati del chiamante caricati dinamicamente
+    vm.content = {}; // Contenuto dinamico
+    // Lista delle lingue disponibili
+    vm.availableLanguages = [];
 
+    // Variabili per il contatore della chiamata
+    vm.callDuration = 0; // Secondi totali
 
-    vm.availableLanguages = [
+    var callTimer = null;
+
+    /*vm.availableLanguages = [
         { code: 'en', name: 'English', flagUrl: 'path/to/flag/en.png' },
         { code: 'it', name: 'Italiano', flagUrl: 'path/to/flag/it.png' },
         { code: 'fr', name: 'Français', flagUrl: 'path/to/flag/fr.png' }
-    ];
+    ];*/
 
     // Imposta l'Inglese come linguaggio predefinito per i test
     vm.selectedLanguage = vm.availableLanguages[0]; // Assumi che l'Inglese sia il primo elemento dell'array
@@ -91,6 +93,7 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
 
     vm.answerCall = function() {
         vm.callState = 'inCall';
+        vm.startCallTimer();
         audio.pause();
         audio.currentTime = 0;
         vm.stopVibration();
@@ -98,12 +101,48 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
 
     vm.declineCall = function() {
         vm.callState = 'ended';
+        vm.stopCallTimer();
         audio.pause();
         audio.currentTime = 0;
         vm.stopVibration();
     };
+
+    // Funzione per avviare il timer
+    vm.startCallTimer = function() {
+        if (!callTimer) {
+            callTimer = $interval(function() {
+                vm.callDuration++; // Incrementa la durata della chiamata ogni secondo
+            }, 1000);
+        }
+    };
+
+    // Funzione per fermare il timer
+    vm.stopCallTimer = function() {
+        if (callTimer) {
+            $interval.cancel(callTimer);
+            callTimer = null;
+        }
+    };
+
+    // Funzione per formattare la durata in ore, minuti e secondi
+    vm.formatCallDuration = function() {
+        var seconds = vm.callDuration % 60;
+        var minutes = Math.floor(vm.callDuration / 60) % 60;
+        var hours = Math.floor(vm.callDuration / 3600);
+
+        return (hours > 0 ? hours + ':' : '00:') +
+            (minutes < 10 ? '0' : '') + minutes + ':' +
+            (seconds < 10 ? '0' : '') + seconds;
+    };
+
+
+
+
     $scope.$on('$destroy', function() {
         vm.endCall(); // Termina la chiamata quando il componente viene distrutto
     });
+
+
+
 
 }

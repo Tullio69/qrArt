@@ -18,10 +18,15 @@
 			</div>
 		</div>
 		
+		<!-- Contatore della durata della chiamata -->
+		<div class="call-duration" ng-show="vm.callState === 'inCall'">
+			{{ vm.formatCallDuration() }}
+		</div>
+		
 		<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
-			<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag on-drag-end="handleDragEnd($event)"></i>
-			<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag on-drag-end="handleDragEnd($event)"></i>
-			<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-click="vm.endCall()" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag on-drag-end="handleDragEnd($event)"></i>
+			<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()"></i>
+			<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()" ></i>
+			<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag drag-direction="left" on-drag-end="vm.declineCall()"></i>
 		</div>
 		
 		<div ng-show="vm.callState === 'ended'">

@@ -79,42 +79,68 @@ var app = angular.module('phoneApp', ['ngRoute'])
             }
         };
     })
-    .directive('hmDrag', ['$timeout', function($timeout) {
-        return {
-            restrict: 'A',
-            link: function(scope, element, attrs) {
-                var hammer = new Hammer(element[0]);
-                var startX, initialPosX = 0;
+.directive('hmDrag', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            dragDirection: '@',    // Direzione ammessa del drag ('left' o 'right')
+            onDragEnd: '&',        // Funzione da chiamare quando si raggiunge la massima escursione
+        },
+        link: function(scope, element) {
+            var hammer = new Hammer(element[0]);
+            var startX = 0;
+            var deltaX = 0;
+            var direction = scope.dragDirection;
+            var maxDragDistance = 50; // Massima escursione del drag
 
-                hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+            // Configura Hammer.js per pan orizzontale
+            hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
 
-                element.addClass('button'); // Assicura che la classe base sia applicata
+            // Disabilita animazioni all'inizio del drag
+            hammer.on('panstart', function(e) {
+                startX = e.center.x;
+                element.addClass('no-animation'); // Disattiva le animazioni durante il drag
+            });
 
-                hammer.on('panstart', function(ev) {
-                    element.addClass('no-animation'); // Disabilita le animazioni durante il drag
-                    startX = ev.center.x;
-                    element.css('transition', 'none'); // Rimuove transizioni per migliorare la reattività del drag
+            hammer.on('panmove', function(e) {
+                deltaX = e.center.x - startX;
+
+                // Limita il movimento alla massima escursione
+                if (Math.abs(deltaX) > maxDragDistance) {
+                    deltaX = maxDragDistance * Math.sign(deltaX);
+                }
+
+                // Verifica se il drag è nella direzione permessa (se specificata)
+                if (direction === 'left' && deltaX > 0) {
+                    deltaX = 0; // Blocco del drag verso destra
+                } else if (direction === 'right' && deltaX < 0) {
+                    deltaX = 0; // Blocco del drag verso sinistra
+                }
+
+                element.css({
+                    transform: 'translateX(' + deltaX + 'px)'
                 });
+            });
 
-                hammer.on('panmove', function(ev) {
-                    var deltaX = ev.center.x - startX;
-                    var newPositionX = initialPosX + deltaX;
-                    element.css({
-                        transform: 'translateX(' + newPositionX + 'px)'
-                    });
+            hammer.on('panend', function() {
+                // Ripristina la posizione e rimuovi la classe no-animation
+                element.css({
+                    transform: 'translateX(0px)',
+                    transition: 'transform 0.3s ease'  // Ripristina la transizione
                 });
+                element.removeClass('no-animation'); // Riattiva le animazioni dopo il drag
 
-                hammer.on('panend', function(ev) {
-                    initialPosX += ev.deltaX;
-                    element.css({
-                        transform: 'translateX(' + initialPosX + 'px)',
-                        transition: 'transform 0.3s ease' // Riapplica transizione
-                    });
-                    $timeout(function() {
-                        element.removeClass('no-animation'); // Riabilita animazioni dopo un ritardo
-                    }, 300); // Ritardo per prevenire sovrapposizioni
-                });
-            }
-        };
-    }]);
+                // Chiamata della funzione al termine del drag
+                if (Math.abs(deltaX) >= maxDragDistance) {
+                    scope.$apply(scope.onDragEnd);
+                }
+            });
+        }
+    };
+});
+
+
+
+
+
 

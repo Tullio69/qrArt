@@ -70,7 +70,7 @@
 }
 .decline{
     background: red;
-    transform: rotate(270deg) !important;
+    transform: rotate(270deg) ;
 }
 
 .Phone::before,
@@ -112,6 +112,14 @@
     &::after {
         animation: phone-icon 3000ms infinite;
     }
+}
+
+.call-duration {
+    font-size: 36px;
+    color: white;
+    margin-top: 10px;
+    text-align: center;
+    font-weight:100
 }
 
 @keyframes phone-outer {
@@ -216,7 +224,7 @@ body, html {
 .caller-info h1 {
     margin: 0.5em 0 0.1em 0;
     font-size: 28px;
-    font-weight: 100;
+    font-weight: 200
 }
 .caller-info h2 {
     margin: 0;
@@ -257,6 +265,9 @@ body, html {
     left: 0; /* Allinea a sinistra del container */
 }
 
-
+.no-animation {
+    animation: none !important;
+    transition: none !important;
+}
 
 /* Phone Layout*/
