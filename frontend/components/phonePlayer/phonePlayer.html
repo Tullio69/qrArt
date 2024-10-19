@@ -1,28 +1,36 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Simulazione Chiamata</title>
-	<link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-<div class="phone-container">
-	<div class="phone-top">
-		<div class="caller-info">
-			<h1>Nome del Chiamante</h1>
-			<h2>Mobile</h2>
-		</div>
-		<div class="caller-avatar">
-			<!-- Placeholder for avatar -->
-			<img src="path/to/avatar.png" alt="Avatar del Chiamante">
+<div ng-switch="vm.callState" class="phone-container">
+	<!-- Stato 'waiting' -->
+	<div ng-switch-when="waiting" class="full-screen" style="background-color: white;">
+		<div class="language-selector">
+			<language-selector on-select-language="vm.selectLanguage(language)"></language-selector>
 		</div>
 	</div>
 	
-	<div class="call-buttons">
-		<i class="Phone is-animating accept"></i>
-		<i class="Phone  decline"></i>
+	<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
+	<div ng-switch-default class="full-screen" ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+		<div class="phone-top" ng-show="vm.callState !== 'ended'">
+			<div class="caller-info">
+				<h1>{{ vm.caller.name }}</h1>
+				<h2>Mobile</h2>
+			</div>
+			<div class="caller-avatar">
+				<img ng-src="{{ vm.caller.avatar }}" alt="Avatar del Chiamante">
+			</div>
+		</div>
+		
+		<!-- Contatore della durata della chiamata -->
+		<div class="call-duration" ng-show="vm.callState === 'inCall'">
+			{{ vm.formatCallDuration() }}
+		</div>
+		
+		<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
+			<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()"></i>
+			<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()" ></i>
+			<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag drag-direction="left" on-drag-end="vm.declineCall()"></i>
+		</div>
+		
+		<div ng-show="vm.callState === 'ended'">
+			<p>Chiamata terminata.</p>
+		</div>
 	</div>
 </div>
-</body>
-</html>

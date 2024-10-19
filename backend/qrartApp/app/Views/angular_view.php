@@ -17,5 +17,10 @@
 	</head>
 <body>
 <div ng-view></div>
+<script>
+    // Passiamo il contentId a AngularJS dal backend di CodeIgniter
+    var contentId = <?= json_encode($contentId); ?>;  // PHP passa il contentId a AngularJS
+</script>
 </body>
+
 </html>

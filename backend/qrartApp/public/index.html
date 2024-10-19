@@ -8,13 +8,45 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.min.js"></script>
+	<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries "></script>
+	<script>
+		tailwind.config = {
+			theme: {
+				extend: {
+					colors: {
+						clifford: '#da373d',
+					},
+					fontFamily: {
+						sans: ['Inter', 'sans-serif']
+					},
+					fontSize: {
+						sm: '0.8rem',
+						base: '1rem',
+						xl: '1.25rem',
+						'2xl': '1.563rem',
+						'3xl': '1.953rem',
+						'4xl': '2.441rem',
+						'5xl': '3.052rem',
+					}
+				}
+			}
+		}
+	</script>
 	
+	<style type="text/tailwindcss">
+		@layer utilities {
+			.content-auto {
+				content-visibility: auto;
+			}
+		}
+	</style>
 	<script src="app.js"></script>
 	<script src="components/audioPlayer/audioPlayer.js"></script>
 	<script src="components/videoPlayer/videoPlayer.js"></script>
 	<script src="components/htmlContent/htmlContent.js"></script>
 	<script src="components/phonePlayer/phonePlayer.js"></script>
 	<script src="components/languageSelector/languageSelector.js"></script>
+	<link rel="stylesheet" href="assets/css/tailwind.css">
 	<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>

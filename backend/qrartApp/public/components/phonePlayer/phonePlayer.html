@@ -1,0 +1,63 @@
+<!-- Stato Waiting (Attesa di chiamata o selezione lingua) -->
+<div ng-if="vm.callState === 'waiting'" class="waiting-container ">
+	<div class="language-selector">
+		<language-selector on-select-language="vm.selectLanguage(language)"></language-selector>
+	</div>
+</div>
+
+<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
+<div ng-if="vm.callState === 'incoming' || vm.callState === 'inCall'" class="full-screen" ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+	<div class="phone-top" ng-show="vm.callState !== 'ended'">
+		<div class="caller-info">
+			<div class="text-3xl font-extralight">{{ vm.caller.name }}</div>
+			<div class="text-2xl font-extralight">{{ vm.caller.subtitle }}</div>
+		</div>
+		<div class="caller-avatar">
+			<img ng-src="{{ vm.caller.avatar }}" alt="Avatar del Chiamante">
+		</div>
+		<div class="call-timer flex justify-center items-center h-16">
+			<!-- Timer della chiamata in corso -->
+			<div ng-show="vm.callDuration > 0" class="text-2xl ">{{ vm.formatCallDuration() }}</div>
+			<!-- Spazio riservato quando la durata non è visibile -->
+			<div ng-show="vm.callDuration === 0" class="opacity-0 text-3xl font-light font-mono">00:00:00</div>
+		</div>
+	
+	</div>
+	
+	<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
+		<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()"></i>
+		<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()" ></i>
+		<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag drag-direction="left" on-drag-end="vm.declineCall()"></i>
+	</div>
+</div>
+
+<!-- Stato Ended (Chiamata terminata) -->
+<div ng-if="vm.callState === 'ended'" class="ended-container">
+	<div class="dynamic-content">
+		<h2>{{ vm.dynamicContent }}</h2>
+		
+		<!-- Pulsante per riascoltare l'audio della chiamata -->
+		<button ng-click="vm.answerCall()" class="replay-button">Riascolta la Chiamata</button>
+		
+		<!-- Link ad articoli correlati -->
+		<div class="related-articles">
+			<h3>Articoli Correlati</h3>
+			<ul>
+				<li ng-repeat="article in vm.relatedArticles">
+					<a href="{{ article.link }}" target="_blank">{{ article.title }}</a>
+				</li>
+			</ul>
+		</div>
+		
+		<!-- Riquadri per sponsor o pubblicità -->
+		<div class="sponsors">
+			<h3>Sponsor</h3>
+			<div class="sponsor-item" ng-repeat="sponsor in vm.sponsorData">
+				<a href="{{ sponsor.link }}" target="_blank">
+					<img ng-src="{{ sponsor.imageUrl }}" alt="{{ sponsor.name }}">
+					<p>{{ sponsor.name }}</p>
+				</a>
+			</div>
+		</div>
+	</div>
+</div>

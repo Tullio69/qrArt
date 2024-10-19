@@ -8,21 +8,24 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
     var vm = this;
 
     // Stati iniziali
-    vm.caller = {}; // Dati del chiamante caricati dinamicamente
-    vm.content = {}; // Contenuto dinamico
-    // Lista delle lingue disponibili
-    vm.availableLanguages = [];
+    vm.callState = 'waiting'; // Stati possibili: 'waiting', 'incoming', 'inCall', 'ended'
+    vm.caller = {
+        name: 'Vincenzo Impallaria',
+        subtitle: 'Santo Baddaro',
+        avatar: 'media/2/background.jpg' // Assicurati che il percorso dell'avatar sia corretto
+    };
+    vm.backgroundUrl="media/2/background.jpg"
 
     // Variabili per il contatore della chiamata
     vm.callDuration = 0; // Secondi totali
 
     var callTimer = null;
 
-    /*vm.availableLanguages = [
-        { code: 'en', name: 'English', flagUrl: 'path/to/flag/en.png' },
-        { code: 'it', name: 'Italiano', flagUrl: 'path/to/flag/it.png' },
-        { code: 'fr', name: 'Français', flagUrl: 'path/to/flag/fr.png' }
-    ];*/
+    vm.availableLanguages = [
+        { code: 'en', name: 'English' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'sv', name: 'Svenska' }
+    ];
 
     // Imposta l'Inglese come linguaggio predefinito per i test
     vm.selectedLanguage = vm.availableLanguages[0]; // Assumi che l'Inglese sia il primo elemento dell'array
@@ -60,7 +63,16 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
     };
 
     var vm = this;
-    var audio = new Audio('assets/audio/marimba.mp3'); // Percorso del file audio
+
+    var ringTone = new Audio('assets/audio/marimba.mp3'); // Percorso del file audio
+    var callerMedia = new Audio('media/2/it/audio.mp3'); // Percorso del file audio
+
+
+    // Funzione per gestire il termine della riproduzione dell'audio
+    vm.onAudioEnded = function() {
+        vm.callState = 'ended';  // Cambia lo stato della chiamata in "terminata"
+       /* console.log("Chiamata terminata dopo la fine dell'audio.");*/
+    };
 
     vm.vibratePhone = function() {
         if ("vibrate" in navigator) {
@@ -71,7 +83,7 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
                 navigator.vibrate([500, 1000]);
             }, 1500);  // La somma del tempo di vibrazione e pausa
         } else {
-            alert("La funzione di vibrazione non è supportata dal tuo dispositivo.");
+          /*  alert("La funzione di vibrazione non è supportata dal tuo dispositivo.");*/
         }
     };
 
@@ -86,25 +98,38 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
 
     vm.receiveCall = function() {
         vm.callState = 'incoming';
-        audio.loop = true;
-        audio.play();
+        ringTone.loop = true;
+        ringTone.play();
         vm.vibratePhone();
     };
 
     vm.answerCall = function() {
         vm.callState = 'inCall';
         vm.startCallTimer();
-        audio.pause();
-        audio.currentTime = 0;
+        // Avvia l'audio della chiamata
+        callerMedia.currentTime = 0;  // Riavvia l'audio dall'inizio
+        callerMedia.play();
+        ringTone.pause();
+        ringTone.currentTime = 0;
         vm.stopVibration();
+
+        // Aggiungi un listener per l'evento 'ended' sul media in chiamata
+        callerMedia.addEventListener('ended', function() {
+            $scope.$apply(function() {
+                vm.declineCall();  // Chiama la funzione per terminare la chiamata
+            });
+        });
     };
 
     vm.declineCall = function() {
         vm.callState = 'ended';
         vm.stopCallTimer();
-        audio.pause();
-        audio.currentTime = 0;
+        callerMedia.pause();
+        callerMedia.currentTime = 0;
         vm.stopVibration();
+        // Assicurati di fermare anche la suoneria qui.
+        ringTone.pause();
+        ringTone.currentTime = 0;
     };
 
     // Funzione per avviare il timer
@@ -139,7 +164,7 @@ function PhonePlayerController(FullscreenService,$scope,$interval ) {
 
 
     $scope.$on('$destroy', function() {
-        vm.endCall(); // Termina la chiamata quando il componente viene distrutto
+        vm.declineCall(); // Termina la chiamata quando il componente viene distrutto
     });
 
 

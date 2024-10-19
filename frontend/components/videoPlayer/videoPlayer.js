@@ -1,4 +1,4 @@
-angular.module('app').component('videoPlayer', {
+angular.module('phoneApp').component('videoPlayerController', {
     templateUrl: 'components/videoPlayer/videoPlayer.html',
     controller: function() {
         this.$onInit = () => {

@@ -70,7 +70,7 @@
 }
 .decline{
     background: red;
-    transform: rotate(270deg) ;
+    transform: rotate(134deg) ;
 }
 
 .Phone::before,
@@ -203,8 +203,7 @@
 body, html {
     height: 100%;
     margin: 0;
-    font-family: Arial, sans-serif;
-}
+  }
 
 
 .phone-container {
@@ -271,3 +270,114 @@ body, html {
 }
 
 /* Phone Layout*/
+
+/* Ended Call Style Page*/
+.ended-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: white; /* Sfondo bianco fisso */
+    text-align: center;
+}
+
+.dynamic-content {
+    color: #333;
+    font-size: 24px;
+    padding: 20px;
+}
+
+.replay-button {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+.replay-button:hover {
+    background-color: #2980b9;
+}
+
+.related-articles {
+    margin-top: 30px;
+}
+
+.related-articles ul {
+    list-style: none;
+    padding: 0;
+}
+
+.related-articles ul li {
+    margin: 5px 0;
+}
+
+.related-articles ul li a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.related-articles ul li a:hover {
+    text-decoration: underline;
+}
+
+.sponsors {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.sponsor-item {
+    text-align: center;
+}
+
+.sponsor-item img {
+    width: 150px;
+    height: auto;
+    margin-bottom: 10px;
+}
+/* Container principale che occupa tutta la schermata */
+.waiting-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;  /* Centra verticalmente */
+    align-items: center;  /* Centra orizzontalmente */
+    width: 100vw;
+    height: 100vh;
+    background-color: white;  /* Sfondo bianco per lo stato "waiting" */
+    text-align: center;
+}
+
+/* Sezione del selettore delle lingue */
+.language-options {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;  /* Aggiunge uno spazio tra i pulsanti */
+}
+
+/* Stile per i pulsanti di selezione della lingua */
+.language-button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    margin: 10px;
+}
+
+.language-button img {
+    width: 80px;  /* Dimensione della bandiera */
+    height: auto;
+    transition: transform 0.3s ease;  /* Transizione per l'effetto hover */
+}
+
+.language-button img:hover {
+    transform: scale(1.1);  /* Effetto di ingrandimento al passaggio del mouse */
+}
+
+/* Ended Call Style Page*/

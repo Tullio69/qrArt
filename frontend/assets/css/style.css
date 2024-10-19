@@ -1,4 +1,53 @@
 /* Button Style */
+.full-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw; /* Larghezza a tutto schermo */
+    height: 100vh; /* Altezza a tutto schermo */
+    position: fixed; /* Rende il div fisso */
+    top: 0;
+    left: 0;
+    background-size: cover; /* Assicura che l'immagine di sfondo copra l'intero div */
+    background-position: center; /* Centra l'immagine di sfondo */
+    background-repeat: no-repeat; /* Impedisce la ripetizione dell'immagine */
+}
+
+.language-selector, .incoming-call, .in-call {
+    text-align: center;
+    width: 100%; /* Assicura che i contenuti siano centrati e occupino tutta la larghezza */
+}
+
+.language-selector {
+    display: flex;
+    flex-direction: row; /* Disponi le bandiere orizzontalmente */
+    justify-content: center;
+    align-items: center;
+}
+
+.language-button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    margin: 20px; /* Aumentato il margine per dare più spazio attorno ai pulsanti */
+    padding: 10px; /* Aggiunto padding per aumentare la dimensione del pulsante */
+    transition: transform 0.3s ease; /* Aggiunge un effetto di transizione per il feedback visivo */
+}
+
+.language-button:hover {
+    transform: scale(1.1); /* Effetto di ingrandimento all'hover per un feedback interattivo */
+}
+
+.language-button img {
+    width: 80px; /* Dimensione aumentata delle bandiere */
+    height: auto; /* Mantiene le proporzioni corrette dell'immagine */
+    display: block; /* Assicura che l'immagine non abbia spazio extra intorno */
+}
+
+.button-slide {
+    will-change: transform;  /* Suggerisce al browser che questa proprietà cambierà frequentemente */
+}
 
 
 .Phone {
@@ -21,7 +70,7 @@
 }
 .decline{
     background: red;
-    transform: rotateY(180deg);
+    transform: rotate(270deg) ;
 }
 
 .Phone::before,
@@ -63,6 +112,14 @@
     &::after {
         animation: phone-icon 3000ms infinite;
     }
+}
+
+.call-duration {
+    font-size: 36px;
+    color: white;
+    margin-top: 10px;
+    text-align: center;
+    font-weight:100
 }
 
 @keyframes phone-outer {
@@ -148,6 +205,8 @@ body, html {
     margin: 0;
     font-family: Arial, sans-serif;
 }
+
+
 .phone-container {
     display: flex;
     flex-direction: column;
@@ -165,7 +224,7 @@ body, html {
 .caller-info h1 {
     margin: 0.5em 0 0.1em 0;
     font-size: 28px;
-    font-weight: 200;
+    font-weight: 200
 }
 .caller-info h2 {
     margin: 0;
@@ -174,8 +233,8 @@ body, html {
     opacity: 0.8;
 }
 .caller-avatar {
-    width: 100px;
-    height: 100px;
+    width: 6em;
+    height: 6em;
     background-color: white;
     border-radius: 50%;
     display: flex;
@@ -194,6 +253,21 @@ body, html {
     position: fixed;
     bottom: 0;
     bottom: 24px;
+}
+.phone-top {
+    width: 100%; /* Assicura che la sezione si estenda per tutta la larghezza del contenitore */
+    text-align: center; /* Centra il testo e gli elementi all'interno */
+    padding: 20px 0; /* Aggiunge spazio sopra e sotto per separazione */
+    background-color: rgba(0, 0, 0, 0.5); /* Leggero sfondo trasparente per migliorare la leggibilità */
+    color: white; /* Testo bianco per contrasto */
+    position: absolute; /* Posizionamento assoluto per controllare la sua posizione */
+    top: 0; /* Allinea al top del container */
+    left: 0; /* Allinea a sinistra del container */
+}
+
+.no-animation {
+    animation: none !important;
+    transition: none !important;
 }
 
 /* Phone Layout*/

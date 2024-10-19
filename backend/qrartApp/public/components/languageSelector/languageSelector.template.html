@@ -1,0 +1,5 @@
+<div class="language-selector">
+	<button ng-repeat="lang in vm.availableLanguages" ng-click="vm.selectLanguage(lang)" class="language-button">
+		<img ng-src="assets/images/flags/{{ lang.code }}.svg" alt="{{ lang.name }}" title="{{ lang.name }}">
+	</button>
+</div>

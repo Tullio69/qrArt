@@ -27,8 +27,9 @@
       <paths name="QrArt">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$/frontend" web="/" />
-            <mapping deploy="/" local="$PROJECT_DIR$/backend/qrart/public" web="/" />
+            <mapping deploy="/develop" local="$PROJECT_DIR$" web="/" />
+            <mapping local="" />
+            <mapping deploy="/develop" local="$PROJECT_DIR$/backend/qrartApp/public" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -36,6 +37,13 @@
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="sshQrArt">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

@@ -12,7 +12,7 @@ var app = angular.module('phoneApp', ['ngRoute'])
                 controller: 'AudioController'
             })
             .when('/phone', {
-                templateUrl: 'views/home.html',
+                templateUrl: 'views/phone.html',
                 controller: 'HomeController'
             })
             .when('/video', {
@@ -32,12 +32,7 @@ var app = angular.module('phoneApp', ['ngRoute'])
     .controller('HomeController', ['$scope', function($scope) {
         $scope.message = "Welcome to the Phone App!";
     }])
-    .controller('AudioController', ['$scope', function($scope) {
-        $scope.message = "Welcome to Audio Controller";
-    }])
-    .controller('PhoneController', ['$scope', function($scope) {
-        $scope.message = "Welcome to Phone Controller";
-    }]).factory('FullscreenService', [function() {
+    .factory('FullscreenService', [function() {
     var service = {
         enterFullscreen: function(element) {
             if (element.requestFullscreen) {
