@@ -17,11 +17,10 @@
 		</div>
 		<div class="call-timer flex justify-center items-center h-16">
 			<!-- Timer della chiamata in corso -->
-			<div ng-show="vm.callDuration > 0" class="text-2xl ">{{ vm.formatCallDuration() }}</div>
+			<div ng-show="vm.callDuration > 0" class="text-3xl ">{{ vm.formatCallDuration() }}</div>
 			<!-- Spazio riservato quando la durata non è visibile -->
 			<div ng-show="vm.callDuration === 0" class="opacity-0 text-3xl font-light font-mono">00:00:00</div>
 		</div>
-	
 	</div>
 	
 	<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">

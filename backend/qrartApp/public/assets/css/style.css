@@ -1,4 +1,16 @@
 /* Button Style */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+body { font-family: Arial, sans-serif; margin: 20px; }
+.editor-wrapper { margin-bottom: 20px; }
+.preview { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+
+.inter-400 {
+    font-family: "Inter", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
 .full-screen {
     display: flex;
     flex-direction: column;
@@ -262,6 +274,7 @@ body, html {
     position: absolute; /* Posizionamento assoluto per controllare la sua posizione */
     top: 0; /* Allinea al top del container */
     left: 0; /* Allinea a sinistra del container */
+    backdrop-filter: blur(4px);
 }
 
 .no-animation {

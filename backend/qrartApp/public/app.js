@@ -1,5 +1,5 @@
 // Definizione del modulo principale dell'applicazione
-var app = angular.module('phoneApp', ['ngRoute'])
+var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
     // Configurazione del routing
     .config(['$routeProvider', function($routeProvider) {
         $routeProvider
@@ -29,8 +29,17 @@ var app = angular.module('phoneApp', ['ngRoute'])
     }])
 
     // Controller esemplificativo
-    .controller('HomeController', ['$scope', function($scope) {
-        $scope.message = "Welcome to the Phone App!";
+    .controller('HomeController', ['$scope', function($scope,$sce) {
+        var vm = this;
+        vm.editorContent = '<p>Contenuto iniziale</p>';
+
+        vm.tinymceOptions = {
+            // Puoi sovrascrivere o estendere le opzioni predefinite qui
+        };
+
+        vm.$doCheck = function() {
+            vm.trustedContent = $sce.trustAsHtml(vm.editorContent);
+        };
     }])
     .factory('FullscreenService', [function() {
     var service = {
@@ -74,7 +83,7 @@ var app = angular.module('phoneApp', ['ngRoute'])
             }
         };
     })
-.directive('hmDrag', function() {
+    .directive('hmDrag', function() {
     return {
         restrict: 'A',
         scope: {
@@ -132,7 +141,10 @@ var app = angular.module('phoneApp', ['ngRoute'])
             });
         }
     };
-});
+})
+
+
+
 
 
 

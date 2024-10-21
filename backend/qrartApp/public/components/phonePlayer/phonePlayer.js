@@ -1,4 +1,5 @@
-angular.module('phoneApp').component('phonePlayer', {
+angular.module('phoneApp')
+    .component('phonePlayer', {
     templateUrl: 'components/phonePlayer/phonePlayer.html',
         controller: ['FullscreenService', '$scope','$interval', PhonePlayerController],
     controllerAs: 'vm'
