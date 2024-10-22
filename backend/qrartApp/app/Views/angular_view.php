@@ -6,20 +6,48 @@
 	<meta http-equiv="Pragma" content="no-cache" />
 	<meta http-equiv="Expires" content="0" />
 	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+	
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-sanitize.min.js"></script>
+	
+	<!-- Tailwind CSS via CDN -->
+	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+	
+	<!-- Flowbite CSS via CDN -->
+	<link href="https://cdn.jsdelivr.net/npm/flowbite@1.6.0/dist/flowbite.min.css" rel="stylesheet"/>
+	
+	<!-- Flowbite JS via CDN -->
+	<script src="https://cdn.jsdelivr.net/npm/flowbite@1.6.0/dist/flowbite.bundle.min.js"></script>
+	
+	
+	
+	<script src="https://cdn.tiny.cloud/1/rq6fm10cyrhlfic4umvx8byiglirglqwdd1jt37q1xpjmr5e/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+	<script src="https://cdn.tiny.cloud/1/rq6fm10cyrhlfic4umvx8byiglirglqwdd1jt37q1xpjmr5e/tinymce/5/langs/it.js" referrerpolicy="origin"></script>
+	
+	<style type="text/tailwindcss">
+		@layer utilities {
+			.content-auto {
+				content-visibility: auto;
+			}
+		}
+	</style>
 	<script src="app.js"></script>
 	<script src="components/audioPlayer/audioPlayer.js"></script>
 	<script src="components/videoPlayer/videoPlayer.js"></script>
 	<script src="components/htmlContent/htmlContent.js"></script>
 	<script src="components/phonePlayer/phonePlayer.js"></script>
-	
-	</head>
+	<script src="components/wysiwygEditor/wysiwygEditor.js"></script>
+	<script src="components/languageSelector/languageSelector.js"></script>
+	<link rel="stylesheet" href="assets/css/style.css">
+
+</head>
 <body>
 <div ng-view></div>
 <script>
     // Passiamo il contentId a AngularJS dal backend di CodeIgniter
-    var contentId = <?= json_encode($contentId); ?>;  // PHP passa il contentId a AngularJS
+    /*var contentId =  json_encode($contentId); ?>;*/  // PHP passa il contentId a AngularJS
 </script>
 </body>
 
