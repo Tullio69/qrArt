@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import 'flowbite/dist/flowbite.css';
+
+@layer base {
+    html {
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply px-4 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out;
+    }
+    .btn-primary {
+        @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
+    }
+    .btn-secondary {
+        @apply btn bg-secondary-500 text-gray-900 hover:bg-secondary-600 focus:ring-secondary-500;
+    }
+    .btn-accent {
+        @apply btn bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-500;
+    }
+    .btn-outline {
+        @apply btn border border-primary-500 text-primary-500 hover:bg-primary-50 focus:ring-primary-500;
+    }
+    .input {
+        @apply px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500;
+    }
+    .card {
+        @apply bg-white shadow-md rounded-lg overflow-hidden;
+    }
+    .card-header {
+        @apply px-4 py-5 border-b border-gray-200;
+    }
+    .card-content {
+        @apply px-4 py-5;
+    }
+    .card-title {
+        @apply text-lg font-medium text-gray-900;
+    }
+    .card-description {
+        @apply mt-1 text-sm text-gray-600;
+    }
+}
+
+

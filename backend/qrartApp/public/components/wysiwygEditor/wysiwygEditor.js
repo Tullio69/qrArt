@@ -3,8 +3,7 @@ angular.module('phoneApp')
         template: '<textarea id="{{$ctrl.editorId}}"></textarea>',
         controller: WysiwygEditorController,
         bindings: {
-            content: '=',
-            onChange: '&'
+            content: '='
         }
     });
 
@@ -49,7 +48,7 @@ function WysiwygEditorController($element, $scope, $timeout, $sce, $sanitize) {
                         $scope.$apply(function() {
                             var sanitizedContent = sanitizeContent(editor.getContent());
                             $ctrl.content = sanitizedContent;
-                            $ctrl.onChange({content: sanitizedContent});
+                         /*   $ctrl.onChange({content: sanitizedContent});*/
                         });
                     });
                 }
@@ -71,6 +70,7 @@ function WysiwygEditorController($element, $scope, $timeout, $sce, $sanitize) {
             }
         }
     };
+
 }
 
 WysiwygEditorController.$inject = ['$element', '$scope', '$timeout', '$sce', '$sanitize'];
