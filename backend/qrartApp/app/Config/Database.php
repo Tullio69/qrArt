@@ -29,7 +29,7 @@ class Database extends Config
         'hostname' => 'localhost',
         'database' => 'qrart',
         'username' => 'developer.qrart',
-        'password' => '6iBxzo7vGXU5DE2',
+        'password' => 'pOngE0oYSiVAtRZ',
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => false,
@@ -39,7 +39,7 @@ class Database extends Config
         'swapPre'  => '',
         'encrypt'  => false,
         'compress' => false,
-        'strictOn' => false,
+        'strictOn' => true,
         'failover' => [],
         'port'     => 3306
     ];

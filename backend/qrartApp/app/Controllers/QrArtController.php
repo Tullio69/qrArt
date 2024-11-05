@@ -17,84 +17,121 @@
         
         public function processQrArtContent()
         {
-            echo "<pre>DEBUG: Inizio processQrArtContent()</pre>";
+            // Inizia la transazione del database
+            $db = \Config\Database::connect();
+            $db->transStart();
             
-            // 1. Ricezione dei dati del form e dei file
-            $formData = $this->request->getPost();
-            $files = $this->request->getFiles();
-            
-            echo "<pre>DEBUG: Dati del form ricevuti: " . print_r($formData, true) . "</pre>";
-            echo "<pre>DEBUG: File ricevuti: " . print_r($files, true) . "</pre>";
-           
-            // 2. Validazione dei dati del form
-          
-            
-            echo "<pre>DEBUG: Validazione dei dati del form completata con successo</pre>";
-            
-            // 3. Elaborazione e controllo dei dati
-            $processedData = $this->processData($formData);
-            echo "<pre>DEBUG: Dati elaborati: " . print_r($processedData, true) . "</pre>";
-            
-            // 4. Gestione del caricamento dei file e salvataggio dei dati per ogni variante linguistica
-            $results = [];
-            foreach ($processedData['languageVariants'] as $index => $variant) {
-                echo "<pre>DEBUG: Elaborazione della variante linguistica {$variant['language']}</pre>";
+            try {
+                // 1. Ricezione dei dati del form e dei file
+                $formData = $this->request->getPost();
+                $files = $this->request->getFiles();
+                log_message('debug', 'Dati del form: ' . print_r($formData, true));
+                log_message('debug', 'File ricevuti: ' . print_r($files, true));
+                // 2. Validazione dei dati del form
+               /* if (!$this->validateFormData($formData)) {
+                    throw new \Exception('Errore di validazione dei dati del form');
+                }*/
                 
-                // 4.1 Gestione del caricamento dei file per la variante corrente
-                $variantFiles = $this->extractVariantFiles($files, $index);
-                echo "<pre>DEBUG: File estratti per la variante {$variant['language']}: " . print_r($variantFiles, true) . "</pre>";
+                // 3. Elaborazione e controllo dei dati
+                $processedData = $this->processData($formData);
                 
-                $fileUploadResult = $this->handleFileUploads($variantFiles, $variant);
-                echo "<pre>DEBUG: Risultato caricamento file per {$variant['language']}: " . print_r($fileUploadResult, true) . "</pre>";
+                // 4. Creazione del nuovo content nel database
+                $contentModel = new \App\Models\ContentModel();
+                $contentId = $contentModel->insert([
+                    'caller_name' => $processedData['callerName'],
+                    'caller_title' => $processedData['callerTitle'],
+                    'content_name' => $processedData['contentName'],
+                    'content_type' => $processedData['contentType'],
+                    // Aggiungi altri campi necessari per il content
+                ]);
                 
-                if (!$fileUploadResult['success']) {
-                    $results[$variant['language']] = [
-                        'success' => false,
-                        'message' => "Errore nel caricamento dei file per la lingua {$variant['language']}: " . $fileUploadResult['message']
-                    ];
-                    echo "<pre>DEBUG: Errore nel caricamento dei file per {$variant['language']}</pre>";
-                    continue;
+                if (!$contentId) {
+                    throw new \Exception('Errore nella creazione del nuovo content');
                 }
                 
-                // 4.2 Salvataggio dei dati per la variante corrente
-                $saveResult = $this->saveVariantData($processedData, $variant, $fileUploadResult['files']);
-                echo "<pre>DEBUG: Risultato salvataggio dati per {$variant['language']}: " . print_r($saveResult, true) . "</pre>";
+                // 5. Creazione della directory per il content
+                $contentDir = FCPATH . 'media/' . $contentId;
                 
-                if (!$saveResult['success']) {
-                    $results[$variant['language']] = [
-                        'success' => false,
-                        'message' => "Errore nel salvataggio dei dati per la lingua {$variant['language']}: " . $saveResult['message']
-                    ];
-                } else {
+                if (!mkdir($contentDir, 0755, true)) {
+                    throw new \Exception('Errore nella creazione della directory del content');
+                }
+                
+                // 6. Gestione del caricamento dei file e salvataggio dei dati per ogni variante linguistica
+                $results = [];
+                foreach ($processedData['languageVariants'] as $index => $variant) {
+                    $variantFiles = $this->extractVariantFiles($files, $index);
+                    $fileUploadResult = $this->handleFileUploads($variantFiles, $variant, $contentDir);
+                    
+                    if (!$fileUploadResult['success']) {
+                        throw new \Exception("Errore nel caricamento dei file per la lingua {$variant['language']}: " . $fileUploadResult['message']);
+                    }
+                    
+                    $saveResult = $this->saveVariantData($contentId, $variant, $fileUploadResult['files']);
+                    
+                    if (!$saveResult['success']) {
+                        throw new \Exception("Errore nel salvataggio dei dati per la lingua {$variant['language']}: " . $saveResult['message']);
+                    }
+                    
                     $results[$variant['language']] = [
                         'success' => true,
                         'message' => "Dati salvati con successo per la lingua {$variant['language']}",
                         'variantId' => $saveResult['variantId']
                     ];
                 }
+                
+                // Se siamo arrivati qui, tutto è andato bene. Confermiamo la transazione.
+                $db->transCommit();
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Tutte le varianti linguistiche sono state elaborate con successo',
+                    'contentId' => $contentId,
+                    'results' => $results
+                ])->setStatusCode(200);
+                
+            } catch (\Exception $e) {
+                // In caso di errore, annulliamo la transazione e eliminiamo la directory del content se è stata creata
+                $db->transRollback();
+                if (isset($contentDir) && is_dir($contentDir)) {
+                    $this->removeDirectory($contentDir);
+                }
+                
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Si è verificato un errore durante l\'elaborazione: ' . $e->getMessage()
+        ])->setStatusCode(500);
+    }
+}
+
+// Funzione helper per rimuovere una directory e il suo contenuto
+private function removeDirectory($dir) {
+    if (is_dir($dir)) {
+        $objects = scandir($dir);
+        foreach ($objects as $object) {
+            if ($object != "." && $object != "..") {
+                if (is_dir($dir. DIRECTORY_SEPARATOR .$object) && !is_link($dir."/".$object))
+                    $this->removeDirectory($dir. DIRECTORY_SEPARATOR .$object);
+                else
+                    unlink($dir. DIRECTORY_SEPARATOR .$object);
+            }
+        }
+        rmdir($dir);
+    }
+}
+        
+        private function handleFileUploads($files, &$variant, $contentId)
+        {
+            $logger = service('logger');
+            $logger->info("Inizio handleFileUploads per la variante {$variant['language']} del content {$contentId}");
+            
+            $uploadPath = WRITEPATH . 'media/' . $contentId . '/';
+            if (!is_dir($uploadPath)) {
+                if (!mkdir($uploadPath, 0755, true)) {
+                    $logger->error("Impossibile creare la directory: {$uploadPath}");
+                    return ['success' => false, 'message' => "Errore nella creazione della directory per i file"];
+                }
             }
             
-            // 5. Verifica dei risultati e preparazione della risposta
-            $allSuccess = !in_array(false, array_column($results, 'success'));
-            $responseMessage = $allSuccess ? 'Tutte le varianti linguistiche sono state elaborate con successo' : 'Alcune varianti linguistiche hanno riscontrato errori';
-            
-            echo "<pre>DEBUG: Risultati finali: " . print_r($results, true) . "</pre>";
-            echo "<pre>DEBUG: Tutti i processi completati con successo? " . ($allSuccess ? 'Sì' : 'No') . "</pre>";
-            
-            // 6. Restituzione della risposta
-            echo "<pre>DEBUG: Fine processQrArtContent()</pre>";
-            return $this->response->setJSON([
-                'success' => $allSuccess,
-                'message' => $responseMessage,
-                'results' => $results
-            ])->setStatusCode($allSuccess ? 200 : 500);
-        }
-        
-        private function handleFileUploads($files, &$variant)
-        {
-            echo "<pre>DEBUG: Inizio handleFileUploads per la variante {$variant['language']}</pre>";
-            
-            $uploadPath = WRITEPATH . 'uploads/';
             $allowedTypes = [
                 'audio' => 'audio/mpeg,audio/wav',
                 'video' => 'video/mp4,video/mpeg',
@@ -104,27 +141,32 @@
             $uploadedFiles = [];
             
             foreach ($files as $fileType => $file) {
-                echo "<pre>DEBUG: Elaborazione file di tipo {$fileType}</pre>";
+                $logger->info("Elaborazione file di tipo {$fileType}");
                 
-                if ($file instanceof UploadedFile && $file->isValid() && !$file->hasMoved()) {
+                if ($file instanceof \CodeIgniter\HTTP\Files\UploadedFile && $file->isValid() && !$file->hasMoved()) {
                     $type = strpos($fileType, 'audio') !== false ? 'audio' : (strpos($fileType, 'video') !== false ? 'video' : 'image');
                     if (!in_array($file->getMimeType(), explode(',', $allowedTypes[$type]))) {
-                        echo "<pre>DEBUG: Tipo di file non valido per {$fileType}</pre>";
+                        $logger->error("Tipo di file non valido per {$fileType}: {$file->getMimeType()}");
                         return ['success' => false, 'message' => "Tipo di file non valido per {$fileType}"];
                     }
                     
                     $newName = $file->getRandomName();
-                    $file->move($uploadPath, $newName);
-                    $uploadedFiles[$fileType] = $uploadPath . $newName;
-                    
-                    echo "<pre>DEBUG: File {$fileType} caricato con successo: {$uploadedFiles[$fileType]}</pre>";
+                    try {
+                        $file->move($uploadPath, $newName);
+                        $uploadedFiles[$fileType] = 'media/' . $contentId . '/' . $newName;
+                        $logger->info("File {$fileType} caricato con successo: {$uploadedFiles[$fileType]}");
+                    } catch (\Exception $e) {
+                        $logger->error("Errore nel caricamento del file {$fileType}: " . $e->getMessage());
+                        return ['success' => false, 'message' => "Errore nel caricamento del file {$fileType}: " . $e->getMessage()];
+                    }
                 } else {
-                    echo "<pre>DEBUG: Errore nel caricamento del file {$fileType}</pre>";
-                    return ['success' => false, 'message' => "Errore nel caricamento del file {$fileType}: " . $file->getErrorString()];
+                    $errorMessage = $file instanceof \CodeIgniter\HTTP\Files\UploadedFile ? $file->getErrorString() : "File non valido";
+                    $logger->error("Errore nel caricamento del file {$fileType}: {$errorMessage}");
+                    return ['success' => false, 'message' => "Errore nel caricamento del file {$fileType}: {$errorMessage}"];
                 }
             }
             
-            echo "<pre>DEBUG: Fine handleFileUploads, files caricati: " . print_r($uploadedFiles, true) . "</pre>";
+            $logger->info("Fine handleFileUploads, files caricati: " . json_encode($uploadedFiles));
             return ['success' => true, 'files' => $uploadedFiles];
         }
      
@@ -147,7 +189,9 @@
         {
             // Implementa qui la logica per salvare i dati della variante nel database
             // Questo è un esempio semplificato, adattalo alle tue esigenze specifiche
-            
+            print_r($processedData);
+            print_r($variant);
+            print_r($uploadedFiles);
             try {
                 $db = \Config\Database::connect();
                 

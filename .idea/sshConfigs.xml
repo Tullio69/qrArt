@@ -2,7 +2,7 @@
 <project version="4">
   <component name="SshConfigs">
     <configs>
-      <sshConfig authType="PASSWORD" host="qrart.it" id="4fb3557c-df2f-4272-95ac-acc3704a18bb" port="22" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="false" />
+      <sshConfig authType="PASSWORD" host="qrart.it" id="4fb3557c-df2f-4272-95ac-acc3704a18bb" port="22" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>

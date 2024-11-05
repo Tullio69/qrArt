@@ -299,12 +299,13 @@ function FormController($http, $scope) {
     var vm = this;
 
     vm.formData = {
+        callerName: '',
         callerTitle: '',
-        callerSubtitle: '',
+        contentName: '',
         contentType: '',
         languageVariants: []
     };
-    console.log("SUCA");
+
     vm.addLanguageVariant = function() {
         vm.formData.languageVariants.push({
             language: '',
@@ -345,8 +346,9 @@ function FormController($http, $scope) {
         var formData = new FormData();
 
         // Append main form data
+        formData.append('callerName', vm.formData.callerName);
         formData.append('callerTitle', vm.formData.callerTitle);
-        formData.append('callerSubtitle', vm.formData.callerSubtitle);
+        formData.append('contentName', vm.formData.contentName);
         formData.append('contentType', vm.formData.contentType);
 
         // Append language variants

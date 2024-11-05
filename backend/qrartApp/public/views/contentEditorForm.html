@@ -9,12 +9,16 @@
 	<form ng-submit="vm.submitForm()" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 			<div>
-				<label for="callerTitle" class="block mb-2 text-sm font-medium text-gray-900">Titolo Chiamante</label>
+				<label for="callerName" class="block mb-2 text-sm font-medium text-gray-900">Nome Chiamante</label>
+				<input type="text" id="callerName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerName" required>
+			</div>
+			<div>
+				<label for="callerTitle" class="block mb-2 text-sm font-medium text-gray-900">Sottotitolo Chiamante</label>
 				<input type="text" id="callerTitle" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerTitle" required>
 			</div>
 			<div>
-				<label for="callerSubtitle" class="block mb-2 text-sm font-medium text-gray-900">Sottotitolo Chiamante</label>
-				<input type="text" id="callerSubtitle" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerSubtitle" required>
+				<label for="contentName" class="block mb-2 text-sm font-medium text-gray-900">Nome Contenuto</label>
+				<input type="text" id="contentName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentName" required>
 			</div>
 			<div>
 				<label for="contentType" class="block mb-2 text-sm font-medium text-gray-900">Tipo di Contenuto</label>
@@ -25,6 +29,17 @@
 					<option value="audio_call">Chiamata Audio</option>
 					<option value="video_call">Chiamata Video</option>
 				</select>
+			</div>
+		</div>
+		
+		<div ng-if="vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+			<div>
+				<label for="callerBackground" class="block mb-2 text-sm font-medium text-gray-900">Sfondo Chiamante</label>
+				<input type="file" id="callerBackground" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
+			</div>
+			<div>
+				<label for="callerAvatar" class="block mb-2 text-sm font-medium text-gray-900">Avatar Chiamante</label>
+				<input type="file" id="callerAvatar" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
 			</div>
 		</div>
 		
@@ -84,17 +99,6 @@
 				<div ng-if="vm.formData.contentType === 'video' || vm.formData.contentType === 'video_call'" class="mb-4">
 					<label for="videoFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Video</label>
 					<input type="file" id="videoFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="video/*">
-				</div>
-				
-				<div ng-if="vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-					<div>
-						<label for="callerBackground-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Sfondo Chiamante</label>
-						<input type="file" id="callerBackground-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
-					</div>
-					<div>
-						<label for="callerAvatar-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Avatar Chiamante</label>
-						<input type="file" id="callerAvatar-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
-					</div>
 				</div>
 				
 				<button type="button" ng-click="vm.removeLanguageVariant($index)" class="mt-4 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
