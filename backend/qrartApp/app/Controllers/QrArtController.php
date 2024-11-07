@@ -17,23 +17,18 @@
             // Inizializzazione del controller
         }
         
-        
         public function processQrArtContent()
         {
             $db = \Config\Database::connect();
             $db->transStart();
             
             try {
-                // Ricezione dei dati del form e dei file
                 $formData = $this->request->getPost();
                 $files = $this->request->getFiles();
                 
-                // Validazione dei dati del form
-               /* if (!$this->validateFormData($formData)) {
-                    throw new \Exception('Errore di validazione dei dati del form');
-                }*/
+                log_message('info', 'Received form data: ' . print_r($formData, true));
+                log_message('info', 'Received files: ' . print_r($files, true));
                 
-                // Creazione del nuovo content nel database
                 $contentModel = new ContentModel();
                 $contentData = [
                     'caller_name' => $formData['callerName'],
@@ -42,52 +37,55 @@
                     'content_type' => $formData['contentType'],
                 ];
                 $contentId = $contentModel->insert($contentData);
+                log_message('info', 'Query di inserimento content: ' . $db->getLastQuery());
+                
+                $contentDir = $this->createContentDirectory($contentId);
                 
                 if (!$contentId) {
                     throw new \Exception('Errore nella creazione del nuovo content');
                 }
                 
-                log_message('info', 'Query di inserimento content: ' . $db->getLastQuery());
-                
-                // Gestione del caricamento dei file e salvataggio dei dati per ogni variante linguistica
-                $contentMetadataModel = new ContentMetadataModel();
-                foreach ($formData['languageVariants'] as $variant) {
+                foreach ($formData['languageVariants'] as $index => $variant) {
                     $metadataData = [
                         'content_id' => $contentId,
                         'language' => $variant['language'],
-                        'text_only' => $variant['textOnly']=='true' ? 1 : 0,
+                        'content_name' => $variant['contentName'],
+                        'text_only' => $variant['textOnly'] === 'true' ? 1 : 0,
                         'description' => $variant['description'] ?? null,
                     ];
+                    $contentMetadataModel = new ContentMetadataModel();
                     $metadataId = $contentMetadataModel->insert($metadataData);
                     
                     if (!$metadataId) {
                         throw new \Exception('Errore nel salvataggio dei metadati della variante linguistica');
                     }
                     
-                    log_message('info', 'Query di inserimento metadata: ' . $db->getLastQuery());
                     
-                    // Gestione del caricamento dei file
-                    if ($variant['textOnly'] == '0') {
-                        $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId);
-                        if (!$uploadedFiles['success']) {
-                            throw new \Exception($uploadedFiles['message']);
-                        }
-                        
-                        // Qui puoi aggiungere la logica per salvare le informazioni sui file caricati
-                    }
+                    $languageDir = $this->createLanguageDirectory($contentDir, $variant['language']);
+                    $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId, $languageDir, $formData['contentType'], $index);
+                    
+                  
+                 /*   if (!$uploadedFiles['success']) {
+                        throw new \Exception($uploadedFiles['message']);
+                    }*/
+                    
+                   
                 }
                 
-                // Se siamo arrivati qui, tutto è andato bene. Confermiamo la transazione.
-                $db->transCommit();
+                #$this->handleCommonFiles($files, $contentDir);
+                
+               /* $db->transCommit();
                 
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Contenuto creato con successo',
                     'contentId' => $contentId
-                ]);
+                ]);*/
                 
             } catch (\Exception $e) {
-                // In caso di errore, annulliamo la transazione
+                
+               
+               
                 $db->transRollback();
                 
                 log_message('error', 'Errore in processQrArtContent: ' . $e->getMessage());
@@ -98,146 +96,117 @@
                 ])->setStatusCode(500);
             }
         }
+        
+        private function createContentDirectory($contentId)
+        {
+            $contentDir = WRITEPATH . 'media/' . $contentId;
+            if (!is_dir($contentDir)) {
+                mkdir($contentDir, 0755, true);
+            }
+            return $contentDir;
+        }
+        
+        private function createLanguageDirectory($contentDir, $language)
+        {
+            $languageDir = $contentDir . '/' . $language;
+            if (!is_dir($languageDir)) {
+                mkdir($languageDir, 0755, true);
+            }
+            return $languageDir;
+        }
+        
+        private function handleFileUploads($files, $variant, $contentId,  $languageDir, $contentType, $variantIndex)
+        {
+     
+// Otteniamo l'oggetto file dalla variabile
+            $file = $files['languageVariants'][0]['audioFile'];
+
+// Verifichiamo se il file è un'istanza valida di UploadedFile
+            if ($file instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
+                // Verifichiamo se il file è valido e non è stato già spostato
+                if ($file->isValid() && !$file->hasMoved()) {
+                    // Definiamo la directory di destinazione
+                    $destinationPath = $languageDir;
+                    
+                    // Generiamo un nome per il file
+                    $newName = 'audio.' . $file->getExtension();
+                    
+                    try {
+                        // Spostiamo il file nella directory di destinazione
+                        $file->move($destinationPath, $newName);
+                        
+                        if ($file->hasMoved()) {
+                            $risultato = [
+                                'success' => true,
+                                'message' => 'File audio salvato con successo',
+                                'filePath' => $contentId . '/' . $languageDir . '/' . $newName,
+                                'originalName' => $file->getClientName(),
+                                'newName' => $newName
+                            ];
+                        } else {
+                            $risultato = [
+                                'success' => false,
+                                'message' => 'Impossibile spostare il file audio'
+                            ];
+                        }
+                    } catch (\Exception $e) {
+                        $risultato = [
+                            'success' => false,
+                            'message' => 'Errore durante il salvataggio del file audio: ' . $e->getMessage()
+                        ];
+                    }
+                } else {
+                    $risultato = [
+                        'success' => false,
+                        'message' => 'File audio non valido o già spostato'
+                    ];
+                }
+            } else {
+                $risultato = [
+                    'success' => false,
+                    'message' => 'Il file fornito non è un\'istanza valida di UploadedFile'
+                ];
+            }
+
+// Puoi utilizzare $risultato come necessario, ad esempio:
+// return $this->response->setJSON($risultato);
+        }
+        private function handleCommonFiles($files, $contentDir)
+        {
+            $commonFiles = ['callerBackground', 'callerAvatar'];
+            foreach ($commonFiles as $fileKey) {
+                if (isset($files[$fileKey]) && $files[$fileKey] instanceof \CodeIgniter\Files\UploadedFile) {
+                    $file = $files[$fileKey];
+                    if ($file->isValid() && !$file->hasMoved()) {
+                        $newName = $fileKey . '.' . $file->getExtension();
+                        $file->move($contentDir, $newName);
+                        log_message('info', "File comune caricato con successo: {$contentDir}/{$newName}");
+                    } else {
+                        log_message('error', "Errore nel caricamento del file comune: {$fileKey}");
+                    }
+                } else {
+                    log_message('warning', "File comune non trovato: {$fileKey}");
+                }
+            }
+        }
+        
         private function removeDirectory($dir)
         {
             if (is_dir($dir)) {
                 $objects = scandir($dir);
                 foreach ($objects as $object) {
                     if ($object != "." && $object != "..") {
-                        if (is_dir($dir . "/" . $object))
+                        if (is_dir($dir . "/" . $object)) {
                             $this->removeDirectory($dir . "/" . $object);
-                        else
+                        } else {
                             unlink($dir . "/" . $object);
+                        }
                     }
                 }
                 rmdir($dir);
             }
         }
         
-        private function createContentDirectory($contentId)
-        {
-            $contentDir = WRITEPATH . 'media/' . $contentId;
-            if (!mkdir($contentDir, 0755, true)) {
-                throw new \Exception('Errore nella creazione della directory del content');
-            }
-            return $contentDir;
-        }
-        
-        private function processLanguageVariants($variants, $files, $contentId, $contentDir)
-        {
-            $processedVariants = [];
-            foreach ($variants as $index => $variant) {
-                if ($variant['textOnly']) {
-                    $processedVariants[$index] = $this->processTextOnlyVariant($variant);
-                } else {
-                    $processedVariants[$index] = $this->processFileVariant($variant, $files['languageVariants'][$index] ?? [], $contentId, $contentDir);
-                }
-            }
-            return $processedVariants;
-        }
-        
-        private function processTextOnlyVariant($variant)
-        {
-            return [
-                'language' => $variant['language'],
-                'textOnly' => true,
-                'description' => $variant['description']
-            ];
-        }
-        
-        private function processFileVariant($variant, $files, $contentId, $contentDir)
-        {
-            $processedFiles = [];
-            foreach ($files as $fileType => $file) {
-                $uploadResult = $this->uploadFile($file, $fileType, $contentDir);
-                if ($uploadResult['success']) {
-                    $processedFiles[$fileType] = $uploadResult['path'];
-                } else {
-                    throw new \Exception($uploadResult['message']);
-                }
-            }
-            return [
-                'language' => $variant['language'],
-                'textOnly' => false,
-                'files' => $processedFiles
-            ];
-        }
-        
-        private function uploadFile($file, $fileType, $uploadPath)
-        {
-            if ($file->isValid() && !$file->hasMoved()) {
-                $newName = $file->getRandomName();
-                $file->move($uploadPath, $newName);
-                return [
-                    'success' => true,
-                    'path' => 'media/' . basename($uploadPath) . '/' . $newName
-                ];
-            }
-            return [
-                'success' => false,
-                'message' => 'Errore nel caricamento del file ' . $fileType
-            ];
-        }
-        
-        private function saveVariantsData($contentId, $processedVariants)
-        {
-            $variantModel = new \App\Models\VariantModel();
-            foreach ($processedVariants as $variant) {
-                $variantModel->insert([
-                    'content_id' => $contentId,
-                    'language' => $variant['language'],
-                    'text_only' => $variant['textOnly']== "true" ? 1 : 0 ,
-                    'description' => $variant['textOnly'] ? $variant['description'] : null,
-                    'files' => $variant['textOnly'] ? null : json_encode($variant['files'])
-                ]);
-            }
-        }
-        
-      
-
-    private function validateFormData($formData)
-    {
-        $validation = \Config\Services::validation();
-        
-        $rules = [
-            `callerName` => `required|max_length[255]`,
-            `callerTitle` => `required|max_length[255]`,
-            `contentName` => `required|max_length[255]`,
-            `contentType` => `required|in_list[audio,video,audio_call,video_call]`,
-            `languageVariants` => `required|is_array`,
-            `languageVariants.*.language` => `required|alpha|max_length[5]`,
-            `languageVariants.*.textOnly` => `required|in_list[0,1]`,
-            `languageVariants.*.description` => `permit_empty|string`
-        ];
-        
-        if (!$validation->setRules($rules)->run($formData)) {
-            log_message('error', 'Errori di validazione: ' . print_r($validation->getErrors(), true));
-            return false;
-        }
-        
-        return true;
-    }
-
-    private function handleFileUploads($files, $variant, $contentId)
-    {
-        // Implementa qui la logica per il caricamento dei file
-        // Questa è una versione semplificata, assicurati di gestire correttamente i file e gli errori
-        $uploadedFiles = [];
-        $uploadPath = WRITEPATH . 'uploads/' . $contentId . '/';
-
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        foreach ($files as $file) {
-            if ($file->isValid() && !$file->hasMoved()) {
-                $newName = $file->getRandomName();
-                $file->move($uploadPath, $newName);
-                $uploadedFiles[] = $uploadPath . $newName;
-            }
-        }
-
-        return ['success' => true, 'files' => $uploadedFiles];
-    }
+       
         
     }

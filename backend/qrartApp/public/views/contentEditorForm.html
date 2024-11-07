@@ -62,6 +62,10 @@
 			<div class="variant-content" ng-class="{'minimized': variant.minimized}">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 					<div>
+						<label for="contentName-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Nome Contenuto</label>
+						<input type="text" id="contentName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="variant.contentName" required>
+					</div>
+					<div>
 						<label for="language-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Lingua</label>
 						<select id="language-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="variant.language" required>
 							<option value="">Seleziona lingua</option>

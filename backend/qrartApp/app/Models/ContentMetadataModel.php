@@ -13,7 +13,7 @@
         protected $returnType       = 'array';
         protected $useSoftDeletes   = false;
         protected $protectFields    = true;
-        protected $allowedFields    = ['content_id', 'language', 'text_only', 'description'];
+        protected $allowedFields    = ['content_id', 'language', 'text_only', 'description','content_name'];
         
         // Dates
         protected $useTimestamps = true;

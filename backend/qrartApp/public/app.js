@@ -356,6 +356,7 @@ function FormController($http, $scope) {
             formData.append(`languageVariants[${index}][language]`, variant.language);
             formData.append(`languageVariants[${index}][textOnly]`, variant.textOnly);
             formData.append(`languageVariants[${index}][description]`, variant.description);
+            formData.append(`languageVariants[${index}][contentName]`, variant.contentName);
 
             // Append files if present
             var fileInput;
