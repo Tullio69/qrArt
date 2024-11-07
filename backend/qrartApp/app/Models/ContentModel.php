@@ -6,19 +6,14 @@
     
     class ContentModel extends Model
     {
+        protected $DBGroup          = 'default';
         protected $table            = 'content';
         protected $primaryKey       = 'id';
         protected $useAutoIncrement = true;
         protected $returnType       = 'array';
         protected $useSoftDeletes   = false;
         protected $protectFields    = true;
-        protected $allowedFields    = [
-            'caller_id',
-            'caller_name',
-            'caller_title',
-            'content_name',
-            'content_type'
-        ];
+        protected $allowedFields    = ['caller_name', 'caller_title', 'content_name', 'content_type'];
         
         // Dates
         protected $useTimestamps = true;
@@ -27,13 +22,7 @@
         protected $updatedField  = 'updated_at';
         
         // Validation
-        protected $validationRules      = [
-            'caller_name'     => 'required|max_length[255]',
-            'content_name'     => 'required|max_length[255]',
-            'caller_title' => 'permit_empty|max_length[255]',
-            'content_type'    => 'required|in_list[audio,video,audio_call,video_call,html]',
-            'caller_id'       => 'permit_empty|integer'
-        ];
+        protected $validationRules      = [];
         protected $validationMessages   = [];
         protected $skipValidation       = false;
         protected $cleanValidationRules = true;

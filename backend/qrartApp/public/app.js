@@ -372,13 +372,14 @@ function FormController($http, $scope) {
                 }
             }
             if (vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call') {
-                var backgroundInput = document.getElementById(`callerBackground-${index}`);
-                var avatarInput = document.getElementById(`callerAvatar-${index}`);
+                backgroundInput = document.getElementById(`callerBackground`);
+                avatarInput = document.getElementById(`callerAvatar`);
+
                 if (backgroundInput && backgroundInput.files[0]) {
-                    formData.append(`languageVariants[${index}][callerBackground]`, backgroundInput.files[0]);
+                    formData.append(`callerBackground`, backgroundInput.files[0]);
                 }
                 if (avatarInput && avatarInput.files[0]) {
-                    formData.append(`languageVariants[${index}][callerAvatar]`, avatarInput.files[0]);
+                    formData.append(`callerAvatar`, avatarInput.files[0]);
                 }
             }
         });

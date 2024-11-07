@@ -31,11 +31,11 @@ use CodeIgniter\Router\RouteCollection;
         $agent = service('request')->getUserAgent();
         $userAgentString = $agent->getAgentString();
         
-        log_message('debug', 'User Agent String: ' . $userAgentString);
+        #log_message('debug', 'User Agent String: ' . $userAgentString);
         
         $isAllowed = (strpos($userAgentString, 'force-ws05') !== false);
         
-        log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
+        #log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
         
         return $isAllowed;
     }

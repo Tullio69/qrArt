@@ -6,19 +6,14 @@
     
     class ContentMetadataModel extends Model
     {
+        protected $DBGroup          = 'default';
         protected $table            = 'content_metadata';
         protected $primaryKey       = 'id';
         protected $useAutoIncrement = true;
         protected $returnType       = 'array';
         protected $useSoftDeletes   = false;
         protected $protectFields    = true;
-        protected $allowedFields    = [
-            'content_id',
-            'language',
-            'text_only',
-            'title',
-            'description'
-        ];
+        protected $allowedFields    = ['content_id', 'language', 'text_only', 'description'];
         
         // Dates
         protected $useTimestamps = true;
@@ -27,13 +22,7 @@
         protected $updatedField  = 'updated_at';
         
         // Validation
-        protected $validationRules      = [
-            'content_id'  => 'required|integer',
-            'language'    => 'required|alpha|max_length[5]',
-            'text_only'   => 'permit_empty|integer|in_list[0,1]',
-            'title'       => 'required|max_length[255]',
-            'description' => 'permit_empty'
-        ];
+        protected $validationRules      = [];
         protected $validationMessages   = [];
         protected $skipValidation       = false;
         protected $cleanValidationRules = true;
