@@ -26,9 +26,6 @@
                 $formData = $this->request->getPost();
                 $files = $this->request->getFiles();
                 
-                log_message('info', 'Received form data: ' . print_r($formData, true));
-                log_message('info', 'Received files: ' . print_r($files, true));
-                
                 $contentModel = new ContentModel();
                 $contentData = [
                     'caller_name' => $formData['callerName'],
@@ -37,7 +34,6 @@
                     'content_type' => $formData['contentType'],
                 ];
                 $contentId = $contentModel->insert($contentData);
-                log_message('info', 'Query di inserimento content: ' . $db->getLastQuery());
                 
                 $contentDir = $this->createContentDirectory($contentId);
                 
@@ -63,7 +59,7 @@
                     
                     $languageDir = $this->createLanguageDirectory($contentDir, $variant['language']);
                     $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId, $languageDir, $formData['contentType'], $index);
-                    
+                    log_message('info', '66 Dati Variante: ' . print_r($files['languageVariants'],true));
                   
                  /*   if (!$uploadedFiles['success']) {
                         throw new \Exception($uploadedFiles['message']);
@@ -72,15 +68,15 @@
                    
                 }
                 
-                #$this->handleCommonFiles($files, $contentDir);
+                $this->handleCommonFiles($files, $contentDir);
                 
-               /* $db->transCommit();
+                $db->transCommit();
                 
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Contenuto creato con successo',
                     'contentId' => $contentId
-                ]);*/
+                ]);
                 
             } catch (\Exception $e) {
                 
@@ -115,77 +111,99 @@
             return $languageDir;
         }
         
-        private function handleFileUploads($files, $variant, $contentId,  $languageDir, $contentType, $variantIndex)
+        private function handleFileUploads($files, $variant, $contentId, $languageDir, $contentType, $variantIndex)
         {
-     
-// Otteniamo l'oggetto file dalla variabile
-            $file = $files['languageVariants'][0]['audioFile'];
-
-// Verifichiamo se il file è un'istanza valida di UploadedFile
-            if ($file instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
-                // Verifichiamo se il file è valido e non è stato già spostato
-                if ($file->isValid() && !$file->hasMoved()) {
-                    // Definiamo la directory di destinazione
-                    $destinationPath = $languageDir;
+            $uploadedFiles = [];
+          
+            if ($variant['textOnly'] === 'false') {
+                $fileKey = $contentType === 'audio' || $contentType === 'audio_call' ? 'audioFile' : 'videoFile';
+             
+                if (isset($files['languageVariants'][$variantIndex][$fileKey]) &&
+                    $files['languageVariants'][$variantIndex][$fileKey] instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
                     
-                    // Generiamo un nome per il file
-                    $newName = 'audio.' . $file->getExtension();
+                    $file = $files['languageVariants'][$variantIndex][$fileKey];
                     
-                    try {
-                        // Spostiamo il file nella directory di destinazione
-                        $file->move($destinationPath, $newName);
+                    if ($file->isValid() && !$file->hasMoved()) {
+                        $destinationPath = $languageDir;
                         
-                        if ($file->hasMoved()) {
-                            $risultato = [
-                                'success' => true,
-                                'message' => 'File audio salvato con successo',
-                                'filePath' => $contentId . '/' . $languageDir . '/' . $newName,
-                                'originalName' => $file->getClientName(),
-                                'newName' => $newName
-                            ];
-                        } else {
-                            $risultato = [
+                        $newName = ($contentType === 'audio' || $contentType === 'audio_call' ? 'audio' : 'video') . '.' . $file->getExtension();
+                        
+                        try {
+                            $file->move($destinationPath, $newName);
+                            
+                            if ($file->hasMoved()) {
+                                $uploadedFiles[] = [
+                                    'success' => true,
+                                    'message' => 'File salvato con successo',
+                                    'filePath' => $contentId . '/' . $languageDir . '/' . $newName,
+                                    'originalName' => $file->getClientName(),
+                                    'newName' => $newName
+                                ];
+                            } else {
+                                $uploadedFiles[] = [
+                                    'success' => false,
+                                    'message' => 'Impossibile spostare il file'
+                                ];
+                            }
+                        } catch (\Exception $e) {
+                            $uploadedFiles[] = [
                                 'success' => false,
-                                'message' => 'Impossibile spostare il file audio'
+                                'message' => 'Errore durante il salvataggio del file: ' . $e->getMessage()
                             ];
                         }
-                    } catch (\Exception $e) {
-                        $risultato = [
+                    } else {
+                        $uploadedFiles[] = [
                             'success' => false,
-                            'message' => 'Errore durante il salvataggio del file audio: ' . $e->getMessage()
+                            'message' => 'File non valido o già spostato'
                         ];
                     }
                 } else {
-                    $risultato = [
+                    $uploadedFiles[] = [
                         'success' => false,
-                        'message' => 'File audio non valido o già spostato'
+                        'message' => 'File non trovato per la variante linguistica ' . $variantIndex . ', chiave: ' . $fileKey
                     ];
                 }
             } else {
-                $risultato = [
-                    'success' => false,
-                    'message' => 'Il file fornito non è un\'istanza valida di UploadedFile'
-                ];
+                $htmlContent = $variant['description'] ?? '';
+                $htmlFilePath = $languageDir . '/text_only_content.html';
+                if (file_put_contents($htmlFilePath, $htmlContent) !== false) {
+                    $uploadedFiles[] = [
+                        'success' => true,
+                        'message' => 'Contenuto HTML salvato con successo',
+                        'filePath' => $contentId . '/' . $languageDir . '/text_only_content.html',
+                        'newName' => 'text_only_content.html'
+                    ];
+                } else {
+                    $uploadedFiles[] = [
+                        'success' => false,
+                        'message' => 'Impossibile salvare il contenuto HTML'
+                    ];
+                }
             }
-
-// Puoi utilizzare $risultato come necessario, ad esempio:
-// return $this->response->setJSON($risultato);
+            
+            return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
         }
         private function handleCommonFiles($files, $contentDir)
         {
             $commonFiles = ['callerBackground', 'callerAvatar'];
             foreach ($commonFiles as $fileKey) {
-                if (isset($files[$fileKey]) && $files[$fileKey] instanceof \CodeIgniter\Files\UploadedFile) {
+                if (isset($files[$fileKey]) && $files[$fileKey] instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
                     $file = $files[$fileKey];
                     if ($file->isValid() && !$file->hasMoved()) {
                         $newName = $fileKey . '.' . $file->getExtension();
-                        $file->move($contentDir, $newName);
-                        log_message('info', "File comune caricato con successo: {$contentDir}/{$newName}");
+                        try {
+                            $file->move($contentDir, $newName);
+                            log_message('info', "File comune caricato con successo: {$contentDir}/{$newName}");
+                        } catch (\Exception $e) {
+                            log_message('error', "Errore nel caricamento del file comune {$fileKey}: " . $e->getMessage());
+                            throw new \Exception("Errore nel caricamento del file comune {$fileKey}");
+                        }
                     } else {
-                        log_message('error', "Errore nel caricamento del file comune: {$fileKey}");
+                        log_message('error', "File comune non valido o già spostato: {$fileKey}");
+                        throw new \Exception("File comune non valido o già spostato: {$fileKey}");
                     }
                 } else {
-                    log_message('warning', "File comune non trovato: {$fileKey}");
+                    log_message('info', "File comune non fornito: {$fileKey}");
                 }
             }
         }

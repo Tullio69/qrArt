@@ -372,18 +372,25 @@ function FormController($http, $scope) {
                     formData.append(`languageVariants[${index}][videoFile]`, fileInput.files[0]);
                 }
             }
-            if (vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call') {
-                backgroundInput = document.getElementById(`callerBackground`);
-                avatarInput = document.getElementById(`callerAvatar`);
-
-                if (backgroundInput && backgroundInput.files[0]) {
-                    formData.append(`callerBackground`, backgroundInput.files[0]);
-                }
-                if (avatarInput && avatarInput.files[0]) {
-                    formData.append(`callerAvatar`, avatarInput.files[0]);
-                }
-            }
         });
+
+        // Append common files for audio_call and video_call
+        if (vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call') {
+            var backgroundInput = document.getElementById('callerBackground');
+            var avatarInput = document.getElementById('callerAvatar');
+
+            if (backgroundInput && backgroundInput.files[0]) {
+                formData.append('callerBackground', backgroundInput.files[0]);
+            }
+            if (avatarInput && avatarInput.files[0]) {
+                formData.append('callerAvatar', avatarInput.files[0]);
+            }
+        }
+
+        // Log formData contents for debugging
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
 
         $http({
             method: 'POST',
@@ -396,15 +403,15 @@ function FormController($http, $scope) {
                 console.log('Dati salvati con successo:', response.data);
                 alert('Dati salvati con successo!');
             } else {
-                console.error('Errore nel salvataggio dei dati:', response.data.message);
-
+               /* console.error('Errore nel salvataggio dei dati:', response.data.message);
+                alert('Errore nel salvataggio dei dati: ' + response.data.message);*/
             }
         }, function errorCallback(response) {
             console.error('Errore nella richiesta:', response);
             var errorMessage = response.data && response.data.message
                 ? response.data.message
                 : 'Si è verificato un errore imprevisto. Per favore, riprova.';
-
+            alert('Errore nella richiesta: ' + errorMessage);
         });
     };
 }
