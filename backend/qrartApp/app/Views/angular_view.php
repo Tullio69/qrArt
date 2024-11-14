@@ -26,11 +26,14 @@
 	<link rel="stylesheet" href="assets/tailwind/output.css">
 	<link rel="stylesheet" href="assets/tailwind/node_modules/flowbite/dist/flowbite.css">
 	<script src="assets/tailwind/node_modules/flowbite/dist/flowbite.min.js"></script>
-
+	<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <div ng-view></div>
+<script>
+    var contentId = <?= isset($contentId) ? json_encode($contentId) : 'null'; ?>;
+</script>
 <script src="app.js"></script>
 <script src="components/audioPlayer/audioPlayer.js"></script>
 <script src="components/videoPlayer/videoPlayer.js"></script>

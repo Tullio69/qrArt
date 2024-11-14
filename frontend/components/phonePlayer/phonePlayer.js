@@ -1,10 +1,10 @@
 angular.module('phoneApp').component('phonePlayer', {
     templateUrl: 'components/phonePlayer/phonePlayer.html',
-        controller: ['FullscreenService', '$scope','$interval', PhonePlayerController],
+        controller: ['FullscreenService', '$scope','$interval','$http', PhonePlayerController],
     controllerAs: 'vm'
 });
 
-function PhonePlayerController(FullscreenService,$scope,$interval ) {
+function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     var vm = this;
 
     // Stati iniziali

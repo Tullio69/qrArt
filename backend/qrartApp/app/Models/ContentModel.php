@@ -39,6 +39,15 @@
         protected $afterDelete    = [];
         
         // Custom Methods
+        public function getContentWithRelations($contentId)
+        {
+            return $this->select('content.*, content_metadata.*, content_files.*')
+                ->join('content_metadata', 'content_metadata.content_id = content.id', 'left')
+                ->join('content_files', 'content_files.content_id = content.id', 'left')
+                ->where('content.id', $contentId)
+                ->findAll();
+        }
+        
         public function getContentWithVariants($contentId)
         {
             $content = $this->find($contentId);

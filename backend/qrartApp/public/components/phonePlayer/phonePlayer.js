@@ -1,21 +1,53 @@
 angular.module('phoneApp')
     .component('phonePlayer', {
     templateUrl: 'components/phonePlayer/phonePlayer.html',
-        controller: ['FullscreenService', '$scope','$interval', PhonePlayerController],
+        controller: ['FullscreenService', '$scope','$interval','$http', PhonePlayerController],
     controllerAs: 'vm'
 });
 
-function PhonePlayerController(FullscreenService,$scope,$interval ) {
+function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     var vm = this;
-
-    // Stati iniziali
+    // Inizializzazione delle variabili di stato
     vm.callState = 'waiting'; // Stati possibili: 'waiting', 'incoming', 'inCall', 'ended'
-    vm.caller = {
-        name: 'Vincenzo Impallaria',
-        subtitle: 'Santo Baddaro',
-        avatar: 'media/2/background.jpg' // Assicurati che il percorso dell'avatar sia corretto
+    vm.caller = {};
+    vm.backgroundUrl = '';
+    vm.callDuration = 0;
+    vm.dynamicContent = '';
+    vm.relatedArticles = [];
+    vm.sponsorData = [];
+
+    // Carica i contenuti dal server
+    vm.loadContent = function(contentId) {
+        $http.get('/api/content/' + contentId)
+            .then(function(response) {
+                var data = response.data;
+                vm.contentType = data.content.type;
+                vm.caller = {
+                    name: data.content.callerTitle,
+                    subtitle: data.content.callerSubtitle,
+                    avatar: data.files.find(f => f.type === 'callerAvatar')?.url
+                };
+                vm.backgroundUrl = data.files.find(f => f.type === 'callerBackground')?.url;
+                vm.dynamicContent = data.content.dynamicContent;
+                vm.relatedArticles = data.content.relatedArticles;
+                vm.sponsorData = data.content.sponsorData;
+
+                // Imposta l'audio o il video in base al tipo di contenuto
+                if (vm.contentType === 'audio' || vm.contentType === 'audio_call') {
+                    vm.audioUrl = data.files.find(f => f.type === 'audio')?.url;
+                } else if (vm.contentType === 'video' || vm.contentType === 'video_call') {
+                    vm.videoUrl = data.files.find(f => f.type === 'video')?.url;
+                }
+            })
+            .catch(function(error) {
+                console.error('Error loading content:', error);
+            });
     };
-    vm.backgroundUrl="media/2/background.jpg"
+
+    // Carica il contenuto all'inizializzazione del componente
+    vm.loadContent(contentId);
+    // Stati iniziali
+
 
     // Variabili per il contatore della chiamata
     vm.callDuration = 0; // Secondi totali

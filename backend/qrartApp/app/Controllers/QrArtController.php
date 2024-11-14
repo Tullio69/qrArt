@@ -21,6 +21,7 @@
         {
             $db = \Config\Database::connect();
             $db->transStart();
+            $contentDir = null;  // Dichiariamo contentDir fuori dal blocco try
             
             try {
                 $formData = $this->request->getPost();
@@ -58,6 +59,7 @@
                     
                     
                     $languageDir = $this->createLanguageDirectory($contentDir, $variant['language']);
+                   
                     $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId, $languageDir, $formData['contentType'], $index);
                     log_message('info', '66 Dati Variante: ' . print_r($files['languageVariants'],true));
                   
@@ -67,8 +69,8 @@
                     
                    
                 }
-                
-                $this->handleCommonFiles($files, $contentDir);
+                #throw new \Exception('Errore forzato per il test');
+                $this->handleCommonFiles($files, $contentDir,$contentId);
                 
                 $db->transCommit();
                 
@@ -80,9 +82,13 @@
                 
             } catch (\Exception $e) {
                 
-               
-               
+                // Elimina la directory creata se esiste
+                if ($contentDir !== null && is_dir($contentDir)) {
+                    $this->removeDirectory($contentDir);
+                }
+                
                 $db->transRollback();
+                $this->resetContentCounter();
                 
                 log_message('error', 'Errore in processQrArtContent: ' . $e->getMessage());
                 
@@ -129,6 +135,10 @@
                         $newName = ($contentType === 'audio' || $contentType === 'audio_call' ? 'audio' : 'video') . '.' . $file->getExtension();
                         
                         try {
+                            // Genera il nuovo nome del file con contentId_
+                            $contentGroup= ($contentType === 'audio_call' ? 'audio' : 'video');
+                            $originalName = $file->getClientName();
+                            $newName = $contentId . '_' .$variant['language'] . '_' . $contentGroup . '.' . $file->getExtension() ;
                             $file->move($destinationPath, $newName);
                             
                             if ($file->hasMoved()) {
@@ -183,14 +193,15 @@
             
             return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
         }
-        private function handleCommonFiles($files, $contentDir)
+       
+        private function handleCommonFiles($files, $contentDir, $contentId)
         {
             $commonFiles = ['callerBackground', 'callerAvatar'];
             foreach ($commonFiles as $fileKey) {
                 if (isset($files[$fileKey]) && $files[$fileKey] instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
                     $file = $files[$fileKey];
                     if ($file->isValid() && !$file->hasMoved()) {
-                        $newName = $fileKey . '.' . $file->getExtension();
+                        $newName = $contentId . '_' .$fileKey .".". $file->getExtension();
                         try {
                             $file->move($contentDir, $newName);
                             log_message('info', "File comune caricato con successo: {$contentDir}/{$newName}");
@@ -208,6 +219,44 @@
             }
         }
         
+        public function resetContentCounter()
+        {
+            $db = \Config\Database::connect();
+            
+            try {
+                // Inizia una transazione
+                $db->transStart();
+                
+                // Ottieni il valore massimo dell'ID attuale
+                $maxId = $db->table('content')->selectMax('id')->get()->getRow()->id ?? 0;
+                
+                // Resetta l'auto-increment al valore massimo + 1
+                $db->query("ALTER TABLE content AUTO_INCREMENT = " . ($maxId + 1));
+                
+                // Completa la transazione
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    // Se la transazione è fallita, lancia un'eccezione
+                    throw new DatabaseException('Errore durante il reset del contatore');
+                }
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Contatore della tabella content resettato con successo',
+                    'next_id' => $maxId + 1
+                ]);
+                
+            } catch (\Exception $e) {
+                log_message('error', 'Errore nel reset del contatore: ' . $e->getMessage());
+                
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Si è verificato un errore durante il reset del contatore: ' . $e->getMessage()
+                ])->setStatusCode(500);
+            }
+        }
+       
         private function removeDirectory($dir)
         {
             if (is_dir($dir)) {
