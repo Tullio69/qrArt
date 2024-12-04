@@ -41,11 +41,29 @@
         // Custom Methods
         public function getContentWithRelations($contentId)
         {
-            return $this->select('content.*, content_metadata.*, content_files.*')
-                ->join('content_metadata', 'content_metadata.content_id = content.id', 'left')
-                ->join('content_files', 'content_files.content_id = content.id', 'left')
-                ->where('content.id', $contentId)
-                ->findAll();
+            $db = \Config\Database::connect();
+            $builder = $db->table('content');
+            
+            $builder->select('c.caller_name,c.caller_title,c.content_type,cf.file_url,cf.file_type,cm.content_name,cm.language,cm.text_only')
+                ->from('content c')
+                ->join('content_files cf', 'c.id = cf.content_id', 'left')
+                ->join('content_metadata cm', 'cf.metadata_id=cm.id', 'left')
+                ->where('content.id', $contentId);
+            
+            // Get the compiled SQL
+            $sql = $builder->getCompiledSelect();
+            
+            // Log the SQL query
+            log_message('debug', 'Query executed: ' . $sql);
+            
+            // Execute the query
+            $query = $db->query($sql);
+            
+            // Return both the result and the SQL for debugging
+            return [
+                'data' => $query->getResultArray(),
+                'sql' => $sql
+            ];
         }
         
         public function getContentWithVariants($contentId)

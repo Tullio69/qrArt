@@ -52,8 +52,7 @@ body { font-family: Arial, sans-serif; margin: 20px; }
 }
 
 .language-button img {
-    width: 80px; /* Dimensione aumentata delle bandiere */
-    height: auto; /* Mantiene le proporzioni corrette dell'immagine */
+
     display: block; /* Assicura che l'immagine non abbia spazio extra intorno */
 }
 
@@ -384,8 +383,7 @@ body, html {
 }
 
 .language-button img {
-    width: 80px;  /* Dimensione della bandiera */
-    height: auto;
+
     transition: transform 0.3s ease;  /* Transizione per l'effetto hover */
 }
 

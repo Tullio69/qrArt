@@ -11,6 +11,10 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
                 templateUrl: 'views/home.html',
                 controller: 'HomeController'
             })
+            .when('/content/:id', {
+                templateUrl: 'views/contentViewer.html',
+                controller: 'ContentViewerController'
+            })
             .when('/editor', {
                 templateUrl: 'views/contentEditorForm.html',
                 controller: 'FormController',
@@ -36,6 +40,25 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
 
     }])
     // Controller esemplificativo
+    .controller('ContentViewerController', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
+        var contentId = $routeParams.id;
+
+        $scope.contentid=contentId;
+        $scope.content = null;
+        $scope.loading = true;
+        $scope.error = null;
+
+        $http.get('/api/content/' + contentId)
+            .then(function(response) {
+                $scope.content = response.data.content;
+                $scope.loading = false;
+            })
+            .catch(function(error) {
+                $scope.error = 'Errore nel caricamento del contenuto';
+                $scope.loading = false;
+                console.log('Errore:', error);
+            });
+    }])
     .controller('HomeController', ['$scope', '$http', '$timeout', function($scope , $http, $timeout) {
         $scope.currentYear = new Date().getFullYear();
         $scope.email = '';

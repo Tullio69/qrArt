@@ -6,6 +6,7 @@
             controller: LanguageSelectorController,
             controllerAs: 'vm',
             bindings: {
+                availableLanguages: '<',
                 onSelectLanguage: '&'  // Aggiunge un binding per la funzione
             }
         });
@@ -13,22 +14,21 @@
     function LanguageSelectorController() {
         var vm = this;
 
-        vm.availableLanguages = [
-            { code: 'en', name: 'English' },
-            { code: 'it', name: 'Italiano' },
-            { code: 'fr', name: 'Français' },
-            { code: 'de', name: 'Deutsch' },
-            { code: 'sv', name: 'Sweden' }
-            // Aggiungi altre lingue secondo necessità
-        ];
+        vm.filterTextOnly = false;
 
-        vm.selectedLanguage = vm.availableLanguages[0]; // Imposta la lingua predefinita, se desiderato
+        vm.filterLanguages = function(lang) {
+            return lang.text_only === (vm.filterTextOnly ? '1' : '0');
+        };
 
         vm.selectLanguage = function(language) {
             vm.selectedLanguage = language;
             vm.onSelectLanguage({language: language});  // Chiama la funzione esterna passando 'language' come parametro
-            console.log('Language selected:', language.name);
+            console.log('Language selected:', language);
         };
+
+        vm.getTextOnlyFilter= function () {
+            return vm.filterTextOnly;
+        }
 
     }
 

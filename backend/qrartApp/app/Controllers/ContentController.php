@@ -49,61 +49,69 @@
         
         public function getContentData($contentId): ResponseInterface
         {
-            $rawData = $this->contentModel->getContentWithRelations($contentId);
-            
-            if (empty($rawData)) {
-                return $this->failNotFound('Content not found');
-            }
-            
-            // Organize the data
-            $content = [
-                'id' => $rawData[0]['id'],
-                'caller_id' => $rawData[0]['caller_id'],
-                'caller_name' => $rawData[0]['caller_name'],
-                'caller_title' => $rawData[0]['caller_title'],
-                'content_name' => $rawData[0]['content_name'],
-                'content_type' => $rawData[0]['content_type'],
-                'created_at' => $rawData[0]['created_at'],
-                'updated_at' => $rawData[0]['updated_at'],
-            ];
-            
-            $metadata = [];
-            $files = [];
-            
-            foreach ($rawData as $row) {
-                if (!empty($row['language'])) {
-                    $metadata[] = [
-                        'id' => $row['id'],
-                        'content_id' => $row['content_id'],
-                        'language' => $row['language'],
-                        'text_only' => $row['text_only'],
-                        'content_name' => $row['content_name'],
-                        'description' => $row['description'],
-                        'created_at' => $row['created_at'],
-                        'updated_at' => $row['updated_at'],
-                    ];
+            try {
+                $result = $this->contentModel->getContentWithRelations($contentId);
+                $rawData = $result['data'];
+                $sql = $result['sql'];
+                
+                if (empty($rawData)) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'status' => 404,
+                        'error' => 'Content not found'
+                    ]);
                 }
                 
-                if (!empty($row['file_name'])) {
-                    $files[] = [
-                        'id' => $row['id'],
-                        'content_id' => $row['content_id'],
-                        'file_name' => $row['file_name'],
-                        'file_type' => $row['file_type'],
-                        'file_path' => $row['file_path'],
-                        'created_at' => $row['created_at'],
-                        'updated_at' => $row['updated_at'],
-                    ];
+                // Initialize content structure
+                $content = [
+                    'id' => $contentId,
+                    'caller_name' => $rawData[0]['caller_name'],
+                    'caller_title' => $rawData[0]['caller_title'],
+                    'content_type' => $rawData[0]['content_type'],
+                    'common_files' => [],
+                    'metadata' => []
+                ];
+                
+                $metadata = [];
+                
+                foreach ($rawData as $row) {
+                    if ($row['file_type'] === 'callerBackground' || $row['file_type'] === 'callerAvatar') {
+                        $content['common_files'][] = [
+                            'file_type' => $row['file_type'],
+                            'file_url' => $row['file_url']
+                        ];
+                    } elseif ($row['language'] !== null) {
+                        $metadataKey = $row['language'] . '_' . ($row['text_only'] ? 'text_only' : 'audio');
+                        
+                        if (!isset($metadata[$metadataKey])) {
+                            $metadata[$metadataKey] = [
+                                'language' => $row['language'],
+                                'content_name' => $row['content_name'],
+                                'text_only' => (bool)$row['text_only'],
+                                'file_type' => $row['file_type'],
+                                'file_url' => $row['file_url']
+                            ];
+                        }
+                    }
                 }
+                
+                $content['metadata'] = array_values($metadata);
+                
+                $response = [
+                    'status' => 200,
+                    'content' => $content,
+                    'debug' => [
+                        'sql' => $sql
+                    ]
+                ];
+                
+                return $this->response->setJSON($response);
+            } catch (\Exception $e) {
+                log_message('error', 'Error in getContentData: ' . $e->getMessage());
+                return $this->response->setStatusCode(500)->setJSON([
+                    'status' => 500,
+                    'error' => 'An error occurred while processing your request'
+                ]);
             }
-            
-            $response = [
-                'content' => $content,
-                'metadata' => $metadata,
-                'files' => $files
-            ];
-            
-            return $this->response->setJSON($response);
         }
         
         public function createShortUrl(): ResponseInterface

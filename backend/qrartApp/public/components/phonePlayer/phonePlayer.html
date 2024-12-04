@@ -1,42 +1,55 @@
 <!-- Stato Waiting (Attesa di chiamata o selezione lingua) -->
-<div ng-if="vm.callState === 'waiting'" class="waiting-container ">
-	<div class="language-selector">
-		<language-selector on-select-language="vm.selectLanguage(language)"></language-selector>
-	</div>
+
+<div ng-show="vm.text_only" >
+    <contviewer content="vm.content"></contviewer>
 </div>
 
-<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
-<div ng-if="vm.callState === 'incoming' || vm.callState === 'inCall'" class="full-screen" ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+<div ng-show="!vm.text_only">
+	<div class="waiting-container " ng-if="vm.callState === 'waiting'">
+	<div class="language-selector">
+		<language-selector available-languages="vm.content.metadata"
+						   on-select-language="vm.selectLanguage(language)"></language-selector>
+	</div>
+</div>
+	
+	<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
+<div class="full-screen" ng-if="vm.callState === 'incoming' || vm.callState === 'inCall'"
+	 ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+	
 	<div class="phone-top" ng-show="vm.callState !== 'ended'">
 		<div class="caller-info">
 			<div class="text-3xl font-extralight">{{ vm.caller.name }}</div>
 			<div class="text-2xl font-extralight">{{ vm.caller.subtitle }}</div>
 		</div>
 		<div class="caller-avatar">
-			<img ng-src="{{ vm.caller.avatar }}" alt="Avatar del Chiamante">
+			<img alt="Avatar del Chiamante" ng-src="{{ vm.caller.avatar }}">
 		</div>
 		<div class="call-timer flex justify-center items-center h-16">
 			<!-- Timer della chiamata in corso -->
-			<div ng-show="vm.callDuration > 0" class="text-3xl ">{{ vm.formatCallDuration() }}</div>
+			<div class="text-3xl " ng-show="vm.callDuration > 0">{{ vm.formatCallDuration() }}</div>
 			<!-- Spazio riservato quando la durata non è visibile -->
-			<div ng-show="vm.callDuration === 0" class="opacity-0 text-3xl font-light font-mono">00:00:00</div>
+			<div class="opacity-0 text-3xl font-light font-mono" ng-show="vm.callDuration === 0">00:00:00</div>
 		</div>
 	</div>
 	
 	<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
-		<i class="Phone is-animating accept"  ng-show="vm.callState === 'incoming'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()"></i>
-		<i class="Phone accept"  ng-show="vm.callState === 'inCall'" hm-drag drag-direction="right" on-drag-end="vm.answerCall()" ></i>
-		<i class="Phone decline" ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'" hm-drag drag-direction="left" on-drag-end="vm.declineCall()"></i>
+		<i class="Phone is-animating accept" drag-direction="right" hm-drag ng-show="vm.callState === 'incoming'"
+		   on-drag-end="vm.answerCall()"></i>
+		<i class="Phone accept" drag-direction="right" hm-drag ng-show="vm.callState === 'inCall'"
+		   on-drag-end="vm.answerCall()"></i>
+		<i class="Phone decline" drag-direction="left"
+		   hm-drag ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'"
+		   on-drag-end="vm.declineCall()"></i>
 	</div>
 </div>
-
-<!-- Stato Ended (Chiamata terminata) -->
-<div ng-if="vm.callState === 'ended'" class="ended-container">
+	
+	<!-- Stato Ended (Chiamata terminata) -->
+<div class="ended-container" ng-if="vm.callState === 'ended'">
 	<div class="dynamic-content">
 		<h2>{{ vm.dynamicContent }}</h2>
 		
 		<!-- Pulsante per riascoltare l'audio della chiamata -->
-		<button ng-click="vm.answerCall()" class="replay-button">Riascolta la Chiamata</button>
+		<button class="replay-button" ng-click="vm.answerCall()">Riascolta la Chiamata</button>
 		
 		<!-- Link ad articoli correlati -->
 		<div class="related-articles">
@@ -53,10 +66,13 @@
 			<h3>Sponsor</h3>
 			<div class="sponsor-item" ng-repeat="sponsor in vm.sponsorData">
 				<a href="{{ sponsor.link }}" target="_blank">
-					<img ng-src="{{ sponsor.imageUrl }}" alt="{{ sponsor.name }}">
+					<img alt="{{ sponsor.name }}" ng-src="{{ sponsor.imageUrl }}">
 					<p>{{ sponsor.name }}</p>
 				</a>
 			</div>
 		</div>
 	</div>
 </div>
+</div>
+
+

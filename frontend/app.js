@@ -7,6 +7,10 @@ var app = angular.module('phoneApp', ['ngRoute'])
                 templateUrl: 'views/home.html',
                 controller: 'HomeController'
             })
+            .when('/home', {
+                templateUrl: 'views/home.html',
+                controller: 'HomeController'
+            })
             .when('/audio', {
                 templateUrl: 'views/audio.html',
                 controller: 'AudioController'

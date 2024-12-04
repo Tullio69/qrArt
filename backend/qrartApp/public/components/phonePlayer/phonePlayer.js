@@ -1,6 +1,9 @@
 angular.module('phoneApp')
     .component('phonePlayer', {
     templateUrl: 'components/phonePlayer/phonePlayer.html',
+        bindings: {
+            content: '<'
+        },
         controller: ['FullscreenService', '$scope','$interval','$http', PhonePlayerController],
     controllerAs: 'vm'
 });
@@ -8,6 +11,8 @@ angular.module('phoneApp')
 function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     var vm = this;
     // Inizializzazione delle variabili di stato
+
+
     vm.callState = 'waiting'; // Stati possibili: 'waiting', 'incoming', 'inCall', 'ended'
     vm.caller = {};
     vm.backgroundUrl = '';
@@ -16,38 +21,9 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     vm.relatedArticles = [];
     vm.sponsorData = [];
 
-    // Carica i contenuti dal server
-    vm.loadContent = function(contentId) {
-        $http.get('/api/content/' + contentId)
-            .then(function(response) {
-                var data = response.data;
-                vm.contentType = data.content.type;
-                vm.caller = {
-                    name: data.content.callerTitle,
-                    subtitle: data.content.callerSubtitle,
-                    avatar: data.files.find(f => f.type === 'callerAvatar')?.url
-                };
-                vm.backgroundUrl = data.files.find(f => f.type === 'callerBackground')?.url;
-                vm.dynamicContent = data.content.dynamicContent;
-                vm.relatedArticles = data.content.relatedArticles;
-                vm.sponsorData = data.content.sponsorData;
-
-                // Imposta l'audio o il video in base al tipo di contenuto
-                if (vm.contentType === 'audio' || vm.contentType === 'audio_call') {
-                    vm.audioUrl = data.files.find(f => f.type === 'audio')?.url;
-                } else if (vm.contentType === 'video' || vm.contentType === 'video_call') {
-                    vm.videoUrl = data.files.find(f => f.type === 'video')?.url;
-                }
-            })
-            .catch(function(error) {
-                console.error('Error loading content:', error);
-            });
+    vm.$onInit = function() {
+        console.log("Content:", vm.content);
     };
-
-    // Carica il contenuto all'inizializzazione del componente
-    vm.loadContent(contentId);
-    // Stati iniziali
-
 
     // Variabili per il contatore della chiamata
     vm.callDuration = 0; // Secondi totali
@@ -60,14 +36,59 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
         { code: 'sv', name: 'Svenska' }
     ];
 
+    vm.loadContent = function(metadata) {
+        /*{
+            "id": "127",
+            "language": "it",
+            "text_only": "0",
+            "content_name": "Chiesa di Sant'Orsola",
+            "content_url": "10/it/10_it_audio.wav",
+            "description": "",
+            "created_at": "2024-11-14 10:08:37",
+            "updated_at": "2024-11-14 10:08:37",
+            "$$hashKey": "object:8"
+        }*/
+        vm.caller = {};
+        vm.caller.name= vm.content.caller_name;
+        vm.caller.subtitle = vm.content.caller_title;
+        vm.caller.avatar = vm.content.caller_description;
+        vm.text_only = metadata.text_only;
+        vm.backgroundUrl = '';
+        vm.callDuration = 0;
+        vm.dynamicContent = '';
+        vm.relatedArticles = [];
+        vm.sponsorData = [];
+
+    }
     // Imposta l'Inglese come linguaggio predefinito per i test
     vm.selectedLanguage = vm.availableLanguages[0]; // Assumi che l'Inglese sia il primo elemento dell'array
 
-    vm.selectLanguage = function(language) {
-        vm.selectedLanguage = language;
-        vm.goToFullscreen(); // Commenta questa riga durante i test se il fullscreen non è desiderato
-        vm.receiveCall();
+    vm.loadHtmlContent = function(url) {
+        $http.get(url)
+            .then(function(response) {
+                vm.htmlContent = response.data;
+            })
+            .catch(function(error) {
+                console.error('Errore nel caricamento del contenuto HTML:', error);
+                vm.htmlContent = '<p>Errore nel caricamento del contenuto.</p>';
+            });
     };
+
+
+
+    vm.selectLanguage = function(metadata) {
+        vm.loadContent(metadata);
+        vm.selectedLanguage = metadata.language;
+        vm.goToFullscreen();
+        if (metadata.text_only === "1") {
+            vm.callState = 'text_only';
+            vm.loadHtmlContent(metadata.content_url);
+        } else {
+            vm.receiveCall();
+        }
+    };
+
+
 
     vm.goToFullscreen = function() {
         var element = document.documentElement;
@@ -98,9 +119,8 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     var vm = this;
 
     var ringTone = new Audio('assets/audio/marimba.mp3'); // Percorso del file audio
+
     var callerMedia = new Audio('media/2/it/audio.mp3'); // Percorso del file audio
-
-
     // Funzione per gestire il termine della riproduzione dell'audio
     vm.onAudioEnded = function() {
         vm.callState = 'ended';  // Cambia lo stato della chiamata in "terminata"
@@ -193,14 +213,8 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
             (seconds < 10 ? '0' : '') + seconds;
     };
 
-
-
-
     $scope.$on('$destroy', function() {
         vm.declineCall(); // Termina la chiamata quando il componente viene distrutto
     });
-
-
-
 
 }

@@ -1,0 +1,16 @@
+
+<div ng-if="content">
+	<h1>{{content.title}}</h1>
+	<div ng-switch="content.content_type">
+		<div ng-switch-when="audio_call">
+			<phone-player content="content"></phone-player>
+		</div>
+		<div ng-switch-when="video">
+			<phone-player content="content"></phone-player>
+		</div>
+		<!-- Aggiungi altri casi per diversi tipi di contenuto -->
+		<div ng-switch-default>
+			Tipo di contenuto non supportato: {{content.type}}
+		</div>
+	</div>
+</div>
