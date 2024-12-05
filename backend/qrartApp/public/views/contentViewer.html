@@ -1,16 +1,30 @@
+<div class="content-viewer waiting-container" >
 
-<div ng-if="content">
-	<h1>{{content.title}}</h1>
-	<div ng-switch="content.content_type">
-		<div ng-switch-when="audio_call">
-			<phone-player content="content"></phone-player>
-		</div>
-		<div ng-switch-when="video">
-			<phone-player content="content"></phone-player>
-		</div>
-		<!-- Aggiungi altri casi per diversi tipi di contenuto -->
-		<div ng-switch-default>
-			Tipo di contenuto non supportato: {{content.type}}
-		</div>
+	<div class="language-selector" ng-if="!language_selected">
+		<language-selector
+				available-languages="content.metadata"
+				on-select-language="selectLanguage(metadata, filterTextOnly)"
+				filter-text-only="filterTextOnly">
+		</language-selector>
 	</div>
+	
+	
+	<div   ng-show="!selContent.text_only" ng-cloak>
+		<div ng-show="selContent.content_type === 'audio'" >
+			<audio-player content="selContent"></audio-player>
+		</div>
+		<div ng-show="selContent.content_type === 'video'" >
+			<video-player content="selContent" ></video-player>
+		</div>
+		<div ng-show="selContent.content_type === 'audio_call'" >
+			<phone-player content="selContent" call-state="selContent.call_state" caller-avatar="avatarImgSrc" caller-background="bgImgSrc" ></phone-player>
+		</div>
+		<div ng-show="selContent.content_type === 'video_call'" >
+			<phone-player content="selContent" ></phone-player>
+		</div>
+		
+	</div>
+	<div ng-if="selContent.text_only">
+	<html-content-viewer content="content.text_content"></html-content-viewer>
+</div>
 </div>

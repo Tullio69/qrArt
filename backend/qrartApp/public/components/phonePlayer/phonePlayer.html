@@ -1,20 +1,8 @@
 <!-- Stato Waiting (Attesa di chiamata o selezione lingua) -->
 
-<div ng-show="vm.text_only" >
-    <contviewer content="vm.content"></contviewer>
-</div>
-
-<div ng-show="!vm.text_only">
-	<div class="waiting-container " ng-if="vm.callState === 'waiting'">
-	<div class="language-selector">
-		<language-selector available-languages="vm.content.metadata"
-						   on-select-language="vm.selectLanguage(language)"></language-selector>
-	</div>
-</div>
-	
 	<!-- UI generica per la gestione delle chiamate, visibile per stati incoming e inCall -->
 <div class="full-screen" ng-if="vm.callState === 'incoming' || vm.callState === 'inCall'"
-	 ng-style="{'background-image': 'url(' + vm.backgroundUrl + ')'}">
+	 ng-style="{'background-image': 'url(' + vm.callerBackground + ')'}" ng-cloak="">
 	
 	<div class="phone-top" ng-show="vm.callState !== 'ended'">
 		<div class="caller-info">
@@ -22,7 +10,12 @@
 			<div class="text-2xl font-extralight">{{ vm.caller.subtitle }}</div>
 		</div>
 		<div class="caller-avatar">
-			<img alt="Avatar del Chiamante" ng-src="{{ vm.caller.avatar }}">
+			<img alt="Avatar del Chiamante"
+				 ng-src="{{ vm.caller.avatar }}"
+				 ng-srcset="{{ vm.caller.avatar }} 1x, {{ vm.caller.avatar }} 2x"
+				 class="avatar-image"
+				 ng-class="{ 'transition-all duration-300 ease-in-out': true}"
+				 >
 		</div>
 		<div class="call-timer flex justify-center items-center h-16">
 			<!-- Timer della chiamata in corso -->
@@ -34,12 +27,12 @@
 	
 	<div class="call-buttons" ng-show="vm.callState === 'incoming' || vm.callState === 'inCall'">
 		<i class="Phone is-animating accept" drag-direction="right" hm-drag ng-show="vm.callState === 'incoming'"
-		   on-drag-end="vm.answerCall()"></i>
+		   on-drag-end="vm.handleSwipe('right')"></i>
 		<i class="Phone accept" drag-direction="right" hm-drag ng-show="vm.callState === 'inCall'"
-		   on-drag-end="vm.answerCall()"></i>
+		   on-drag-end="vm.handleSwipe('right')"></i>
 		<i class="Phone decline" drag-direction="left"
 		   hm-drag ng-class="{'is-animating':vm.callState === 'inCall'}" ng-show="vm.callState === 'inCall'||vm.callState === 'incoming'"
-		   on-drag-end="vm.declineCall()"></i>
+		   on-drag-end="vm.handleSwipe('left')"></i>
 	</div>
 </div>
 	

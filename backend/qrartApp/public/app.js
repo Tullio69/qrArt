@@ -36,28 +36,90 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
                 templateUrl: 'views/html.html',
                 controller: 'HomeController'
             })
-
-
     }])
     // Controller esemplificativo
-    .controller('ContentViewerController', ['$scope', '$routeParams', '$http', function($scope, $routeParams, $http) {
+    .controller('ContentViewerController', ['$scope', '$routeParams', '$http','FullscreenService', function($scope, $routeParams, $http,FullscreenService) {
         var contentId = $routeParams.id;
-
+        $scope.language_selected=false;
         $scope.contentid=contentId;
         $scope.content = null;
         $scope.loading = true;
         $scope.error = null;
+        $scope.callerAvatar = null;
+        $scope.callerBackground = null;
+
 
         $http.get('/api/content/' + contentId)
             .then(function(response) {
                 $scope.content = response.data.content;
                 $scope.loading = false;
+                // Pre-elabora callerAvatar e callerBackground
+                $scope.callerAvatar = $scope.getFileByType('callerAvatar');
+                $scope.callerBackground = $scope.getFileByType('callerBackground');
+                $scope.preloadImages();  // Aggiungi questa linea
             })
             .catch(function(error) {
                 $scope.error = 'Errore nel caricamento del contenuto';
                 $scope.loading = false;
                 console.log('Errore:', error);
             });
+
+        $scope.selectLanguage = function(metadata, filterTextOnly) {
+
+            // Qui dobbiamo aggiungere la logica per il caricamento del contenuto corrispondente al linguaggio selezionato
+            // con la variante textOnly corrispondente al valore di filterTextOnly
+
+            var callerAvatar = $scope.getFileByType('callerAvatar');
+            var callerBackground = $scope.getFileByType('callerBackground');
+
+            $scope.selContent = {
+                caller_name: $scope.content.caller_name,
+                caller_subtitle: $scope.content.caller_title,
+                caller_avatar: callerAvatar ? callerAvatar.file_url : null,
+                caller_background: callerBackground ? callerBackground.file_url : null,
+                file_type: metadata.file_type,
+                text_only: filterTextOnly,
+                content_name:metadata.content_name,
+                content_url:metadata.file_url,
+                content_type:$scope.content.content_type,
+                content_language:metadata.language,
+                call_state:'incoming'
+                            }
+            $scope.language_selected=true;
+            $scope.goFullscreen();
+        }
+
+        $scope.getFileByType = function(fileType) {
+            if (!$scope.content || !$scope.content.common_files) {
+                console.warn('common_files non disponibile');
+                return null;
+            }
+
+            return $scope.content.common_files.find(function(file) {
+                return file.file_type === fileType;
+            });
+        };
+
+        $scope.goFullscreen = function() {
+            var element = document.documentElement; // Prende l'elemento radice per passare a pieno schermo
+            FullscreenService.enterFullscreen(element);
+        };
+
+        $scope.exitFullscreen = function() {
+            FullscreenService.exitFullscreen();
+        };
+
+        $scope.preloadImages = function() {
+            if ($scope.callerAvatar) {
+                var avatarImg = new Image();
+                $scope.avatarImgSrc = 'media/'+$scope.callerAvatar.file_url;
+            }
+            if ($scope.callerBackground) {
+                var bgImg = new Image();
+                $scope.bgImgSrc = 'media/'+$scope.callerBackground.file_url;
+            }
+        };
+
     }])
     .controller('HomeController', ['$scope', '$http', '$timeout', function($scope , $http, $timeout) {
         $scope.currentYear = new Date().getFullYear();
@@ -155,13 +217,13 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
     };
     return service;
 }])
-    .directive('hmSwipe', function() {
+    .directive('hmSwipe', ['$timeout', function($timeout) {
         return {
             restrict: 'A',
             link: function(scope, element, attrs) {
                 var hammer = new Hammer(element[0]);
                 hammer.on('swipeleft swiperight', function(ev) {
-                    scope.$apply(function() {
+                    $timeout(function() {
                         if (attrs.hmSwipe) {
                             scope.$eval(attrs.hmSwipe, { $event: ev });
                         }
@@ -169,66 +231,62 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
                 });
             }
         };
-    })
-    .directive('hmDrag', function() {
-    return {
-        restrict: 'A',
-        scope: {
-            dragDirection: '@',    // Direzione ammessa del drag ('left' o 'right')
-            onDragEnd: '&',        // Funzione da chiamare quando si raggiunge la massima escursione
-        },
-        link: function(scope, element) {
-            var hammer = new Hammer(element[0]);
-            var startX = 0;
-            var deltaX = 0;
-            var direction = scope.dragDirection;
-            var maxDragDistance = 50; // Massima escursione del drag
+    }])
+    .directive('hmDrag', ['$timeout', function($timeout) {
+        return {
+            restrict: 'A',
+            scope: {
+                dragDirection: '@',
+                onDragEnd: '&',
+            },
+            link: function(scope, element) {
+                var hammer = new Hammer(element[0]);
+                var startX = 0;
+                var deltaX = 0;
+                var direction = scope.dragDirection;
+                var maxDragDistance = 50;
 
-            // Configura Hammer.js per pan orizzontale
-            hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
+                hammer.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL });
 
-            // Disabilita animazioni all'inizio del drag
-            hammer.on('panstart', function(e) {
-                startX = e.center.x;
-                element.addClass('no-animation'); // Disattiva le animazioni durante il drag
-            });
-
-            hammer.on('panmove', function(e) {
-                deltaX = e.center.x - startX;
-
-                // Limita il movimento alla massima escursione
-                if (Math.abs(deltaX) > maxDragDistance) {
-                    deltaX = maxDragDistance * Math.sign(deltaX);
-                }
-
-                // Verifica se il drag è nella direzione permessa (se specificata)
-                if (direction === 'left' && deltaX > 0) {
-                    deltaX = 0; // Blocco del drag verso destra
-                } else if (direction === 'right' && deltaX < 0) {
-                    deltaX = 0; // Blocco del drag verso sinistra
-                }
-
-                element.css({
-                    transform: 'translateX(' + deltaX + 'px)'
+                hammer.on('panstart', function(e) {
+                    startX = e.center.x;
+                    element.addClass('no-animation');
                 });
-            });
 
-            hammer.on('panend', function() {
-                // Ripristina la posizione e rimuovi la classe no-animation
-                element.css({
-                    transform: 'translateX(0px)',
-                    transition: 'transform 0.3s ease'  // Ripristina la transizione
+                hammer.on('panmove', function(e) {
+                    deltaX = e.center.x - startX;
+
+                    if (Math.abs(deltaX) > maxDragDistance) {
+                        deltaX = maxDragDistance * Math.sign(deltaX);
+                    }
+
+                    if (direction === 'left' && deltaX > 0) {
+                        deltaX = 0;
+                    } else if (direction === 'right' && deltaX < 0) {
+                        deltaX = 0;
+                    }
+
+                    element.css({
+                        transform: 'translateX(' + deltaX + 'px)'
+                    });
                 });
-                element.removeClass('no-animation'); // Riattiva le animazioni dopo il drag
 
-                // Chiamata della funzione al termine del drag
-                if (Math.abs(deltaX) >= maxDragDistance) {
-                    scope.$apply(scope.onDragEnd);
-                }
-            });
-        }
-    };
-})
+                hammer.on('panend', function() {
+                    element.css({
+                        transform: 'translateX(0px)',
+                        transition: 'transform 0.3s ease'
+                    });
+                    element.removeClass('no-animation');
+
+                    if (Math.abs(deltaX) >= maxDragDistance) {
+                        $timeout(function() {
+                            scope.onDragEnd();
+                        });
+                    }
+                });
+            }
+        };
+    }])
     .directive('btn', function () {
         return {
             restrict: 'C',
@@ -317,6 +375,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
             }
         };
     })
+
 
 function FormController($http, $scope) {
     var vm = this;

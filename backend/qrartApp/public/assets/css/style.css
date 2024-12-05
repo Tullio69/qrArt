@@ -4,6 +4,11 @@ body { font-family: Arial, sans-serif; margin: 20px; }
 .editor-wrapper { margin-bottom: 20px; }
 .preview { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
 
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+    display: none !important;
+}
+
+
 .inter-400 {
     font-family: "Inter", sans-serif;
     font-optical-sizing: auto;

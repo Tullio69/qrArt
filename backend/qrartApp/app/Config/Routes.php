@@ -10,13 +10,16 @@ use CodeIgniter\Router\RouteCollection;
    
 // Cattura tutte le altre richieste non API
     $routes->get('(:any)', 'AngularController::index'); // Assumi che 'noauth' sia un tuo filtro, se necessario*/
+    $routes->get('test-file', 'MediaController::testFileExistence');
     $routes->get('api/content/(:num)', 'ContentController::getContentData/$1');
     $routes->post('api/qrart/process', 'QrArtController::processQrArtContent');
+    $routes->get('media/audio/(:any)', 'MediaController::serveAudio/$1');
 // Rotte per l'applicazione principale
     if (!isAllowedUserAgent()) {
         $routes->get('(:any)', 'WipController::index');
     } else {
         // Rotte specifiche per AngularJS
+        
         $routes->get('dashboard', 'AngularController::dashboard');
         $routes->get('profile', 'AngularController::profile');
         

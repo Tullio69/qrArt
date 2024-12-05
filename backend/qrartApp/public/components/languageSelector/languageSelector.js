@@ -20,14 +20,17 @@
             return lang.text_only === (vm.filterTextOnly ? '1' : '0');
         };
 
-        vm.selectLanguage = function(language) {
-            vm.selectedLanguage = language;
-            vm.onSelectLanguage({language: language});  // Chiama la funzione esterna passando 'language' come parametro
-            console.log('Language selected:', language);
+        vm.selectLanguage = function(metadata) {
+            vm.selectedLanguage = metadata;
+            vm.onSelectLanguage({metadata: metadata, filterTextOnly: vm.filterTextOnly});  // Chiama la funzione esterna passando 'language' come parametro
         };
 
         vm.getTextOnlyFilter= function () {
             return vm.filterTextOnly;
+        }
+
+        vm.updateFilter = function () {
+
         }
 
     }

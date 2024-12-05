@@ -2,15 +2,19 @@ angular.module('phoneApp')
     .component('phonePlayer', {
     templateUrl: 'components/phonePlayer/phonePlayer.html',
         bindings: {
-            content: '<'
+            content: '<',
+            callerAvatar: '<',
+            callerBackground: '<',
+            callState:'<'
         },
-        controller: ['FullscreenService', '$scope','$interval','$http', PhonePlayerController],
+        controller: ['FullscreenService', '$scope','$interval','$http','$timeout','$window', PhonePlayerController],
     controllerAs: 'vm'
 });
 
-function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
+function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeout,$window) {
     var vm = this;
-    // Inizializzazione delle variabili di stato
+    var callTimer;
+    var ringTone = new Audio('assets/audio/marimba.mp3');
 
 
     vm.callState = 'waiting'; // Stati possibili: 'waiting', 'incoming', 'inCall', 'ended'
@@ -22,21 +26,44 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     vm.sponsorData = [];
 
     vm.$onInit = function() {
-        console.log("Content:", vm.content);
+        // ... codice esistente ...
+        vm.avatarLoaded = false;
+        vm.loadAvatar();
     };
 
-    // Variabili per il contatore della chiamata
-    vm.callDuration = 0; // Secondi totali
 
-    var callTimer = null;
+    vm.loadAvatar = function() {
+        if (vm.caller && vm.caller.avatar) {
+            var img = new Image();
+            img.onload = function() {
+                $timeout(function() {
+                    vm.avatarLoaded = true;
+                });
+            };
+            img.src = vm.caller.avatar;
+        }
+    };
 
-    vm.availableLanguages = [
-        { code: 'en', name: 'English' },
-        { code: 'it', name: 'Italiano' },
-        { code: 'sv', name: 'Svenska' }
-    ];
 
-    vm.loadContent = function(metadata) {
+
+    vm.$onChanges = function(changesObj) {
+        if (changesObj.callState) {
+            vm.handleCallStateChange(changesObj.callState.currentValue);
+        }
+    };
+
+
+
+
+    vm.handleCallStateChange = function(newState) {
+        if (newState === 'incoming') {
+            vm.loadContent()
+            vm.receiveCall();
+        }
+        // Add other state handling as needed
+    };
+
+    vm.loadContent = function() {
         /*{
             "id": "127",
             "language": "it",
@@ -50,18 +77,16 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
         }*/
         vm.caller = {};
         vm.caller.name= vm.content.caller_name;
-        vm.caller.subtitle = vm.content.caller_title;
-        vm.caller.avatar = vm.content.caller_description;
-        vm.text_only = metadata.text_only;
-        vm.backgroundUrl = '';
-        vm.callDuration = 0;
+        vm.caller.subtitle = vm.content.caller_subtitle;
+        vm.caller.avatar = 'media/'+ vm.content.caller_avatar;
+        vm.text_only = vm.content.text_only;
+        vm.backgroundUrl = 'media/'+ vm.content.caller_background;
         vm.dynamicContent = '';
         vm.relatedArticles = [];
         vm.sponsorData = [];
-
+        vm.fullUrl = 'media/'+ vm.content.content_url;
+        vm.callerMedia= new Audio(vm.fullUrl);
     }
-    // Imposta l'Inglese come linguaggio predefinito per i test
-    vm.selectedLanguage = vm.availableLanguages[0]; // Assumi che l'Inglese sia il primo elemento dell'array
 
     vm.loadHtmlContent = function(url) {
         $http.get(url)
@@ -73,8 +98,6 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
                 vm.htmlContent = '<p>Errore nel caricamento del contenuto.</p>';
             });
     };
-
-
 
     vm.selectLanguage = function(metadata) {
         vm.loadContent(metadata);
@@ -99,12 +122,14 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
         }
     };
 
-    vm.yourSwipeHandler = function(event) {
-        if (event.type === 'swipeleft') {
-            console.log('Swiped left');
-        } else if (event.type === 'swiperight') {
-            console.log('Swiped right');
-        }
+    vm.handleSwipe = function(direction) {
+        $timeout(function() {
+            if (direction === 'left') {
+                vm.declineCall();
+            } else if (direction === 'right') {
+                vm.answerCall();
+            }
+        });
     };
 
     vm.goFullscreen = function() {
@@ -116,11 +141,7 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
         FullscreenService.exitFullscreen();
     };
 
-    var vm = this;
 
-    var ringTone = new Audio('assets/audio/marimba.mp3'); // Percorso del file audio
-
-    var callerMedia = new Audio('media/2/it/audio.mp3'); // Percorso del file audio
     // Funzione per gestire il termine della riproduzione dell'audio
     vm.onAudioEnded = function() {
         vm.callState = 'ended';  // Cambia lo stato della chiamata in "terminata"
@@ -150,6 +171,7 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     };
 
     vm.receiveCall = function() {
+        vm.callDuration = 0;
         vm.callState = 'incoming';
         ringTone.loop = true;
         ringTone.play();
@@ -157,28 +179,31 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ) {
     };
 
     vm.answerCall = function() {
+        vm.callDuration = 0;
         vm.callState = 'inCall';
         vm.startCallTimer();
         // Avvia l'audio della chiamata
-        callerMedia.currentTime = 0;  // Riavvia l'audio dall'inizio
-        callerMedia.play();
+        vm.callerMedia.currentTime = 0;  // Riavvia l'audio dall'inizio
+        vm.callerMedia.play();
         ringTone.pause();
         ringTone.currentTime = 0;
         vm.stopVibration();
 
         // Aggiungi un listener per l'evento 'ended' sul media in chiamata
-        callerMedia.addEventListener('ended', function() {
-            $scope.$apply(function() {
-                vm.declineCall();  // Chiama la funzione per terminare la chiamata
-            });
+        vm.callerMedia.addEventListener('ended', function() {
+            $timeout(function() {
+                vm.declineCall(); // Chiama la funzione per terminare la chiamata
+            })
+
+
         });
     };
 
     vm.declineCall = function() {
         vm.callState = 'ended';
         vm.stopCallTimer();
-        callerMedia.pause();
-        callerMedia.currentTime = 0;
+        vm.callerMedia.pause();
+        vm.callerMedia.currentTime = 0;
         vm.stopVibration();
         // Assicurati di fermare anche la suoneria qui.
         ringTone.pause();
