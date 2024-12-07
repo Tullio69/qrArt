@@ -29,7 +29,7 @@
                     'caller_name' => $formData['callerName'],
                     'caller_title' => $formData['callerTitle'],
                     'content_name' => $formData['contentName'],
-                    'content_type' => $formData['contentType'],
+                    'content_type' => $formData['contentType']
                 ];
                 $contentId = $contentModel->insert($contentData);
                 
@@ -93,10 +93,25 @@
         
         private function createContentDirectory($contentId)
         {
-            $contentDir = WRITEPATH . 'media/' . $contentId;
-            if (!is_dir($contentDir)) {
-                mkdir($contentDir, 0755, true);
+            $mediaDir = FCPATH . 'media';
+            $contentDir = $mediaDir . DIRECTORY_SEPARATOR . $contentId;
+            
+            // Crea la directory 'media' se non esiste
+            if (!is_dir($mediaDir)) {
+                if (!mkdir($mediaDir, 0755)) {
+                    log_message('error', "Failed to create media directory: {$mediaDir}");
+                    throw new \RuntimeException("Unable to create media directory {$mediaDir}");
+                }
             }
+            
+            // Crea la directory specifica per il contenuto
+            if (!is_dir($contentDir)) {
+                if (!mkdir($contentDir, 0755, true)) {
+                    log_message('error', "Failed to create content directory: {$contentDir}");
+                    throw new \RuntimeException("Unable to create content directory {$contentDir}");
+                }
+            }
+            
             return $contentDir;
         }
         

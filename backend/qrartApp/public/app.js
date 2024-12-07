@@ -385,14 +385,20 @@ function FormController($http, $scope) {
         callerTitle: '',
         contentName: '',
         contentType: '',
+        contentDescription: '',
+        callerBackground: null,
+        callerAvatar: null,
         languageVariants: []
     };
 
     vm.addLanguageVariant = function() {
         vm.formData.languageVariants.push({
+            contentName: '',
             language: '',
             textOnly: false,
             description: '',
+            htmlContent: '',
+            file: null,
             minimized: false,
             editorMinimized: false
         });
@@ -403,7 +409,7 @@ function FormController($http, $scope) {
     };
 
     vm.handleEditorChange = function(content, index) {
-        vm.formData.languageVariants[index].description = content;
+        vm.formData.languageVariants[index].htmlContent = content;
     };
 
     vm.toggleVariant = function(index) {
@@ -435,24 +441,25 @@ function FormController($http, $scope) {
 
         // Append language variants
         vm.formData.languageVariants.forEach((variant, index) => {
-            formData.append(`languageVariants[${index}][language]`, variant.language);
-            formData.append(`languageVariants[${index}][textOnly]`, variant.textOnly);
-            formData.append(`languageVariants[${index}][description]`, variant.description);
             formData.append(`languageVariants[${index}][contentName]`, variant.contentName);
+            formData.append(`languageVariants[${index}][language]`, variant.language);
+            formData.append(`languageVariants[${index}][textOnly]`, variant.textOnly ? '1' : '0');
+            formData.append(`languageVariants[${index}][description]`, variant.description);
+            formData.append(`languageVariants[${index}][htmlContent]`, variant.htmlContent);
 
-            // Append files if present
+            // Append audio/video file if present
             var fileInput;
             if (vm.formData.contentType === 'audio' || vm.formData.contentType === 'audio_call') {
                 fileInput = document.getElementById(`audioFile-${index}`);
                 if (fileInput && fileInput.files[0]) {
                     formData.append(`languageVariants[${index}][audioFile]`, fileInput.files[0]);
                 }
-            }
-            if (vm.formData.contentType === 'video' || vm.formData.contentType === 'video_call') {
+            } else if (vm.formData.contentType === 'video' || vm.formData.contentType === 'video_call') {
                 fileInput = document.getElementById(`videoFile-${index}`);
                 if (fileInput && fileInput.files[0]) {
                     formData.append(`languageVariants[${index}][videoFile]`, fileInput.files[0]);
                 }
+
             }
         });
 
@@ -485,8 +492,8 @@ function FormController($http, $scope) {
                 console.log('Dati salvati con successo:', response.data);
                 alert('Dati salvati con successo!');
             } else {
-               /* console.error('Errore nel salvataggio dei dati:', response.data.message);
-                alert('Errore nel salvataggio dei dati: ' + response.data.message);*/
+                console.error('Errore nel salvataggio dei dati:', response.data.message);
+                alert('Errore nel salvataggio dei dati: ' + response.data.message);
             }
         }, function errorCallback(response) {
             console.error('Errore nella richiesta:', response);
@@ -496,7 +503,14 @@ function FormController($http, $scope) {
             alert('Errore nella richiesta: ' + errorMessage);
         });
     };
+
+    // Initialize with one language variant
+    vm.addLanguageVariant();
 }
+
+
+
+
 
 // Inizializza le icone Lucide dopo che AngularJS ha finito di renderizzare la vista
 

@@ -52,7 +52,11 @@
 		
 		<div ng-repeat="variant in vm.formData.languageVariants" class="mb-6 p-4 border border-gray-200 rounded-lg">
 			<div class="flex justify-between items-center mb-4">
-				<h3 class="text-md font-semibold"> <span ng-if="!variant.language">Linguaggio {{$index + 1}}</span>  <span ng-if="variant.language">{{vm.getLanguageName(variant.language) || ''}}</span> <span ng-if="variant.textOnly">Solo testo</span>	</h3>
+				<h3 class="text-md font-semibold">
+					<span ng-if="!variant.language">Linguaggio {{$index + 1}}</span>
+					<span ng-if="variant.language">{{vm.getLanguageName(variant.language) || ''}}</span>
+					<span ng-if="variant.textOnly">Solo testo</span>
+				</h3>
 				<button type="button" ng-click="vm.toggleVariant($index)" class="text-gray-500 hover:text-gray-700 focus:outline-none">
 					<svg class="w-6 h-6 transition-transform duration-200" ng-class="{'rotate-180': !variant.minimized}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -64,6 +68,10 @@
 					<div>
 						<label for="contentName-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Nome Contenuto</label>
 						<input type="text" id="contentName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="variant.contentName" required>
+					</div>
+					<div>
+						<label for="callerName" class="block mb-2 text-sm font-medium text-gray-900">Descrizione </label>
+						<input type="text" id="contentDescription" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentDescription" required>
 					</div>
 					<div>
 						<label for="language-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Lingua</label>
@@ -81,28 +89,36 @@
 					</div>
 				</div>
 				
-				<div class="mb-4" ng-if="variant.textOnly">
-					<div class="flex justify-between items-center mb-2">
-						<label for="description-{{$index}}" class="block text-sm font-medium text-gray-900">Descrizione (trascrizione dell'audio)</label>
-						<button type="button" ng-click="vm.toggleEditor($index)" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-							<svg class="w-6 h-6 transition-transform duration-200" ng-class="{'rotate-180': !variant.editorMinimized}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-							</svg>
-						</button>
+				<div class="mb-4">
+					
+					<div ng-if="vm.formData.contentType === 'audio' || vm.formData.contentType === 'audio_call'">
+						<label for="audioFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Audio</label>
+						<input type="file" id="audioFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="audio/*">
 					</div>
-					<div class="editor-content" ng-class="{'minimized': variant.editorMinimized}">
-						<wysiwyg-editor content="variant.description" editor-id="description-{{$index}}" editor-options="vm.editorOptions" ></wysiwyg-editor>
+					<div ng-if="vm.formData.contentType === 'video' || vm.formData.contentType === 'video_call'">
+						<label for="videoFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Video</label>
+						<input type="file" id="videoFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="video/mp4,video/*">
 					</div>
-				</div>
-				
-				<div ng-if="(vm.formData.contentType === 'audio' || vm.formData.contentType === 'audio_call') && !variant.textOnly" class="mb-4">
-					<label for="audioFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Audio</label>
-					<input type="file" id="audioFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="audio/*">
-				</div>
-				
-				<div ng-if="vm.formData.contentType === 'video' || vm.formData.contentType === 'video_call'" class="mb-4">
-					<label for="videoFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Video</label>
-					<input type="file" id="videoFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="video/mp4,video/*">
+					
+					<div class="mt-4">
+						<div class="flex justify-between items-center mb-2">
+							<label for="description-{{$index}}" class="block text-sm font-medium text-gray-900">
+								<span ng-if="variant.textOnly">Descrizione (trascrizione dell'audio)</span>
+								<span ng-if="!variant.textOnly">Trascrizione (opzionale)</span>
+							</label>
+							<button type="button" ng-click="vm.toggleEditor($index)" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+								<svg class="w-6 h-6 transition-transform duration-200" ng-class="{'rotate-180': !variant.editorMinimized}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+								</svg>
+							</button>
+						</div>
+						<div>
+						
+						</div>
+						<div class="editor-content" ng-class="{'minimized': variant.editorMinimized}" ng-if="variant.textOnly" >
+							<wysiwyg-editor content="variant.htmlContent" editor-id="htmlcontent-{{$index}}" editor-options="vm.editorOptions"></wysiwyg-editor>
+						</div>
+					</div>
 				</div>
 				
 				<button type="button" ng-click="vm.removeLanguageVariant($index)" class="mt-4 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
@@ -110,6 +126,8 @@
 				</button>
 			</div>
 		</div>
+		
+		
 		
 		<div class="flex items-center justify-end">
 			<button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Invia</button>
