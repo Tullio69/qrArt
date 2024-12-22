@@ -31,6 +31,7 @@
                     'content_name' => $formData['contentName'],
                     'content_type' => $formData['contentType']
                 ];
+                
                 $contentId = $contentModel->insert($contentData);
                 
                 $contentDir = $this->createContentDirectory($contentId);
@@ -47,12 +48,15 @@
                         'content_id' => $contentId,
                         'language' => $variant['language'],
                         'content_name' => $variant['contentName'],
-                        'text_only' => $variant['textOnly'] === 'true' ? 1 : 0,
-                        'description' => $variant['description'] ?? null,
+                        'text_only' => $variant['textOnly'],
+                        'description' => $variant['description'] ?? '',
+                        'html_content' => $variant['htmlContent'] ?? null  // Salva sempre l'HTML content se presente
                     ];
+                    
+                  
                     $contentMetadataModel = new ContentMetadataModel();
                     $metadataId = $contentMetadataModel->insert($metadataData);
-                    
+                   
                     if (!$metadataId) {
                         throw new Exception('Errore nel salvataggio dei metadati della variante linguistica');
                     }
@@ -91,12 +95,100 @@
             }
         }
         
+        private function handleFileUploads($files, $variant, $contentId, $languageDir, $contentType, $variantIndex, $metadataId)
+        {
+            $uploadedFiles = [];
+            $contentFilesModel = new ContentFilesModel();
+            
+            // Handle audio/video file
+            $fileKey = $contentType === 'audio' || $contentType === 'audio_call' ? 'audioFile' : 'videoFile';
+            if (isset($files['languageVariants'][$variantIndex][$fileKey]) &&
+                $files['languageVariants'][$variantIndex][$fileKey] instanceof UploadedFile) {
+                
+                $file = $files['languageVariants'][$variantIndex][$fileKey];
+                
+                if ($file->isValid() && !$file->hasMoved()) {
+                    $destinationPath = $languageDir;
+                    
+                    try {
+                        $contentGroup = ($contentType === 'audio' || $contentType === 'audio_call' ? 'audio' : 'video');
+                        $newName = $contentId . '_' . $variant['language'] . '_' . $contentGroup . '.' . $file->getExtension();
+                        $file->move($destinationPath, $newName);
+                        
+                        if ($file->hasMoved()) {
+                            $filePath = $contentId . '/' . $variant['language'] . '/' . $newName;
+                            $uploadedFiles[] = [
+                                'success' => true,
+                                'message' => 'File salvato con successo',
+                                'filePath' => $filePath,
+                                'originalName' => $file->getClientName(),
+                                'newName' => $newName
+                            ];
+                            
+                            // Insert into content_files table
+                            $contentFilesModel->insert([
+                                'content_id' => $contentId,
+                                'metadata_id' => $metadataId,
+                                'file_type' => $contentGroup,
+                                'file_url' => $filePath
+                            ]);
+                        } else {
+                            $uploadedFiles[] = [
+                                'success' => false,
+                                'message' => 'Impossibile spostare il file'
+                            ];
+                        }
+                    } catch (Exception $e) {
+                        $uploadedFiles[] = [
+                            'success' => false,
+                            'message' => 'Errore durante il salvataggio del file: ' . $e->getMessage()
+                        ];
+                    }
+                } else {
+                    $uploadedFiles[] = [
+                        'success' => false,
+                        'message' => 'File non valido o già spostato'
+                    ];
+                }
+            }
+            
+            // Handle HTML content for both text-only and non-text-only variants
+            if (isset($variant['htmlContent']) && !empty($variant['htmlContent'])) {
+                $htmlContent = $variant['htmlContent'];
+                $htmlFilePath = $languageDir . '/'.$contentId.'_'.$variant['language'].'_'.'content.html';
+                if (file_put_contents($htmlFilePath, $htmlContent) !== false) {
+                    $filePath = $contentId . '/' . $variant['language'] . '/'.$contentId.'_'.$variant['language'].'_'.'content.html';
+                    $uploadedFiles[] = [
+                        'success' => true,
+                        'message' => 'Contenuto HTML salvato con successo',
+                        'filePath' => $filePath,
+                        'newName' => 'content.html'
+                    ];
+                    
+                    // Insert into content_files table
+                    $contentFilesModel->insert([
+                        'content_id' => $contentId,
+                        'metadata_id' => $metadataId,
+                        'file_type' => 'html',
+                        'file_url' => $filePath
+                    ]);
+                } else {
+                    $uploadedFiles[] = [
+                        'success' => false,
+                        'message' => 'Impossibile salvare il contenuto HTML'
+                    ];
+                }
+            }
+            
+            return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
+        }
+        
+        
         private function createContentDirectory($contentId)
         {
             $mediaDir = FCPATH . 'media';
             $contentDir = $mediaDir . DIRECTORY_SEPARATOR . $contentId;
             
-            // Crea la directory 'media' se non esiste
             if (!is_dir($mediaDir)) {
                 if (!mkdir($mediaDir, 0755)) {
                     log_message('error', "Failed to create media directory: {$mediaDir}");
@@ -104,7 +196,6 @@
                 }
             }
             
-            // Crea la directory specifica per il contenuto
             if (!is_dir($contentDir)) {
                 if (!mkdir($contentDir, 0755, true)) {
                     log_message('error', "Failed to create content directory: {$contentDir}");
@@ -119,7 +210,7 @@
         {
             $commonFiles = ['callerBackground', 'callerAvatar'];
             $contentFilesModel = new ContentFilesModel();
-         
+            
             foreach ($commonFiles as $fileKey) {
                 if (isset($files[$fileKey]) && $files[$fileKey] instanceof \CodeIgniter\HTTP\Files\UploadedFile) {
                     $file = $files[$fileKey];
@@ -153,16 +244,13 @@
                                 'file_url' => $filePath
                             ];
                             
-                            
-                            $db      = \Config\Database::connect();
+                            $db = \Config\Database::connect();
                             $builder = $db->table('content_files');
-                            
                             
                             $sql = $builder->set($data)->getCompiledInsert();
                             $db->query($sql);
                             log_message('info', "Query Eseguita: " . $sql);
-                       
-                          
+                            
                         } catch (\Exception $e) {
                             log_message('error', "Errore dettagliato nel caricamento del file comune {$fileKey}: " . $e->getMessage());
                             log_message('error', "Stack trace: " . $e->getTraceAsString());
@@ -187,97 +275,7 @@
             return $languageDir;
         }
         
-        private function handleFileUploads($files, $variant, $contentId, $languageDir, $contentType, $variantIndex, $metadataId)
-        {
-            $uploadedFiles = [];
-            $contentFilesModel = new ContentFilesModel();
-            
-            if ($variant['textOnly'] === 'false') {
-                $fileKey = $contentType === 'audio' || $contentType === 'audio_call' ? 'audioFile' : 'videoFile';
-                
-                if (isset($files['languageVariants'][$variantIndex][$fileKey]) &&
-                    $files['languageVariants'][$variantIndex][$fileKey] instanceof UploadedFile) {
-                    
-                    $file = $files['languageVariants'][$variantIndex][$fileKey];
-                    
-                    if ($file->isValid() && !$file->hasMoved()) {
-                        $destinationPath = $languageDir;
-                        
-                        try {
-                            $contentGroup = ($contentType === 'audio_call' ? 'audio' : 'video');
-                            $newName = $contentId . '_' . $variant['language'] . '_' . $contentGroup . '.' . $file->getExtension();
-                            $file->move($destinationPath, $newName);
-                            
-                            if ($file->hasMoved()) {
-                                $filePath = $contentId . '/' . $variant['language'] . '/' . $newName;
-                                $uploadedFiles[] = [
-                                    'success' => true,
-                                    'message' => 'File salvato con successo',
-                                    'filePath' => $filePath,
-                                    'originalName' => $file->getClientName(),
-                                    'newName' => $newName
-                                ];
-                                
-                                // Insert into content_files table
-                                $contentFilesModel->insert([
-                                    'content_id' => $contentId,
-                                    'metadata_id' => $metadataId,
-                                    'file_type' => $contentGroup,
-                                    'file_url' => $filePath
-                                ]);
-                            } else {
-                                $uploadedFiles[] = [
-                                    'success' => false,
-                                    'message' => 'Impossibile spostare il file'
-                                ];
-                            }
-                        } catch (Exception $e) {
-                            $uploadedFiles[] = [
-                                'success' => false,
-                                'message' => 'Errore durante il salvataggio del file: ' . $e->getMessage()
-                            ];
-                        }
-                    } else {
-                        $uploadedFiles[] = [
-                            'success' => false,
-                            'message' => 'File non valido o già spostato'
-                        ];
-                    }
-                } else {
-                    $uploadedFiles[] = [
-                        'success' => false,
-                        'message' => 'File non trovato per la variante linguistica ' . $variantIndex . ', chiave: ' . $fileKey
-                    ];
-                }
-            } else {
-                $htmlContent = $variant['description'] ?? '';
-                $htmlFilePath = $languageDir . '/text_only_content.html';
-                if (file_put_contents($htmlFilePath, $htmlContent) !== false) {
-                    $filePath = $contentId . '/' . $variant['language'] . '/text_only_content.html';
-                    $uploadedFiles[] = [
-                        'success' => true,
-                        'message' => 'Contenuto HTML salvato con successo',
-                        'filePath' => $filePath,
-                        'newName' => 'text_only_content.html'
-                    ];
-                    
-                    // Insert into content_files table
-                    $contentFilesModel->insert([
-                        'content_id' => $contentId,
-                        'metadata_id' => $metadataId,
-                        'file_type' => 'text_only',
-                        'file_url' => $filePath
-                    ]);
-                } else {
-                    $uploadedFiles[] = [
-                        'success' => false,
-                        'message' => 'Impossibile salvare il contenuto HTML'
-                    ];
-                }
-            }
-            
-            return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
-        }
+    
         
         private function removeDirectory($dir)
         {
@@ -301,20 +299,15 @@
             $db = Database::connect();
             
             try {
-                // Inizia una transazione
                 $db->transStart();
                 
-                // Ottieni il valore massimo dell'ID attuale
                 $maxId = $db->table('content')->selectMax('id')->get()->getRow()->id ?? 0;
                 
-                // Resetta l'auto-increment al valore massimo + 1
                 $db->query("ALTER TABLE content AUTO_INCREMENT = " . ($maxId + 1));
                 
-                // Completa la transazione
                 $db->transComplete();
                 
                 if ($db->transStatus() === false) {
-                    // Se la transazione è fallita, lancia un'eccezione
                     throw new DatabaseException('Errore durante il reset del contatore');
                 }
                 
@@ -339,6 +332,4 @@
             parent::initController($request, $response, $logger);
             // Inizializzazione del controller
         }
-        
-        
     }

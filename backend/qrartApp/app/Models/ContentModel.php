@@ -89,4 +89,19 @@
             
             return $contentId;
         }
+        
+        public function getHtmlContent($contentId, $language)
+        {
+            $builder = $this->db->table('content c');
+            $builder->select('cm.html_content, cm.content_name')
+                ->join('content_metadata cm', 'c.id = cm.content_id')
+                ->where('c.id', $contentId)
+                ->where('cm.language', $language)
+                ->where('cm.text_only', '1');
+            
+            $query = $builder->get();
+            return $query->getRowArray();
+        }
+        
+        
     }

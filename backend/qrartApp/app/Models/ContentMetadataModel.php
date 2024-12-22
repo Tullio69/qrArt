@@ -6,6 +6,7 @@
     
     class ContentMetadataModel extends Model
     {
+        
         protected $DBGroup          = 'default';
         protected $table            = 'content_metadata';
         protected $primaryKey       = 'id';
@@ -13,7 +14,7 @@
         protected $returnType       = 'array';
         protected $useSoftDeletes   = false;
         protected $protectFields    = true;
-        protected $allowedFields    = ['content_id', 'language', 'text_only', 'description','content_name'];
+        protected $allowedFields    = ['content_id', 'language', 'text_only', 'description', 'content_name', 'html_content'];
         
         // Dates
         protected $useTimestamps = true;
@@ -39,8 +40,10 @@
         protected $afterDelete    = [];
         
         // Relationships
+        
         public function content()
         {
+            
             return $this->belongsTo('App\Models\ContentModel', 'content_id', 'id');
         }
         

@@ -45,7 +45,31 @@
             ]);
         }
         
-        
+        public function getHtmlContent($contentId, $language): ResponseInterface
+        {
+            try {
+                $htmlContent = $this->contentModel->getHtmlContent($contentId, $language);
+                
+                if (empty($htmlContent)) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'status' => 404,
+                        'error' => 'Contenuto HTML non trovato'
+                    ]);
+                }
+                
+                return $this->response->setJSON([
+                    'status' => 200,
+                    'content_name' => $htmlContent['content_name'],
+                    'html_content' => $htmlContent['html_content']
+                ]);
+            } catch (\Exception $e) {
+                log_message('error', 'Errore nel recupero del contenuto HTML: ' . $e->getMessage());
+                return $this->response->setStatusCode(500)->setJSON([
+                    'status' => 500,
+                    'error' => 'Si è verificato un errore durante il recupero del contenuto HTML'
+                ]);
+            }
+        }
         
         public function getContentData($contentId): ResponseInterface
         {

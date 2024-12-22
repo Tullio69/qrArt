@@ -31,7 +31,6 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
         vm.loadAvatar();
     };
 
-
     vm.loadAvatar = function() {
         if (vm.caller && vm.caller.avatar) {
             var img = new Image();
@@ -44,18 +43,18 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
         }
     };
 
-
-
     vm.$onChanges = function(changesObj) {
+        var text_only = false;
+        if (changesObj.content && changesObj.content.currentValue) {
+            text_only = !!changesObj.content.currentValue.text_only;
+        }
         if (changesObj.callState) {
-            vm.handleCallStateChange(changesObj.callState.currentValue);
+            vm.handleCallStateChange(changesObj.callState.currentValue,text_only);
         }
     };
 
-
-
-
-    vm.handleCallStateChange = function(newState) {
+    vm.handleCallStateChange = function(newState,text_only) {
+        if(text_only)return;
         if (newState === 'incoming') {
             vm.loadContent()
             vm.receiveCall();
@@ -111,8 +110,6 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
         }
     };
 
-
-
     vm.goToFullscreen = function() {
         var element = document.documentElement;
         if (element.requestFullscreen) {
@@ -140,8 +137,6 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
     vm.exitFullscreen = function() {
         FullscreenService.exitFullscreen();
     };
-
-
     // Funzione per gestire il termine della riproduzione dell'audio
     vm.onAudioEnded = function() {
         vm.callState = 'ended';  // Cambia lo stato della chiamata in "terminata"

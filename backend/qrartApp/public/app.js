@@ -38,7 +38,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
             })
     }])
     // Controller esemplificativo
-    .controller('ContentViewerController', ['$scope', '$routeParams', '$http','FullscreenService', function($scope, $routeParams, $http,FullscreenService) {
+    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
         $scope.contentid=contentId;
@@ -48,20 +48,22 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
         $scope.callerAvatar = null;
         $scope.callerBackground = null;
 
-
-        $http.get('/api/content/' + contentId)
-            .then(function(response) {
-                $scope.content = response.data.content;
+        ContentService.getContent(contentId)
+            .then(function(data) {
+                $scope.content = data.content;
                 $scope.loading = false;
-                // Pre-elabora callerAvatar e callerBackground
                 $scope.callerAvatar = $scope.getFileByType('callerAvatar');
                 $scope.callerBackground = $scope.getFileByType('callerBackground');
-                $scope.preloadImages();  // Aggiungi questa linea
+                $scope.preloadImages();
             })
             .catch(function(error) {
-                $scope.error = 'Errore nel caricamento del contenuto';
                 $scope.loading = false;
-                console.log('Errore:', error);
+                if (error.error && error.htmlContent) {
+                    $scope.error = 'Errore nel caricamento del contenuto';
+                                } else {
+                    $scope.error = 'Errore nel caricamento del contenuto';
+                    console.log('Errore:', error);
+                }
             });
 
         $scope.selectLanguage = function(metadata, filterTextOnly) {
@@ -375,7 +377,33 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
             }
         };
     })
-
+    .factory('ContentService', ['$http', '$q', function($http, $q) {
+        return {
+            getContent: function(contentId) {
+                return $http.get('/api/content/' + contentId, {
+                    transformResponse: function(data, headers) {
+                        var contentType = headers('Content-Type');
+                        if (contentType && contentType.indexOf('application/json') !== -1) {
+                            // Risposta JSON normale
+                            return angular.fromJson(data);
+                        } else {
+                            // Risposta HTML (errore 404 o 500)
+                            return { error: true, htmlContent: data };
+                        }
+                    }
+                }).then(function(response) {
+                    if (response.data.error) {
+                        // Se abbiamo ricevuto HTML invece di JSON, consideriamolo un errore
+                        return $q.reject({
+                            error: true,
+                            htmlContent: response.data.htmlContent
+                        });
+                    }
+                    return response.data;
+                });
+            }
+        };
+    }]);
 
 function FormController($http, $scope) {
     var vm = this;

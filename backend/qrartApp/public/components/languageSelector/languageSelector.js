@@ -17,7 +17,7 @@
         vm.filterTextOnly = false;
 
         vm.filterLanguages = function(lang) {
-            return lang.text_only === (vm.filterTextOnly ? '1' : '0');
+            return lang.text_only === (vm.filterTextOnly>0);
         };
 
         vm.selectLanguage = function(metadata) {
@@ -29,9 +29,17 @@
             return vm.filterTextOnly;
         }
 
-        vm.updateFilter = function () {
+        vm.filterText = '';
+        vm.filterTextOnly = false;
 
-        }
+        vm.filterCondition = function(lang) {
+            if ( vm.filterTextOnly ){
+                return lang.text_only;
+            } else {
+                return true
+            }
+
+        };
 
     }
 

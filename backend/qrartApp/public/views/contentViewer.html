@@ -1,4 +1,4 @@
-<div class="content-viewer waiting-container" >
+<div class="content-viewer waiting-container" ng-if="!error">
 
 	<div class="language-selector" ng-if="!language_selected">
 		<language-selector
@@ -25,6 +25,6 @@
 		
 	</div>
 	<div ng-if="selContent.text_only">
-	<html-content-viewer content="content.text_content"></html-content-viewer>
-</div>
+	<html-content-viewer content="selContent" content-id="{{ contentid }}"></html-content-viewer>
+    </div>
 </div>

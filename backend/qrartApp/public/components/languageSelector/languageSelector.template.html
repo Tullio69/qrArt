@@ -3,10 +3,11 @@
 	<div class="flex flex-col items-center space-y-12">
 		<!-- Bandiere delle lingue -->
 		<div class="flex justify-center gap-8">
-			<button ng-repeat="lang in vm.availableLanguages | filter: {text_only: vm.filterTextOnly}"
+			
+			<button ng-repeat="lang in vm.availableLanguages | filter: vm.filterCondition"
 					ng-click="vm.selectLanguage(lang)"
 					class="language-button w-32 h-32 flex items-center justify-center rounded-2xl border-2 border-gray-300 hover:border-blue-500 hover:shadow-lg transition-all duration-200 ease-in-out">
-				<img ng-src="assets/images/flags/{{ lang.language }}.svg"
+							<img ng-src="assets/images/flags/{{ lang.language }}.svg"
 					 alt="{{ lang.name }}"
 					 title="{{ lang.name }}"
 					 class="w-48 h-48 object-contain">
@@ -26,10 +27,7 @@
 			<div class="text-only-switch flex flex-col items-center space-y-3">
 				<span class="text-lg font-medium text-gray-900">Solo Testo</span>
 				<label class="inline-flex items-center cursor-pointer" style="zoom:1.5;">
-					<input type="checkbox"
-						   class="sr-only peer"
-						   ng-model="vm.filterTextOnly"
-						   >
+					<input type="checkbox" class="sr-only peer" ng-model="vm.filterTextOnly">
 					<div class="relative w-14 h-7 bg-gray-200 rounded-full peer
                                 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
                                 dark:peer-focus:ring-blue-800 dark:bg-gray-700
