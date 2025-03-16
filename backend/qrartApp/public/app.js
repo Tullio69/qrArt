@@ -36,6 +36,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
                 templateUrl: 'views/html.html',
                 controller: 'HomeController'
             })
+
     }])
     // Controller esemplificativo
     .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
