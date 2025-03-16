@@ -7,6 +7,11 @@
 	<meta http-equiv="Pragma" content="no-cache" />
 	<meta http-equiv="Expires" content="0" />
 	
+	<!-- Aggiungi questi nella sezione head -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+	<!-- Aggiorna le dipendenze nella sezione head -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.6/ui-bootstrap-csp.css" rel="stylesheet">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
@@ -48,5 +53,15 @@
         }
     });
 </script>
+<script src="components/contentManager/contentManager.module.js"></script>
+<script src="components/contentManager/contentManager.service.js"></script>
+<script src="components/contentManager/contentManager.component.js"></script>
+
+<!-- Aggiungi questi prima della chiusura del body -->
+
+<!-- Alla fine del body -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.6/ui-bootstrap-tpls.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

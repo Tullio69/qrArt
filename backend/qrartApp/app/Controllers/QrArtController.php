@@ -1,10 +1,12 @@
 <?php
     
     namespace App\Controllers;
-    
+    use App\Models\ShortUrlModel;
     use App\Models\ContentFilesModel;
     use App\Models\ContentMetadataModel;
     use App\Models\ContentModel;
+    use App\Models\RelatedArticlesModel;
+    use App\Models\SponsorsModel;
     use CodeIgniter\HTTP\Files\UploadedFile;
     use CodeIgniter\HTTP\RequestInterface;
     use CodeIgniter\HTTP\ResponseInterface;
@@ -53,10 +55,9 @@
                         'html_content' => $variant['htmlContent'] ?? null  // Salva sempre l'HTML content se presente
                     ];
                     
-                  
                     $contentMetadataModel = new ContentMetadataModel();
                     $metadataId = $contentMetadataModel->insert($metadataData);
-                   
+                    
                     if (!$metadataId) {
                         throw new Exception('Errore nel salvataggio dei metadati della variante linguistica');
                     }
@@ -70,12 +71,27 @@
                     }
                 }
                 
+                // Handle related articles
+                $this->handleRelatedArticles($formData['relatedArticles'] ?? [], $contentId);
+                
+                // Handle sponsors
+                $this->handleSponsors($formData['sponsors'] ?? [], $files['sponsorImages'] ?? [], $contentId, $contentDir);
+                
+                // Genera URL breve per il contenuto
+                $shortUrlModel = new ShortUrlModel();
+                $shortCode = $shortUrlModel->createShortUrl($contentId);
+                
+                if (!$shortCode) {
+                    throw new Exception('Errore nella creazione dello short URL');
+                }
+
                 $db->transCommit();
                 
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Contenuto creato con successo',
-                    'contentId' => $contentId
+                    'contentId' => $contentId,
+                    'shortCode' => $shortCode
                 ]);
                 
             } catch (Exception $e) {
@@ -183,7 +199,6 @@
             return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
         }
         
-        
         private function createContentDirectory($contentId)
         {
             $mediaDir = FCPATH . 'media';
@@ -275,8 +290,6 @@
             return $languageDir;
         }
         
-    
-        
         private function removeDirectory($dir)
         {
             if (is_dir($dir)) {
@@ -324,6 +337,41 @@
                     'success' => false,
                     'message' => 'Si è verificato un errore durante il reset del contatore: ' . $e->getMessage()
                 ])->setStatusCode(500);
+            }
+        }
+        
+        private function handleRelatedArticles($relatedArticles, $contentId)
+        {
+            $relatedArticlesModel = new RelatedArticlesModel();
+            foreach ($relatedArticles as $article) {
+                $relatedArticlesModel->insert([
+                    'content_id' => $contentId,
+                    'title' => $article['title'],
+                    'link' => $article['link']
+                ]);
+            }
+        }
+        
+        private function handleSponsors($sponsors, $sponsorImages, $contentId, $contentDir)
+        {
+            $sponsorsModel = new SponsorsModel();
+            foreach ($sponsors as $sponsor) {
+                $sponsorData = [
+                    'content_id' => $contentId,
+                    'name' => $sponsor['name'],
+                    'link' => $sponsor['link']
+                ];
+                
+                if (isset($sponsorImages[$sponsor['name']]) && $sponsorImages[$sponsor['name']] instanceof UploadedFile) {
+                    $file = $sponsorImages[$sponsor['name']];
+                    if ($file->isValid() && !$file->hasMoved()) {
+                        $newName = $contentId . '_sponsor_' . $sponsor['name'] . '.' . $file->getExtension();
+                        $file->move($contentDir, $newName);
+                        $sponsorData['image_url'] = 'media/' . $contentId . '/' . $newName;
+                    }
+                }
+                
+                $sponsorsModel->insert($sponsorData);
             }
         }
         

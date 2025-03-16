@@ -1,5 +1,5 @@
 // Definizione del modulo principale dell'applicazione
-var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
+var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     // Configurazione del routing
     .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
 
@@ -19,6 +19,10 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
                 templateUrl: 'views/contentEditorForm.html',
                 controller: 'FormController',
                 controllerAs: 'vm'
+            })
+            .when('/content-manager', {
+                templateUrl: 'views/contentList.html',
+                controller: 'ContentListController'
             })
             .when('/audio', {
                 templateUrl: 'views/audio.html',
@@ -193,6 +197,144 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
         $scope.description = "Questo componente utilizza classi Tailwind e Flowbite per testare se il tuo tema è configurato correttamente.";
         $scope.linkText = "Scopri di più";
     })
+    .controller('ContentListController', [
+        '$scope',
+        '$http',
+        '$uibModal', // Torniamo a usare $uibModal
+        function($scope, $http, $uibModal) {
+            $scope.contents = [];
+            $scope.loading = true;
+            $scope.error = null;
+            $scope.searchQuery = '';
+            $scope.sortField = 'created_at';
+            $scope.sortReverse = true;
+
+            // Carica la lista dei contenuti
+            $scope.loadContents = function() {
+                $scope.loading = true;
+                $http.get('/api/content/list')
+                    .then(function(response) {
+                        $scope.contents = response.data.contents;
+                        $scope.loading = false;
+                    })
+                    .catch(function(error) {
+                        $scope.error = 'Errore nel caricamento dei contenuti';
+                        $scope.loading = false;
+                        console.error('Errore:', error);
+                    });
+            };
+
+            // Genera e scarica il QR Code
+            $scope.downloadQrCode = function(content) {
+                var contentUrl = window.location.origin + '/content/' + content.short_code;
+
+                var qr = new QRCode(document.createElement("div"), {
+                    text: contentUrl,
+                    width: 256,
+                    height: 256
+                });
+
+                var link = document.createElement('a');
+                link.download = 'qrcode_' + content.short_code + '.png';
+                link.href = qr._el.querySelector('canvas').toDataURL();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            // Apre il modal per la modifica
+            $scope.openEditModal = function(content) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/editContentModal.html',
+                    controller: 'EditContentModalController',
+                    size: 'lg',
+                    resolve: {
+                        content: function() {
+                            return content;
+                        }
+                    }
+                });
+
+                modalInstance.result.then(function(updatedContent) {
+                    // Aggiorna la lista dopo la modifica
+                    $scope.loadContents();
+                });
+            };
+
+            // Filtra i contenuti
+            $scope.filterContents = function(content) {
+                if (!$scope.searchQuery) return true;
+
+                var searchLower = $scope.searchQuery.toLowerCase();
+                return content.caller_name.toLowerCase().includes(searchLower) ||
+                    content.content_name.toLowerCase().includes(searchLower) ||
+                    content.short_code.toLowerCase().includes(searchLower);
+            };
+
+            // Inizializza la lista
+            $scope.loadContents();
+        }
+    ])
+    .controller('EditContentModalController', [
+        '$scope',
+        '$uibModalInstance', // Torniamo a usare $uibModalInstance
+        '$http',
+        'content',
+        function($scope, $uibModalInstance, $http, content) {
+            $scope.content = angular.copy(content);
+            $scope.saving = false;
+
+            $scope.save = function() {
+                $scope.saving = true;
+
+                var formData = new FormData();
+
+                formData.append('callerName', $scope.content.caller_name);
+                formData.append('callerTitle', $scope.content.caller_title);
+                formData.append('contentType', $scope.content.content_type);
+
+                if ($scope.content.new_avatar) {
+                    formData.append('callerAvatar', $scope.content.new_avatar);
+                }
+                if ($scope.content.new_background) {
+                    formData.append('callerBackground', $scope.content.new_background);
+                }
+
+                var languageVariants = [];
+                $scope.content.metadata.forEach(function(variant, index) {
+                    var variantData = {
+                        language: variant.language,
+                        contentName: variant.content_name,
+                        textOnly: variant.text_only,
+                        htmlContent: variant.html_content
+                    };
+                    languageVariants.push(variantData);
+
+                    if (variant.new_file) {
+                        formData.append('languageVariants[' + index + '][file]', variant.new_file);
+                    }
+                });
+
+                formData.append('languageVariants', JSON.stringify(languageVariants));
+
+                $http.post('/api/content/update/' + $scope.content.short_code, formData, {
+                    transformRequest: angular.identity,
+                    headers: {'Content-Type': undefined}
+                }).then(function(response) {
+                    $uibModalInstance.close(response.data.content);
+                }).catch(function(error) {
+                    console.error('Errore nel salvataggio:', error);
+                    $scope.error = 'Si è verificato un errore durante il salvataggio';
+                }).finally(function() {
+                    $scope.saving = false;
+                });
+            };
+
+            $scope.cancel = function() {
+                $uibModalInstance.dismiss('cancel');
+            };
+        }
+    ])
     .factory('FullscreenService', [function() {
     var service = {
         enterFullscreen: function(element) {
@@ -220,6 +362,19 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize'])
     };
     return service;
 }])
+    .directive('fileModel', ['$parse', function($parse) {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                var model = $parse(attrs.fileModel);
+                element.bind('change', function() {
+                    scope.$apply(function() {
+                        model.assign(scope, element[0].files[0]);
+                    });
+                });
+            }
+        };
+    }])
     .directive('hmSwipe', ['$timeout', function($timeout) {
         return {
             restrict: 'A',

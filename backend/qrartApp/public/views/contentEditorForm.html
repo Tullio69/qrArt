@@ -70,8 +70,8 @@
 						<input type="text" id="contentName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="variant.contentName" required>
 					</div>
 					<div>
-						<label for="callerName" class="block mb-2 text-sm font-medium text-gray-900">Descrizione </label>
-						<input type="text" id="contentDescription" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentDescription" required>
+						<label for="contentDescription-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Descrizione</label>
+						<input type="text" id="contentDescription-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="variant.contentDescription" required>
 					</div>
 					<div>
 						<label for="language-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Lingua</label>
@@ -90,7 +90,6 @@
 				</div>
 				
 				<div class="mb-4">
-					
 					<div ng-if="vm.formData.contentType === 'audio' || vm.formData.contentType === 'audio_call'">
 						<label for="audioFile-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">File Audio</label>
 						<input type="file" id="audioFile-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="audio/*">
@@ -112,10 +111,7 @@
 								</svg>
 							</button>
 						</div>
-						<div>
-						
-						</div>
-						<div class="editor-content" ng-class="{'minimized': variant.editorMinimized}" ng-if="variant.textOnly" >
+						<div class="editor-content" ng-class="{'minimized': variant.editorMinimized}" ng-if="variant.textOnly">
 							<wysiwyg-editor content="variant.htmlContent" editor-id="htmlcontent-{{$index}}" editor-options="vm.editorOptions"></wysiwyg-editor>
 						</div>
 					</div>
@@ -127,7 +123,55 @@
 			</div>
 		</div>
 		
+		<!-- New section for Related Articles -->
+		<div class="mb-6">
+			<h2 class="text-lg font-semibold mb-2">Articoli Correlati</h2>
+			<div ng-repeat="article in vm.formData.relatedArticles track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<label for="articleTitle-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Titolo Articolo</label>
+						<input type="text" id="articleTitle-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.title" required>
+					</div>
+					<div>
+						<label for="articleLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Articolo</label>
+						<input type="url" id="articleLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.link" required>
+					</div>
+				</div>
+				<button type="button" ng-click="vm.removeRelatedArticle($index)" class="mt-2 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+					Rimuovi Articolo
+				</button>
+			</div>
+			<button type="button" ng-click="vm.addRelatedArticle()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+				Aggiungi Articolo Correlato
+			</button>
+		</div>
 		
+		<!-- New section for Sponsors -->
+		<div class="mb-6">
+			<h2 class="text-lg font-semibold mb-2">Sponsor</h2>
+			<div ng-repeat="sponsor in vm.formData.sponsors track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg">
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div>
+						<label for="sponsorName-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Nome Sponsor</label>
+						<input type="text" id="sponsorName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.name" required>
+					</div>
+					<div>
+						<label for="sponsorLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Sponsor</label>
+						<input type="url" id="sponsorLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.link" required>
+					</div>
+					<div>
+						<label for="sponsorImage-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Immagine Sponsor</label>
+						<input type="file" id="sponsorImage-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-model="sponsor.image" required>
+					</div>
+				</div>
+				<button type="button" ng-click="vm.removeSponsor($index)" class="mt-2 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+					Rimuovi Sponsor
+				</button>
+			</div>
+			<button type="button" ng-click="vm.addSponsor()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+				Aggiungi Sponsor
+			</button>
+		</div>
 		
 		<div class="flex items-center justify-end">
 			<button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Invia</button>

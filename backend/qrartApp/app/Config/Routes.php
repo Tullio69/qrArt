@@ -11,7 +11,7 @@ use CodeIgniter\Router\RouteCollection;
 // Cattura tutte le altre richieste non API
     $routes->get('(:any)', 'AngularController::index'); // Assumi che 'noauth' sia un tuo filtro, se necessario*/
     $routes->get('test-file', 'MediaController::testFileExistence');
-    $routes->get('api/content/(:num)', 'ContentController::getContentData/$1');
+    $routes->get('api/content/(:any)', 'ContentController::getContentData/$1');
     $routes->post('api/qrart/process', 'QrArtController::processQrArtContent');
     $routes->get('media/audio/(:any)', 'MediaController::serveAudio/$1');
     $routes->get('content/html/(:num)/(:alpha)', 'ContentController::getHtmlContent/$1/$2');

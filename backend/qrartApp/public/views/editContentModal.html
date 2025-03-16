@@ -1,0 +1,118 @@
+<div class="modal-content p-4">
+	<div class="modal-header flex justify-between items-center mb-4">
+		<h3 class="text-xl font-bold">Modifica Contenuto</h3>
+		<button type="button" class="text-gray-600 hover:text-gray-900" ng-click="$dismiss()">
+			<i class="fas fa-times"></i>
+		</button>
+	</div>
+	
+	<div class="modal-body">
+		<form name="editForm" ng-submit="save()" class="space-y-4">
+			<!-- Informazioni di base -->
+			<div class="grid grid-cols-2 gap-4">
+				<div class="form-group">
+					<label class="block text-sm font-medium mb-1">Nome Chiamante</label>
+					<input type="text"
+						   ng-model="content.caller_name"
+						   class="w-full px-3 py-2 border rounded-lg"
+						   required>
+				</div>
+				<div class="form-group">
+					<label class="block text-sm font-medium mb-1">Titolo Chiamante</label>
+					<input type="text"
+						   ng-model="content.caller_title"
+						   class="w-full px-3 py-2 border rounded-lg"
+						   required>
+				</div>
+			</div>
+			
+			<!-- File comuni -->
+			<div class="grid grid-cols-2 gap-4">
+				<div class="form-group">
+					<label class="block text-sm font-medium mb-1">Avatar Chiamante</label>
+					<div class="flex items-center space-x-2">
+						<img ng-if="content.avatar_url"
+							 ng-src="{{content.avatar_url}}"
+							 class="w-12 h-12 rounded-full object-cover">
+						<input type="file"
+							   accept="image/*"
+							   file-model="content.new_avatar"
+							   class="flex-1">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="block text-sm font-medium mb-1">Background Chiamante</label>
+					<div class="flex items-center space-x-2">
+						<img ng-if="content.background_url"
+							 ng-src="{{content.background_url}}"
+							 class="w-12 h-12 rounded object-cover">
+						<input type="file"
+							   accept="image/*"
+							   file-model="content.new_background"
+							   class="flex-1">
+					</div>
+				</div>
+			</div>
+			
+			<!-- Varianti linguistiche -->
+			<div class="space-y-4">
+				<h4 class="font-medium">Varianti Linguistiche</h4>
+				<div ng-repeat="variant in content.metadata" class="border p-4 rounded-lg">
+					<div class="grid grid-cols-2 gap-4">
+						<div class="form-group">
+							<label class="block text-sm font-medium mb-1">Lingua</label>
+							<input type="text"
+								   ng-model="variant.language"
+								   class="w-full px-3 py-2 border rounded-lg"
+								   readonly>
+						</div>
+						<div class="form-group">
+							<label class="block text-sm font-medium mb-1">Nome Contenuto</label>
+							<input type="text"
+								   ng-model="variant.content_name"
+								   class="w-full px-3 py-2 border rounded-lg"
+								   required>
+						</div>
+					</div>
+					
+					<div class="mt-4" ng-if="!variant.text_only">
+						<label class="block text-sm font-medium mb-1">File {{content.content_type}}</label>
+						<div class="flex items-center space-x-2">
+							<audio ng-if="content.content_type.includes('audio')"
+								   ng-src="{{variant.file_url}}"
+								   controls></audio>
+							<video ng-if="content.content_type.includes('video')"
+								   ng-src="{{variant.file_url}}"
+								   controls></video>
+							<input type="file"
+								   accept="{{content.content_type.includes('audio') ? 'audio/*' : 'video/*'}}"
+								   file-model="variant.new_file"
+								   class="flex-1">
+						</div>
+					</div>
+					
+					<div class="mt-4" ng-if="variant.text_only">
+						<label class="block text-sm font-medium mb-1">Contenuto HTML</label>
+						<textarea ng-model="variant.html_content"
+								  class="w-full px-3 py-2 border rounded-lg"
+								  rows="4"></textarea>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	
+	<div class="modal-footer mt-6 flex justify-end space-x-2">
+		<button type="button"
+				class="px-4 py-2 border rounded-lg hover:bg-gray-100"
+				ng-click="$dismiss()">
+			Annulla
+		</button>
+		<button type="submit"
+				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+				ng-click="save()"
+				ng-disabled="editForm.$invalid || saving">
+			{{saving ? 'Salvataggio...' : 'Salva'}}
+		</button>
+	</div>
+</div>
