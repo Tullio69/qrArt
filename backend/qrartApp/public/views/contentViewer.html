@@ -20,7 +20,7 @@
 			<phone-player content="selContent" call-state="selContent.call_state" caller-avatar="avatarImgSrc" caller-background="bgImgSrc" ></phone-player>
 		</div>
 		<div ng-show="selContent.content_type === 'video_call'" >
-			<phone-player content="selContent" ></phone-player>
+			<phone-player content="selContent" selected-language="selContent.selected_language"></phone-player>
 		</div>
 		
 	</div>

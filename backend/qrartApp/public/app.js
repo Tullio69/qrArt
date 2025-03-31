@@ -43,6 +43,18 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
     }])
     // Controller esemplificativo
+    .controller('ContentManagerController', ['ContentService', function(ContentService) {
+        var vm = this;
+        vm.contents = [];
+
+        vm.loadContents = function() {
+            ContentService.getContents().then(function(response) {
+                vm.contents = response.data;
+            });
+        };
+
+        vm.loadContents(); // Carica i contenuti all'inizializzazione
+    }])
     .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
@@ -198,34 +210,163 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
         $scope.linkText = "Scopri di più";
     })
     .controller('ContentListController', [
-        '$scope',
-        '$http',
-        '$uibModal', // Torniamo a usare $uibModal
-        function($scope, $http, $uibModal) {
+        '$scope', '$http', '$uibModal','$timeout',
+        function ($scope, $http, $uibModal,$timeout) {
             $scope.contents = [];
             $scope.loading = true;
             $scope.error = null;
             $scope.searchQuery = '';
-            $scope.sortField = 'created_at';
-            $scope.sortReverse = true;
+            $scope.expandedContent = null; // ID del contenuto espanso
+
+            function groupByLanguage(files, metadata) {
+                const grouped = {};
+
+                files.forEach(file => {
+                    if (!grouped[file.language]) grouped[file.language] = {};
+                    grouped[file.language].file = file;
+                });
+
+                metadata.forEach(meta => {
+                    if (!grouped[meta.language]) grouped[meta.language] = {};
+                    grouped[meta.language].metadata = meta;
+                });
+
+                return grouped;
+            }
+            function groupByMetadata(files, metadata) {
+                const perLanguage = {};
+                const globalFiles = [];
+
+                files.forEach(file => {
+                    if (!file.metadata_id) {
+                        globalFiles.push(file);
+                    }
+                });
+
+                metadata.forEach(meta => {
+                    const lang = meta.language;
+                    perLanguage[lang] = {
+                        metadata: meta,
+                        files: {}
+                    };
+
+                    // File collegati a questa lingua
+                    const relatedFiles = files.filter(f => f.metadata_id == meta.id);
+
+                    relatedFiles.forEach(f => {
+                        const type = f.file_type.toLowerCase(); // 🔽 normalizza
+                        perLanguage[lang].files[type] = f;
+                    });
+                });
+
+                return { perLanguage, globalFiles };
+            }
 
             // Carica la lista dei contenuti
-            $scope.loadContents = function() {
+            $scope.loadContents = function () {
                 $scope.loading = true;
-                $http.get('/api/content/list')
-                    .then(function(response) {
-                        $scope.contents = response.data.contents;
+                $http.get('/api/content/getlist')
+                    .then(function (response) {
+                        $scope.contents = response.data.data;
                         $scope.loading = false;
                     })
-                    .catch(function(error) {
+                    .catch(function (error) {
                         $scope.error = 'Errore nel caricamento dei contenuti';
                         $scope.loading = false;
                         console.error('Errore:', error);
                     });
             };
 
-            // Genera e scarica il QR Code
-            $scope.downloadQrCode = function(content) {
+            $scope.expandedContentId = null;
+
+            $scope.base_url = window.BASE_URL;
+
+            $scope.toggleDetails = function (content) {
+                if ($scope.expandedContentId == content.id) {
+                    $scope.expandedContentId = null;
+                } else {
+                    $scope.expandedContentId = content.id;
+
+                    $http.get($scope.base_url + '/api/content/details/' + content.id)
+                        .then(function (response) {
+                            const result = groupByMetadata(response.data.files, response.data.metadata);
+                            content.files = response.data.files;
+                            content.metadata = response.data.metadata;
+                            content.perLanguage = result.perLanguage;
+                            content.globalFiles = result.globalFiles;
+                        });
+                }
+            };
+
+
+            $scope.editContent = function (content) {
+                alert("Funzione di modifica ancora da implementare per: " + content.caller_name);
+            };
+
+            $scope.confirmDelete = function (content) {
+                if (confirm(`Sei sicuro di voler eliminare il contenuto "${content.caller_name}"?`)) {
+                    $scope.deleteContent(content.id);
+                }
+            };
+
+            $scope.deleteContent = function (contentId) {
+                $scope.loading = true;
+                $scope.error = null;
+
+                $http.delete($scope.base_url + '/api/content/delete/' + contentId)
+                    .then(function () {
+                        $scope.contents = $scope.contents.filter(c => c.id !== contentId);
+                    })
+                    .catch(function (error) {
+                        $scope.error = "Errore durante l'eliminazione del contenuto.";
+                        console.error(error);
+                    })
+                    .finally(function () {
+                        $scope.loading = false;
+                    });
+            };
+
+            $scope.replaceFile = function (file) {
+                console.log("🔄 Sostituisci file per ID:", file.id);
+                alert("Funzione da implementare per sostituire il file: " + file.file_name);
+            };
+
+
+
+            $scope.loadContentDetails = function (contentId) {
+                if ($scope.expandedContent === contentId) {
+                    $scope.expandedContent = null;
+                    return;
+                }
+
+                $scope.expandedContent = contentId;
+                console.log("📡 Caricamento dettagli da API...");
+
+                $http.get('/api/content/details/' + contentId)
+                    .then(function (response) {
+                        console.log("✅ Dati ricevuti:", response.data);
+
+                        let content = $scope.contents.find(c => c.id === contentId);
+                        if (content) {
+                            content.files = response.data.files || [];
+                            content.metadata = response.data.metadata || [];
+
+                            console.log("📌 Aggiornati content.files:", content.files);
+                            console.log("📌 Aggiornati content.metadata:", content.metadata);
+
+                            // 🔹 Forza il refresh dell'UI
+                            $scope.$applyAsync();
+                        } else {
+                            console.warn("⚠️ Contenuto non trovato nella lista!");
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error("❌ Errore nel caricamento dei dettagli:", error);
+                    });
+            };
+
+            // Scarica il QR Code per il contenuto
+            $scope.downloadQrCode = function (content) {
                 var contentUrl = window.location.origin + '/content/' + content.short_code;
 
                 var qr = new QRCode(document.createElement("div"), {
@@ -242,37 +383,108 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 document.body.removeChild(link);
             };
 
-            // Apre il modal per la modifica
-            $scope.openEditModal = function(content) {
+            // Apre il modal per modificare un contenuto
+            $scope.openEditModal = function (content) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/editContentModal.html',
                     controller: 'EditContentModalController',
                     size: 'lg',
                     resolve: {
-                        content: function() {
-                            return content;
+                        content: function () {
+                            return angular.copy(content);
                         }
                     }
                 });
 
-                modalInstance.result.then(function(updatedContent) {
-                    // Aggiorna la lista dopo la modifica
+                modalInstance.result.then(function () {
                     $scope.loadContents();
                 });
             };
 
-            // Filtra i contenuti
-            $scope.filterContents = function(content) {
-                if (!$scope.searchQuery) return true;
-
-                var searchLower = $scope.searchQuery.toLowerCase();
-                return content.caller_name.toLowerCase().includes(searchLower) ||
-                    content.content_name.toLowerCase().includes(searchLower) ||
-                    content.short_code.toLowerCase().includes(searchLower);
+            // Elimina un file associato a un contenuto
+            $scope.deleteFile = function (fileId) {
+                if (confirm("Sei sicuro di voler eliminare questo file?")) {
+                    $http.delete('/api/content/file/' + fileId)
+                        .then(function () {
+                            $scope.loadContents();
+                        })
+                        .catch(function (error) {
+                            console.error("Errore nella rimozione del file:", error);
+                        });
+                }
             };
 
-            // Inizializza la lista
+            // Elimina un metadato associato a un contenuto
+            $scope.deleteMetadata = function (metadataId) {
+                if (confirm("Sei sicuro di voler eliminare questo metadato?")) {
+                    $http.delete('/api/content/metadata/' + metadataId)
+                        .then(function () {
+                            $scope.loadContents();
+                        })
+                        .catch(function (error) {
+                            console.error("Errore nella rimozione del metadato:", error);
+                        });
+                }
+            };
+
+            $scope.selectedFile = null;
+
+            $scope.isReplaceFileModalOpen = false;
+            $scope.selectedFile = null;
+
+// Aprire il modale con Tailwind
+            $scope.openReplaceFileModal = function (file) {
+                $scope.selectedFile = file;
+                $scope.isReplaceFileModalOpen = true;
+            };
+
+// Chiudere il modale
+            $scope.closeReplaceFileModal = function () {
+                $scope.isReplaceFileModalOpen = false;
+            };
+
+// Sostituire il file
+            $scope.replaceFile = function (file) {
+                alert("🔄 Sostituzione file per: " + file.file_name + " (ID: " + file.id + ")");
+            };
+
+
+            // Inizializza la lista dei contenuti
             $scope.loadContents();
+
+            $scope.modalVisible = false;
+            $scope.selectedFileToReplace = null;
+            $scope.newFile = null;
+
+            $scope.replaceFile = function (file) {
+                $scope.selectedFileToReplace = file;
+                $scope.newFile = null;
+                $scope.modalVisible = true;
+            };
+
+            $scope.confirmReplace = function () {
+                if (!$scope.newFile) {
+                    alert("Seleziona un file prima di confermare.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', $scope.newFile);
+                formData.append('file_id', $scope.selectedFileToReplace.id);
+
+                $http.post($scope.base_url + '/api/content/replaceFile', formData, {
+                    headers: { 'Content-Type': undefined } // lascia che il browser imposti multipart/form-data
+                }).then(response => {
+                    alert("File sostituito con successo!");
+                    $scope.modalVisible = false;
+                    $scope.newFile = null;
+                    // puoi ricaricare i dati del content se vuoi
+                }).catch(err => {
+                    alert("Errore durante la sostituzione del file.");
+                    console.error(err);
+                });
+            };
+
         }
     ])
     .controller('EditContentModalController', [
@@ -559,7 +771,8 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 });
             }
         };
-    }]);
+    }])
+
 
 function FormController($http, $scope) {
     var vm = this;

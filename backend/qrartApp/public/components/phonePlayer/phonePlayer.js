@@ -237,4 +237,29 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
         vm.declineCall(); // Termina la chiamata quando il componente viene distrutto
     });
 
+
+
+    vm.translations = {
+        it: {
+            dynamicContent: 'La chiamata è terminata.',
+            replayButton: 'Riascolta la Chiamata',
+            relatedArticles: 'Articoli Correlati',
+            sponsor: 'Sponsor'
+        },
+        en: {
+            dynamicContent: 'The call has ended.',
+            replayButton: 'Replay the Call',
+            relatedArticles: 'Related Articles',
+            sponsor: 'Sponsors'
+        },
+        sv: {
+            dynamicContent: 'Samtalet har avslutats.',
+            replayButton: 'Spela upp samtalet igen',
+            relatedArticles: 'Relaterade artiklar',
+            sponsor: 'Sponsorer'
+        }
+    };
+
+
+
 }

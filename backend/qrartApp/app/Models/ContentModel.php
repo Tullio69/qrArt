@@ -13,7 +13,7 @@
         protected $returnType       = 'array';
         protected $useSoftDeletes   = false;
         protected $protectFields    = true;
-        protected $allowedFields    = ['caller_name', 'caller_title', 'content_name', 'content_type'];
+        protected $allowedFields    = ['caller_name', 'caller_title', 'content_name', 'content_type','created_at', 'updated_at'];
         
         // Dates
         protected $useTimestamps = true;
@@ -102,6 +102,26 @@
             $query = $builder->get();
             return $query->getRowArray();
         }
+        
+        public function getAllContents()
+        {
+            $contents = $this->select("content.id, content.caller_name, content.caller_title, content.content_name, content.content_type, content.created_at, content.updated_at, short_urls.short_code,
+        GROUP_CONCAT(DISTINCT content_metadata.language ORDER BY content_metadata.language ASC) AS languages")
+                ->join('short_urls', 'short_urls.content_id = content.id', 'left')
+                ->join('content_metadata', 'content_metadata.content_id = content.id', 'left')
+                ->groupBy('content.id')
+                ->orderBy('content.created_at', 'DESC')
+                ->findAll();
+            
+            // Convertire la stringa di lingue in array
+            foreach ($contents as &$content) {
+                $content['languages'] = $content['languages'] ? explode(',', $content['languages']) : [];
+            }
+            
+            return $contents;
+        }
+        
+        
         
         
     }

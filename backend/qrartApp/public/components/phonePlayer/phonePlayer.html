@@ -9,14 +9,14 @@
 			<div class="text-3xl font-extralight">{{ vm.caller.name }}</div>
 			<div class="text-2xl font-extralight">{{ vm.caller.subtitle }}</div>
 		</div>
-		<div class="caller-avatar">
+		<!--<div class="caller-avatar">
 			<img alt="Avatar del Chiamante"
 				 ng-src="{{ vm.caller.avatar }}"
 				 ng-srcset="{{ vm.caller.avatar }} 1x, {{ vm.caller.avatar }} 2x"
 				 class="avatar-image"
 				 ng-class="{ 'transition-all duration-300 ease-in-out': true}"
 				 >
-		</div>
+		</div>-->
 		<div class="call-timer flex justify-center items-center h-16">
 			<!-- Timer della chiamata in corso -->
 			<div class="text-3xl " ng-show="vm.callDuration > 0">{{ vm.formatCallDuration() }}</div>
@@ -36,17 +36,21 @@
 	</div>
 </div>
 	
-	<!-- Stato Ended (Chiamata terminata) -->
+
+
+<!-- Stato Ended (Chiamata terminata) -->
 <div class="ended-container" ng-if="vm.callState === 'ended'">
 	<div class="dynamic-content">
-		<h2>{{ vm.dynamicContent }}</h2>
+		<h2>{{ vm.translations[vm.content.content_language].dynamicContent }}</h2>
 		
 		<!-- Pulsante per riascoltare l'audio della chiamata -->
-		<button class="replay-button" ng-click="vm.answerCall()">Riascolta la Chiamata</button>
+		<button class="replay-button" ng-click="vm.answerCall()">
+			{{ vm.translations[vm.content.content_language].replayButton }}
+		</button>
 		
 		<!-- Link ad articoli correlati -->
 		<div class="related-articles">
-			<h3>Articoli Correlati</h3>
+			<h3>{{ vm.translations[vm.content.content_language].relatedArticles }}</h3>
 			<ul>
 				<li ng-repeat="article in vm.relatedArticles">
 					<a href="{{ article.link }}" target="_blank">{{ article.title }}</a>
@@ -56,7 +60,7 @@
 		
 		<!-- Riquadri per sponsor o pubblicità -->
 		<div class="sponsors">
-			<h3>Sponsor</h3>
+			<h3>{{ vm.translations[vm.content.content_language].sponsor }}</h3>
 			<div class="sponsor-item" ng-repeat="sponsor in vm.sponsorData">
 				<a href="{{ sponsor.link }}" target="_blank">
 					<img alt="{{ sponsor.name }}" ng-src="{{ sponsor.imageUrl }}">
@@ -66,6 +70,7 @@
 		</div>
 	</div>
 </div>
+
 </div>
 
 

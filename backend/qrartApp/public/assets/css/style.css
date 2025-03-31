@@ -234,10 +234,10 @@ body, html {
 .caller-info {
     text-align: center;
     color: white;
-    padding: 0 0 2em;
+    padding: 0 0 0em;
 }
 .caller-info h1 {
-    margin: 0.5em 0 0.1em 0;
+    margin: 0.2em 0 0.1em 0;
     font-size: 28px;
     font-weight: 200
 }
@@ -245,7 +245,7 @@ body, html {
     margin: 0;
     font-size: 18px; /* Subtitle */
     font-weight: 100;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 .caller-avatar {
     width: 6em;
@@ -272,7 +272,7 @@ body, html {
 .phone-top {
     width: 100%; /* Assicura che la sezione si estenda per tutta la larghezza del contenitore */
     text-align: center; /* Centra il testo e gli elementi all'interno */
-    padding: 20px 0; /* Aggiunge spazio sopra e sotto per separazione */
+    padding: 6px 0; /* Aggiunge spazio sopra e sotto per separazione */
     background-color: rgba(0, 0, 0, 0.5); /* Leggero sfondo trasparente per migliorare la leggibilità */
     color: white; /* Testo bianco per contrasto */
     position: absolute; /* Posizionamento assoluto per controllare la sua posizione */

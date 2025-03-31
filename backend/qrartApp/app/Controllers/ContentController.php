@@ -7,7 +7,8 @@
     use App\Models\ContentModel;
     use App\Models\ShortUrlModel; // Aggiunto import mancante
     use App\Models\ContentMetadataModel;
-    
+    use App\Models\ContentFilesModel;  // ✅ Import corretto
+   
     class ContentController extends Controller
     {
         protected $shortUrlModel;
@@ -174,6 +175,43 @@
                 ]);
             }
         }
+        
+        public function getDetails($contentId): ResponseInterface
+        {
+            $contentFilesModel = new ContentFilesModel();
+            $contentMetadataModel = new ContentMetadataModel();
+            
+            $files = $contentFilesModel->where('content_id', $contentId)->findAll();
+            $metadata = $contentMetadataModel->where('content_id', $contentId)->findAll();
+            
+            return $this->response->setJSON([
+                'status' => 200,
+                'files' => $files,
+                'metadata' => $metadata
+            ]);
+        }
+        
+        
+        public function list(): ResponseInterface
+        {
+            try {
+                $contents = $this->contentModel->getAllContents(); // Chiama il metodo del modello
+                
+                return $this->response->setJSON([
+                    'status' => 200,
+                    'message' => 'Lista contenuti recuperata con successo.',
+                    'data' => $contents
+                ]);
+            } catch (\Exception $e) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'error' => 'Errore durante il recupero dei contenuti.',
+                    'details' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        
         
         public function createShortUrl(): ResponseInterface
         {

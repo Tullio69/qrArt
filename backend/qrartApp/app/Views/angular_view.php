@@ -6,7 +6,8 @@
 	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 	<meta http-equiv="Pragma" content="no-cache" />
 	<meta http-equiv="Expires" content="0" />
-	
+
+
 	<!-- Aggiungi questi nella sezione head -->
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
@@ -22,15 +23,18 @@
 	<script src="https://cdn.tiny.cloud/1/rq6fm10cyrhlfic4umvx8byiglirglqwdd1jt37q1xpjmr5e/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 	<script src="https://cdn.tiny.cloud/1/rq6fm10cyrhlfic4umvx8byiglirglqwdd1jt37q1xpjmr5e/tinymce/5/langs/it.js" referrerpolicy="origin"></script>
 	<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-	
+	<!-- Includi Alpine.js nel tuo index.html -->
+	<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 	<style>
         [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
             display: none !important;
         }
       	</style>
 	<link rel="stylesheet" href="assets/tailwind/output.css">
-	<link rel="stylesheet" href="assets/tailwind/node_modules/flowbite/dist/flowbite.css">
-	<script src="assets/tailwind/node_modules/flowbite/dist/flowbite.min.js"></script>
+	<!-- Includi Flowbite nel progetto -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.css" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
+	
 	<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -53,9 +57,9 @@
         }
     });
 </script>
-<script src="components/contentManager/contentManager.module.js"></script>
-<script src="components/contentManager/contentManager.service.js"></script>
-<script src="components/contentManager/contentManager.component.js"></script>
+<script>
+    window.BASE_URL = "<?= base_url() ?>";
+</script>
 
 <!-- Aggiungi questi prima della chiusura del body -->
 
@@ -63,5 +67,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.6/ui-bootstrap-tpls.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 </body>
 </html>
