@@ -1,0 +1,8 @@
+{
+    "name": "qrart/app",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "google/apiclient": "^2.12"
+    }
+}

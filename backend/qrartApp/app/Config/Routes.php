@@ -17,6 +17,7 @@ use CodeIgniter\Router\RouteCollection;
     $routes->post('api/qrart/process', 'QrArtController::processQrArtContent');
     $routes->get('media/audio/(:any)', 'MediaController::serveAudio/$1');
     $routes->get('content/html/(:num)/(:alpha)', 'ContentController::getHtmlContent/$1/$2');
+    $routes->get('analytics/overview', 'AnalyticsController::overview');
 // Rotte per l'applicazione principale
     if (!isAllowedUserAgent()) {
         $routes->get('(:any)', 'WipController::index');
