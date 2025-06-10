@@ -26,10 +26,10 @@ class Database extends Config
      */
     public array $default = [
         'DSN'      => '',
-        'hostname' => 'localhost',
-        'database' => 'qrart',
-        'username' => 'developer.qrart',
-        'password' => 'pOngE0oYSiVAtRZ',
+        'hostname' => env('database.default.hostname', 'localhost'),
+        'database' => env('database.default.database', 'qrart'),
+        'username' => env('database.default.username', 'developer.qrart'),
+        'password' => env('database.default.password', 'pOngE0oYSiVAtRZ'),
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => false,
