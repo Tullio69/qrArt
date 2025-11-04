@@ -1,0 +1,36 @@
+# Environment files
+.env
+backend/qrartApp/.env
+
+# IDE
+.idea/
+.vscode/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Logs
+*.log
+backend/qrartApp/writable/logs/*
+!backend/qrartApp/writable/logs/.gitkeep
+
+# Cache
+backend/qrartApp/writable/cache/*
+!backend/qrartApp/writable/cache/.gitkeep
+
+# Session
+backend/qrartApp/writable/session/*
+!backend/qrartApp/writable/session/.gitkeep
+
+# Uploads
+backend/qrartApp/writable/uploads/*
+!backend/qrartApp/writable/uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*~

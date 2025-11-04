@@ -21,7 +21,7 @@ class Cache extends BaseConfig
      * The name of the preferred handler that should be used. If for some reason
      * it is not available, the $backupHandler will be used in its place.
      */
-    public string $handler = 'file';
+    public string $handler = 'file'; // Can be overridden via .env: cache.handler
 
     /**
      * --------------------------------------------------------------------------
@@ -54,7 +54,7 @@ class Cache extends BaseConfig
      * This string is added to all cache item names to help avoid collisions
      * if you run multiple applications with the same cache engine.
      */
-    public string $prefix = '';
+    public string $prefix = 'qrart_';
 
     /**
      * --------------------------------------------------------------------------
@@ -67,7 +67,7 @@ class Cache extends BaseConfig
      * hard-coded, but may be useful to projects and modules. This will replace
      * the hard-coded value in a future release.
      */
-    public int $ttl = 60;
+    public int $ttl = 3600; // 1 hour default cache for content
 
     /**
      * --------------------------------------------------------------------------
@@ -124,11 +124,11 @@ class Cache extends BaseConfig
      * @var array<string, int|string|null>
      */
     public array $redis = [
-        'host'     => '127.0.0.1',
-        'password' => null,
-        'port'     => 6379,
+        'host'     => env('cache.redis.host', '127.0.0.1'),
+        'password' => env('cache.redis.password', null),
+        'port'     => (int) env('cache.redis.port', 6379),
         'timeout'  => 0,
-        'database' => 0,
+        'database' => (int) env('cache.redis.database', 0),
     ];
 
     /**

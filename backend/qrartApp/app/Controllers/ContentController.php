@@ -8,18 +8,22 @@
     use App\Models\ShortUrlModel; // Aggiunto import mancante
     use App\Models\ContentMetadataModel;
     use App\Models\ContentFilesModel;  // ✅ Import corretto
+    use App\Helpers\CacheHelper;
+    use App\Helpers\FileUploadHelper;
    
     class ContentController extends Controller
     {
         protected $shortUrlModel;
         protected $contentModel;
         protected $contentMetadataModel;
-        
+        protected $cache;
+
         public function __construct()
         {
             $this->contentModel = new ContentModel();
             $this->shortUrlModel = new ShortUrlModel(); // Aggiunta inizializzazione mancante
             $this->contentMetadataModel = new ContentMetadataModel();
+            $this->cache = \Config\Services::cache();
         }
         
         public function handleShortCode($shortCode): ResponseInterface
@@ -300,37 +304,53 @@
         private function handleCommonFilesUpdate($files, $contentId)
         {
             $commonFiles = ['callerBackground', 'callerAvatar'];
-            
+            $contentFilesModel = new ContentFilesModel();
+
             foreach ($commonFiles as $fileType) {
-                if (isset($files[$fileType]) && $files[$fileType]->isValid()) {
-                    // Elimina il file esistente se presente
-                    $existingFile = $this->contentFilesModel
-                        ->where('content_id', $contentId)
-                        ->where('file_type', $fileType)
-                        ->first();
-                    
-                    if ($existingFile && file_exists(FCPATH . 'media/' . $existingFile['file_url'])) {
-                        unlink(FCPATH . 'media/' . $existingFile['file_url']);
-                    }
-                    
-                    // Carica il nuovo file
-                    $file = $files[$fileType];
-                    $newName = $contentId . '_' . $fileType . '.' . $file->getExtension();
-                    $file->move(FCPATH . 'media/' . $contentId, $newName);
-                    
-                    // Aggiorna o inserisce il record nel database
-                    $fileData = [
-                        'content_id' => $contentId,
-                        'file_type' => $fileType,
-                        'file_url' => $contentId . '/' . $newName
-                    ];
-                    
-                    if ($existingFile) {
-                        $this->contentFilesModel->update($existingFile['id'], $fileData);
-                    } else {
-                        $this->contentFilesModel->insert($fileData);
-                    }
+                if (!isset($files[$fileType]) || !$files[$fileType]->isValid()) {
+                    continue;
                 }
+
+                // Recupera file esistente
+                $existingFile = $contentFilesModel
+                    ->where('content_id', $contentId)
+                    ->where('file_type', $fileType)
+                    ->first();
+
+                // Upload nuovo file usando l'helper
+                $uploadResult = FileUploadHelper::upload(
+                    $files[$fileType],
+                    $contentId,
+                    null, // No language for common files
+                    'image',
+                    $contentId . '_' . $fileType
+                );
+
+                if (!$uploadResult['success']) {
+                    log_message('error', "Failed to upload {$fileType}: " . $uploadResult['error']);
+                    throw new \RuntimeException($uploadResult['error']);
+                }
+
+                // Elimina file vecchio se esiste
+                if ($existingFile) {
+                    FileUploadHelper::delete($existingFile['file_url']);
+                }
+
+                // Aggiorna o inserisce record database
+                $fileData = [
+                    'content_id' => $contentId,
+                    'file_type' => $fileType,
+                    'file_url' => $uploadResult['path']
+                ];
+
+                if ($existingFile) {
+                    $contentFilesModel->update($existingFile['id'], $fileData);
+                } else {
+                    $contentFilesModel->insert($fileData);
+                }
+
+                // Invalida cache per questo contenuto
+                CacheHelper::invalidateContent($contentId);
             }
         }
         
@@ -364,45 +384,73 @@
         
         private function handleVariantFilesUpdate($variant, $contentId, $metadataId, $files)
         {
-            $fileKey = $variant['textOnly'] ? null :
-                ($variant['contentType'] === 'audio' || $variant['contentType'] === 'audio_call' ? 'audioFile' : 'videoFile');
-            
-            if ($fileKey && isset($files['languageVariants'][$variant['language']][$fileKey])) {
-                $file = $files['languageVariants'][$variant['language']][$fileKey];
-                
-                if ($file->isValid()) {
-                    // Elimina il file esistente
-                    $existingFile = $this->contentFilesModel
-                        ->where('content_id', $contentId)
-                        ->where('metadata_id', $metadataId)
-                        ->first();
-                    
-                    if ($existingFile && file_exists(FCPATH . 'media/' . $existingFile['file_url'])) {
-                        unlink(FCPATH . 'media/' . $existingFile['file_url']);
-                    }
-                    
-                    // Carica il nuovo file
-                    $newName = $contentId . '_' . $variant['language'] . '_' .
-                        ($variant['contentType'] === 'audio' || $variant['contentType'] === 'audio_call' ? 'audio' : 'video') .
-                        '.' . $file->getExtension();
-                    
-                    $file->move(FCPATH . 'media/' . $contentId . '/' . $variant['language'], $newName);
-                    
-                    // Aggiorna o inserisce il record nel database
-                    $fileData = [
-                        'content_id' => $contentId,
-                        'metadata_id' => $metadataId,
-                        'file_type' => $variant['contentType'],
-                        'file_url' => $contentId . '/' . $variant['language'] . '/' . $newName
-                    ];
-                    
-                    if ($existingFile) {
-                        $this->contentFilesModel->update($existingFile['id'], $fileData);
-                    } else {
-                        $this->contentFilesModel->insert($fileData);
-                    }
-                }
+            // Skip se text-only
+            if ($variant['textOnly']) {
+                return;
             }
+
+            $fileKey = ($variant['contentType'] === 'audio' || $variant['contentType'] === 'audio_call')
+                ? 'audioFile'
+                : 'videoFile';
+
+            if (!isset($files['languageVariants'][$variant['language']][$fileKey])) {
+                return;
+            }
+
+            $file = $files['languageVariants'][$variant['language']][$fileKey];
+
+            if (!$file->isValid()) {
+                return;
+            }
+
+            $contentFilesModel = new ContentFilesModel();
+
+            // Recupera file esistente
+            $existingFile = $contentFilesModel
+                ->where('content_id', $contentId)
+                ->where('metadata_id', $metadataId)
+                ->first();
+
+            // Determina tipo file
+            $mediaType = str_contains($variant['contentType'], 'audio') ? 'audio' : 'video';
+            $customName = $contentId . '_' . $variant['language'] . '_' . $mediaType;
+
+            // Upload nuovo file usando l'helper
+            $uploadResult = FileUploadHelper::upload(
+                $file,
+                $contentId,
+                $variant['language'],
+                $mediaType,
+                $customName
+            );
+
+            if (!$uploadResult['success']) {
+                log_message('error', "Failed to upload variant file: " . $uploadResult['error']);
+                throw new \RuntimeException($uploadResult['error']);
+            }
+
+            // Elimina file vecchio se esiste
+            if ($existingFile) {
+                FileUploadHelper::delete($existingFile['file_url']);
+            }
+
+            // Aggiorna o inserisce record database
+            $fileData = [
+                'content_id' => $contentId,
+                'metadata_id' => $metadataId,
+                'file_type' => $variant['contentType'],
+                'file_url' => $uploadResult['path']
+            ];
+
+            if ($existingFile) {
+                $contentFilesModel->update($existingFile['id'], $fileData);
+            } else {
+                $contentFilesModel->insert($fileData);
+            }
+
+            // Invalida cache
+            CacheHelper::invalidateContent($contentId);
+        }
             
             // Gestione del contenuto HTML
             if (isset($variant['htmlContent']) && !empty($variant['htmlContent'])) {

@@ -26,22 +26,22 @@ class Database extends Config
      */
     public array $default = [
         'DSN'      => '',
-        'hostname' => 'localhost',
-        'database' => 'qrart',
-        'username' => 'developer.qrart',
-        'password' => 'pOngE0oYSiVAtRZ',
-        'DBDriver' => 'MySQLi',
+        'hostname' => env('database.default.hostname', 'localhost'),
+        'database' => env('database.default.database', 'qrart'),
+        'username' => env('database.default.username', 'developer.qrart'),
+        'password' => env('database.default.password', ''),
+        'DBDriver' => env('database.default.DBDriver', 'MySQLi'),
         'DBPrefix' => '',
-        'pConnect' => false,
-        'DBDebug'  => true,
+        'pConnect' => true, // Enable persistent connections for better performance
+        'DBDebug'  => ENVIRONMENT !== 'production', // Disable debug in production
         'charset'  => 'utf8',
         'DBCollat' => 'utf8_general_ci',
         'swapPre'  => '',
         'encrypt'  => false,
-        'compress' => false,
+        'compress' => true, // Enable compression for better network performance
         'strictOn' => true,
         'failover' => [],
-        'port'     => 3306
+        'port'     => (int) env('database.default.port', 3306)
     ];
 
     //    /**
