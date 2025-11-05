@@ -1,17 +1,26 @@
 # Environment files
 .env
+.env.*
+!.env.example
+!.env.docker.example
 backend/qrartApp/.env
+backend/qrartApp/.env.*
+!backend/qrartApp/.env.example
 
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
 
 # Dependencies
 node_modules/
 vendor/
+composer.phar
 
 # Logs
 *.log
+logs/
 backend/qrartApp/writable/logs/*
 !backend/qrartApp/writable/logs/.gitkeep
 
@@ -27,6 +36,15 @@ backend/qrartApp/writable/session/*
 backend/qrartApp/writable/uploads/*
 !backend/qrartApp/writable/uploads/.gitkeep
 
+# Media (user uploaded files)
+backend/qrartApp/public/media/*
+!backend/qrartApp/public/media/.gitkeep
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+
 # OS
 .DS_Store
 Thumbs.db
@@ -34,3 +52,10 @@ Thumbs.db
 # Backup files
 *.bak
 *~
+
+# Docker
+.env.docker
+!.env.docker.example
+
+# Maintenance mode
+.maintenance

@@ -7,9 +7,17 @@ use CodeIgniter\Router\RouteCollection;
  */
 
    /*#$routes->get('/', 'Home::index');
-   
+
 // Cattura tutte le altre richieste non API
     $routes->get('(:any)', 'AngularController::index'); // Assumi che 'noauth' sia un tuo filtro, se necessario*/
+
+    // Health Check Routes
+    $routes->get('api/health', 'HealthController::index');
+    $routes->get('api/health/detailed', 'HealthController::detailed');
+    $routes->get('api/health/live', 'HealthController::live');
+    $routes->get('api/health/ready', 'HealthController::ready');
+
+    // Application Routes
     $routes->get('test-file', 'MediaController::testFileExistence');
     $routes->get('api/content/details/(:num)', 'ContentController::getDetails/$1');
     $routes->get('api/content/getlist', 'ContentController::list');

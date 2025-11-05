@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs
+*.log
+backend/qrartApp/writable/logs/*
+
+# Cache
+backend/qrartApp/writable/cache/*
+backend/qrartApp/writable/session/*
+
+# Uploads (included via volumes)
+backend/qrartApp/writable/uploads/*
+backend/qrartApp/public/media/*
+
+# Backups
+backups/
+
+# Documentation
+*.md
+!README.md
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Scripts (we want these in prod, keep them)
+# scripts/
