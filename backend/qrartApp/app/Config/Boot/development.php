@@ -2,12 +2,6 @@
 // Do not change this line
     defined('SYSTEMPATH') || exit('No direct script access allowed');
 
-// Include the environment helper
-    require_once APPPATH . 'Helpers/environment_helper.php';
-
-// Set CI_ENVIRONMENT based on the detected environment
-    $detectedEnvironment = detect_environment();
-    defined('CI_ENVIRONMENT') || define('CI_ENVIRONMENT', $detectedEnvironment);
 /*
  |--------------------------------------------------------------------------
  | ERROR DISPLAY
