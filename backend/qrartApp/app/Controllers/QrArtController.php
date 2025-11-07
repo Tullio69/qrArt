@@ -23,11 +23,29 @@
             $contentDir = null;
 
             try {
-                // Use getVar() instead of getPost() for multipart/form-data requests
-                $formData = $this->request->getPost();
                 $files = $this->request->getFiles();
 
+                // For multipart/form-data, use getVar() directly as getPost() may return empty
+                $contentType = $this->request->getHeaderLine('Content-Type');
+                $isMultipart = stripos($contentType, 'multipart/form-data') !== false;
+
+                // Get form data using appropriate method
+                if ($isMultipart || !empty($files)) {
+                    // For multipart requests, use getVar() directly
+                    $formData = [
+                        'callerName' => $this->request->getVar('callerName'),
+                        'callerTitle' => $this->request->getVar('callerTitle'),
+                        'contentName' => $this->request->getVar('contentName'),
+                        'contentType' => $this->request->getVar('contentType')
+                    ];
+                } else {
+                    // For regular POST, use getPost()
+                    $formData = $this->request->getPost();
+                }
+
                 // Log received data for debugging
+                log_message('debug', 'Content-Type: ' . $contentType);
+                log_message('debug', 'Is Multipart: ' . ($isMultipart ? 'yes' : 'no'));
                 log_message('debug', 'Form data received: ' . json_encode($formData));
                 log_message('debug', 'Files received: ' . json_encode(array_keys($files)));
 
@@ -36,14 +54,8 @@
                 $missingFields = [];
 
                 foreach ($requiredFields as $field) {
-                    if (!isset($formData[$field]) || empty($formData[$field])) {
-                        // Try to get from getVar() as fallback for multipart forms
-                        $value = $this->request->getVar($field);
-                        if ($value !== null && $value !== '') {
-                            $formData[$field] = $value;
-                        } else {
-                            $missingFields[] = $field;
-                        }
+                    if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
+                        $missingFields[] = $field;
                     }
                 }
 
@@ -70,8 +82,14 @@
                 // Handle common files first
                 $this->handleCommonFiles($files, $contentDir, $contentId);
 
-                // Get language variants - try both getPost and getVar
-                $languageVariants = $formData['languageVariants'] ?? $this->request->getVar('languageVariants');
+                // Get language variants - use getVar for multipart requests
+                if ($isMultipart || !empty($files)) {
+                    $languageVariants = $this->request->getVar('languageVariants');
+                } else {
+                    $languageVariants = $formData['languageVariants'] ?? $this->request->getVar('languageVariants');
+                }
+
+                log_message('debug', 'Language variants received: ' . json_encode($languageVariants));
 
                 if (empty($languageVariants)) {
                     throw new Exception('Nessuna variante linguistica fornita');
