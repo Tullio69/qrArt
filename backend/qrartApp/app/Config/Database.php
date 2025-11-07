@@ -26,14 +26,14 @@ class Database extends Config
      */
     public array $default = [
         'DSN'      => '',
-        'hostname' => env('database.default.hostname', 'localhost'),
-        'database' => env('database.default.database', 'qrart'),
-        'username' => env('database.default.username', 'developer.qrart'),
-        'password' => env('database.default.password', ''),
-        'DBDriver' => env('database.default.DBDriver', 'MySQLi'),
+        'hostname' => 'localhost',
+        'database' => 'qrart',
+        'username' => 'developer.qrart',
+        'password' => '',
+        'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => true, // Enable persistent connections for better performance
-        'DBDebug'  => ENVIRONMENT !== 'production', // Disable debug in production
+        'DBDebug'  => true, // Will be set to false in production by constructor
         'charset'  => 'utf8',
         'DBCollat' => 'utf8_general_ci',
         'swapPre'  => '',
@@ -41,7 +41,7 @@ class Database extends Config
         'compress' => true, // Enable compression for better network performance
         'strictOn' => true,
         'failover' => [],
-        'port'     => (int) env('database.default.port', 3306)
+        'port'     => 3306
     ];
 
     //    /**
@@ -184,6 +184,36 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Override database settings from .env if available
+        if ($hostname = env('database.default.hostname')) {
+            $this->default['hostname'] = $hostname;
+        }
+
+        if ($database = env('database.default.database')) {
+            $this->default['database'] = $database;
+        }
+
+        if ($username = env('database.default.username')) {
+            $this->default['username'] = $username;
+        }
+
+        if ($password = env('database.default.password')) {
+            $this->default['password'] = $password;
+        }
+
+        if ($driver = env('database.default.DBDriver')) {
+            $this->default['DBDriver'] = $driver;
+        }
+
+        if ($port = env('database.default.port')) {
+            $this->default['port'] = (int) $port;
+        }
+
+        // Disable debug in production
+        if (ENVIRONMENT === 'production') {
+            $this->default['DBDebug'] = false;
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that
