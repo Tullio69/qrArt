@@ -124,12 +124,37 @@ class Cache extends BaseConfig
      * @var array<string, int|string|null>
      */
     public array $redis = [
-        'host'     => env('cache.redis.host', '127.0.0.1'),
-        'password' => env('cache.redis.password', null),
-        'port'     => (int) env('cache.redis.port', 6379),
+        'host'     => '127.0.0.1',
+        'password' => null,
+        'port'     => 6379,
         'timeout'  => 0,
-        'database' => (int) env('cache.redis.database', 0),
+        'database' => 0,
     ];
+
+    /**
+     * Constructor - override Redis settings from environment
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Override Redis settings from .env if available
+        if ($host = env('cache.redis.host')) {
+            $this->redis['host'] = $host;
+        }
+
+        if ($password = env('cache.redis.password')) {
+            $this->redis['password'] = $password;
+        }
+
+        if ($port = env('cache.redis.port')) {
+            $this->redis['port'] = (int) $port;
+        }
+
+        if ($database = env('cache.redis.database')) {
+            $this->redis['database'] = (int) $database;
+        }
+    }
 
     /**
      * --------------------------------------------------------------------------
