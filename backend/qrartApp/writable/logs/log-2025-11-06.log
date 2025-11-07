@@ -1,0 +1,141 @@
+ERROR - 2025-11-06 21:37:48 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'developer.qrart'@'localhost' (using password: YES) in /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php:202
+Stack trace:
+#0 /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php(202): mysqli->real_connect()
+#1 /home/qrart/qrArtApp/system/Database/BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect()
+#2 /home/qrart/qrArtApp/system/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+#3 /home/qrart/qrArtApp/system/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+#4 /home/qrart/qrArtApp/app/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+#5 /home/qrart/qrArtApp/system/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+#6 /home/qrart/qrArtApp/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /home/qrart/qrArtApp/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /home/qrart/qrArtApp/system/Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 /home/qrart/qrArtApp/system/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+#10 /home/qrart/qrArtApp/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'localhost' (using password: YES) in /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php:246
+Stack trace:
+#0 /home/qrart/qrArtApp/system/Database/BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect()
+#1 /home/qrart/qrArtApp/system/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+#2 /home/qrart/qrArtApp/system/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+#3 /home/qrart/qrArtApp/app/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+#4 /home/qrart/qrArtApp/system/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+#5 /home/qrart/qrArtApp/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#6 /home/qrart/qrArtApp/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#7 /home/qrart/qrArtApp/system/Boot.php(363): CodeIgniter\CodeIgniter->run()
+#8 /home/qrart/qrArtApp/system/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+#9 /home/qrart/qrArtApp/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#10 {main}
+CRITICAL - 2025-11-06 21:37:48 --> CodeIgniter\Database\Exceptions\DatabaseException: Unable to connect to the database.
+Main connection [MySQLi]: Access denied for user '****'@'localhost' (using password: YES)
+[Method: POST, Route: api/qrart/process]
+in SYSTEMPATH/Database/BaseConnection.php on line 465.
+ 1 SYSTEMPATH/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+ 2 SYSTEMPATH/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+ 3 APPPATH/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2025-11-06 21:41:55 --> Error: Call to undefined method CodeIgniter\HTTP\CLIRequest::getUserAgent()
+[Method: CLI, Route: key:generate]
+in APPPATH/Config/Routes.php on line 36.
+ 1 APPPATH/Config/Routes.php(21): isAllowedUserAgent()
+ 2 SYSTEMPATH/Router/RouteCollection.php(339): require('/home/qrart/qrArtApp/app/Config/Routes.php')
+ 3 SYSTEMPATH/CLI/Console.php(41): CodeIgniter\Router\RouteCollection->loadRoutes()
+ 4 SYSTEMPATH/Boot.php(388): CodeIgniter\CLI\Console->run()
+ 5 SYSTEMPATH/Boot.php(133): CodeIgniter\Boot::runCommand()
+ 6 ROOTPATH/spark(87): CodeIgniter\Boot::bootSpark()
+CRITICAL - 2025-11-06 21:42:28 --> Error: Call to undefined method CodeIgniter\HTTP\CLIRequest::getUserAgent()
+[Method: CLI, Route: key:generate]
+in APPPATH/Config/Routes.php on line 36.
+ 1 APPPATH/Config/Routes.php(21): isAllowedUserAgent()
+ 2 SYSTEMPATH/Router/RouteCollection.php(339): require('/home/qrart/qrArtApp/app/Config/Routes.php')
+ 3 SYSTEMPATH/CLI/Console.php(41): CodeIgniter\Router\RouteCollection->loadRoutes()
+ 4 SYSTEMPATH/Boot.php(388): CodeIgniter\CLI\Console->run()
+ 5 SYSTEMPATH/Boot.php(133): CodeIgniter\Boot::runCommand()
+ 6 ROOTPATH/spark(87): CodeIgniter\Boot::bootSpark()
+CRITICAL - 2025-11-06 21:44:00 --> Error: Call to undefined method CodeIgniter\HTTP\CLIRequest::getUserAgent()
+[Method: CLI, Route: key:generate]
+in APPPATH/Config/Routes.php on line 36.
+ 1 APPPATH/Config/Routes.php(21): isAllowedUserAgent()
+ 2 SYSTEMPATH/Router/RouteCollection.php(339): require('/home/qrart/qrArtApp/app/Config/Routes.php')
+ 3 SYSTEMPATH/CLI/Console.php(41): CodeIgniter\Router\RouteCollection->loadRoutes()
+ 4 SYSTEMPATH/Boot.php(388): CodeIgniter\CLI\Console->run()
+ 5 SYSTEMPATH/Boot.php(133): CodeIgniter\Boot::runCommand()
+ 6 ROOTPATH/spark(87): CodeIgniter\Boot::bootSpark()
+ERROR - 2025-11-06 21:44:44 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'developer.qrart'@'localhost' (using password: YES) in /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php:202
+Stack trace:
+#0 /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php(202): mysqli->real_connect()
+#1 /home/qrart/qrArtApp/system/Database/BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect()
+#2 /home/qrart/qrArtApp/system/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+#3 /home/qrart/qrArtApp/system/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+#4 /home/qrart/qrArtApp/app/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+#5 /home/qrart/qrArtApp/system/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+#6 /home/qrart/qrArtApp/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#7 /home/qrart/qrArtApp/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#8 /home/qrart/qrArtApp/system/Boot.php(363): CodeIgniter\CodeIgniter->run()
+#9 /home/qrart/qrArtApp/system/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+#10 /home/qrart/qrArtApp/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'localhost' (using password: YES) in /home/qrart/qrArtApp/system/Database/MySQLi/Connection.php:246
+Stack trace:
+#0 /home/qrart/qrArtApp/system/Database/BaseConnection.php(419): CodeIgniter\Database\MySQLi\Connection->connect()
+#1 /home/qrart/qrArtApp/system/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+#2 /home/qrart/qrArtApp/system/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+#3 /home/qrart/qrArtApp/app/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+#4 /home/qrart/qrArtApp/system/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+#5 /home/qrart/qrArtApp/system/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+#6 /home/qrart/qrArtApp/system/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+#7 /home/qrart/qrArtApp/system/Boot.php(363): CodeIgniter\CodeIgniter->run()
+#8 /home/qrart/qrArtApp/system/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+#9 /home/qrart/qrArtApp/public/index.php(59): CodeIgniter\Boot::bootWeb()
+#10 {main}
+CRITICAL - 2025-11-06 21:44:44 --> CodeIgniter\Database\Exceptions\DatabaseException: Unable to connect to the database.
+Main connection [MySQLi]: Access denied for user '****'@'localhost' (using password: YES)
+[Method: POST, Route: api/qrart/process]
+in SYSTEMPATH/Database/BaseConnection.php on line 465.
+ 1 SYSTEMPATH/Database/BaseConnection.php(840): CodeIgniter\Database\BaseConnection->initialize()
+ 2 SYSTEMPATH/Database/BaseConnection.php(774): CodeIgniter\Database\BaseConnection->transBegin()
+ 3 APPPATH/Controllers/QrArtController.php(22): CodeIgniter\Database\BaseConnection->transStart()
+ 4 SYSTEMPATH/CodeIgniter.php(933): App\Controllers\QrArtController->processQrArtContent()
+ 5 SYSTEMPATH/CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController()
+ 6 SYSTEMPATH/CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest()
+ 7 SYSTEMPATH/Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 9 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+INFO - 2025-11-06 21:45:13 --> Tentativo di caricamento del file callerBackground
+INFO - 2025-11-06 21:45:13 --> Tentativo di spostamento del file callerBackground in /home/qrart/qrArtApp/public/media/1/1_callerBackground.jpg
+INFO - 2025-11-06 21:45:13 --> File comune caricato con successo: /home/qrart/qrArtApp/public/media/1/1_callerBackground.jpg
+INFO - 2025-11-06 21:45:13 --> Query Eseguita: INSERT INTO `content_files` (`content_id`, `metadata_id`, `file_type`, `file_url`) VALUES (1, NULL, 'callerBackground', '1/1_callerBackground.jpg')
+INFO - 2025-11-06 21:45:13 --> Tentativo di caricamento del file callerAvatar
+ERROR - 2025-11-06 21:45:13 --> File comune non valido o già spostato: callerAvatar
+ERROR - 2025-11-06 21:45:13 --> Errore in processQrArtContent: File comune non valido o già spostato: callerAvatar
+INFO - 2025-11-06 21:45:35 --> Tentativo di caricamento del file callerBackground
+INFO - 2025-11-06 21:45:35 --> Tentativo di spostamento del file callerBackground in /home/qrart/qrArtApp/public/media/1/1_callerBackground.jpg
+INFO - 2025-11-06 21:45:35 --> File comune caricato con successo: /home/qrart/qrArtApp/public/media/1/1_callerBackground.jpg
+INFO - 2025-11-06 21:45:35 --> Query Eseguita: INSERT INTO `content_files` (`content_id`, `metadata_id`, `file_type`, `file_url`) VALUES (1, NULL, 'callerBackground', '1/1_callerBackground.jpg')
+INFO - 2025-11-06 21:45:35 --> File comune non fornito: callerAvatar
+DEBUG - 2025-11-06 21:48:01 --> Query executed: SELECT `c`.`caller_name`, `c`.`caller_title`, `c`.`content_type`, `cf`.`file_url`, `cf`.`file_type`, `cm`.`content_name`, `cm`.`language`, `cm`.`text_only`
+FROM `content` `c`
+LEFT JOIN `content_files` `cf` ON `c`.`id` = `cf`.`content_id`
+LEFT JOIN `content_metadata` `cm` ON `cf`.`metadata_id` = `cm`.`id`
+WHERE `c`.`id` = 1
+INFO - 2025-11-06 21:50:54 --> Tentativo di caricamento del file callerBackground
+INFO - 2025-11-06 21:50:54 --> Tentativo di spostamento del file callerBackground in /home/qrart/qrArtApp/public/media/2/2_callerBackground.jpg
+INFO - 2025-11-06 21:50:54 --> File comune caricato con successo: /home/qrart/qrArtApp/public/media/2/2_callerBackground.jpg
+INFO - 2025-11-06 21:50:54 --> Query Eseguita: INSERT INTO `content_files` (`content_id`, `metadata_id`, `file_type`, `file_url`) VALUES (2, NULL, 'callerBackground', '2/2_callerBackground.jpg')
+INFO - 2025-11-06 21:50:54 --> File comune non fornito: callerAvatar
+DEBUG - 2025-11-06 21:51:04 --> Query executed: SELECT `c`.`caller_name`, `c`.`caller_title`, `c`.`content_type`, `cf`.`file_url`, `cf`.`file_type`, `cm`.`content_name`, `cm`.`language`, `cm`.`text_only`
+FROM `content` `c`
+LEFT JOIN `content_files` `cf` ON `c`.`id` = `cf`.`content_id`
+LEFT JOIN `content_metadata` `cm` ON `cf`.`metadata_id` = `cm`.`id`
+WHERE `c`.`id` = 2
+DEBUG - 2025-11-06 21:53:26 --> Query executed: SELECT `c`.`caller_name`, `c`.`caller_title`, `c`.`content_type`, `cf`.`file_url`, `cf`.`file_type`, `cm`.`content_name`, `cm`.`language`, `cm`.`text_only`
+FROM `content` `c`
+LEFT JOIN `content_files` `cf` ON `c`.`id` = `cf`.`content_id`
+LEFT JOIN `content_metadata` `cm` ON `cf`.`metadata_id` = `cm`.`id`
+WHERE `c`.`id` = 2

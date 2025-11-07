@@ -1,0 +1,13 @@
+ERROR - 2025-11-07 08:12:17 --> Errore in processQrArtContent: Undefined array key "callerName"
+CRITICAL - 2025-11-07 09:25:53 --> ErrorException: Constant expression contains invalid operations
+[Method: GET, Route: /]
+in APPPATH/Config/Cache.php on line 126.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2025-11-07 08:37:45 --> ErrorException: Constant expression contains invalid operations
+[Method: GET, Route: /]
+in APPPATH/Config/Database.php on line 27.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2025-11-07 08:39:38 --> ErrorException: Constant expression contains invalid operations
+[Method: GET, Route: /]
+in APPPATH/Config/Database.php on line 27.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
