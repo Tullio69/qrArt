@@ -21,11 +21,36 @@
             $db = Database::connect();
             $db->transStart();
             $contentDir = null;
-            
+
             try {
+                // Use getVar() instead of getPost() for multipart/form-data requests
                 $formData = $this->request->getPost();
                 $files = $this->request->getFiles();
-                
+
+                // Log received data for debugging
+                log_message('debug', 'Form data received: ' . json_encode($formData));
+                log_message('debug', 'Files received: ' . json_encode(array_keys($files)));
+
+                // Validate required fields
+                $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
+                $missingFields = [];
+
+                foreach ($requiredFields as $field) {
+                    if (!isset($formData[$field]) || empty($formData[$field])) {
+                        // Try to get from getVar() as fallback for multipart forms
+                        $value = $this->request->getVar($field);
+                        if ($value !== null && $value !== '') {
+                            $formData[$field] = $value;
+                        } else {
+                            $missingFields[] = $field;
+                        }
+                    }
+                }
+
+                if (!empty($missingFields)) {
+                    throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
+                }
+
                 $contentModel = new ContentModel();
                 $contentData = [
                     'caller_name' => $formData['callerName'],
@@ -35,17 +60,24 @@
                 ];
                 
                 $contentId = $contentModel->insert($contentData);
-                
+
                 $contentDir = $this->createContentDirectory($contentId);
-                
+
                 if (!$contentId) {
                     throw new Exception('Errore nella creazione del nuovo content');
                 }
-                
+
                 // Handle common files first
                 $this->handleCommonFiles($files, $contentDir, $contentId);
-                
-                foreach ($formData['languageVariants'] as $index => $variant) {
+
+                // Get language variants - try both getPost and getVar
+                $languageVariants = $formData['languageVariants'] ?? $this->request->getVar('languageVariants');
+
+                if (empty($languageVariants)) {
+                    throw new Exception('Nessuna variante linguistica fornita');
+                }
+
+                foreach ($languageVariants as $index => $variant) {
                     $metadataData = [
                         'content_id' => $contentId,
                         'language' => $variant['language'],
@@ -70,12 +102,14 @@
                         throw new Exception($uploadedFiles['message']);
                     }
                 }
-                
-                // Handle related articles
-                $this->handleRelatedArticles($formData['relatedArticles'] ?? [], $contentId);
-                
-                // Handle sponsors
-                $this->handleSponsors($formData['sponsors'] ?? [], $files['sponsorImages'] ?? [], $contentId, $contentDir);
+
+                // Handle related articles - try both getPost and getVar
+                $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
+                $this->handleRelatedArticles($relatedArticles, $contentId);
+
+                // Handle sponsors - try both getPost and getVar
+                $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
+                $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
                 
                 // Genera URL breve per il contenuto
                 $shortUrlModel = new ShortUrlModel();
