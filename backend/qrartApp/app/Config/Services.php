@@ -19,14 +19,25 @@ use CodeIgniter\Config\BaseService;
  */
 class Services extends BaseService
 {
-    /*
-     * public static function example($getShared = true)
-     * {
-     *     if ($getShared) {
-     *         return static::getSharedInstance('example');
-     *     }
-     *
-     *     return new \CodeIgniter\Example();
-     * }
+    /**
+     * Path to the Google Analytics credentials JSON file.
      */
+    public string $gaCredentialsPath = '';
+
+    /**
+     * Google Analytics property ID.
+     */
+    public string $gaPropertyId = '';
+
+    /**
+     * Returns the Google Analytics service.
+     */
+    public static function googleAnalytics(bool $getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('googleAnalytics');
+        }
+
+        return new \App\Libraries\GoogleAnalyticsService();
+    }
 }

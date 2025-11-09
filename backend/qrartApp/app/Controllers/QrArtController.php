@@ -21,11 +21,48 @@
             $db = Database::connect();
             $db->transStart();
             $contentDir = null;
-            
+
             try {
-                $formData = $this->request->getPost();
                 $files = $this->request->getFiles();
-                
+
+                // For multipart/form-data, use getVar() directly as getPost() may return empty
+                $contentType = $this->request->getHeaderLine('Content-Type');
+                $isMultipart = stripos($contentType, 'multipart/form-data') !== false;
+
+                // Get form data using appropriate method
+                if ($isMultipart || !empty($files)) {
+                    // For multipart requests, use getVar() directly
+                    $formData = [
+                        'callerName' => $this->request->getVar('callerName'),
+                        'callerTitle' => $this->request->getVar('callerTitle'),
+                        'contentName' => $this->request->getVar('contentName'),
+                        'contentType' => $this->request->getVar('contentType')
+                    ];
+                } else {
+                    // For regular POST, use getPost()
+                    $formData = $this->request->getPost();
+                }
+
+                // Log received data for debugging
+                log_message('debug', 'Content-Type: ' . $contentType);
+                log_message('debug', 'Is Multipart: ' . ($isMultipart ? 'yes' : 'no'));
+                log_message('debug', 'Form data received: ' . json_encode($formData));
+                log_message('debug', 'Files received: ' . json_encode(array_keys($files)));
+
+                // Validate required fields
+                $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
+                $missingFields = [];
+
+                foreach ($requiredFields as $field) {
+                    if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
+                        $missingFields[] = $field;
+                    }
+                }
+
+                if (!empty($missingFields)) {
+                    throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
+                }
+
                 $contentModel = new ContentModel();
                 $contentData = [
                     'caller_name' => $formData['callerName'],
@@ -35,17 +72,30 @@
                 ];
                 
                 $contentId = $contentModel->insert($contentData);
-                
+
                 $contentDir = $this->createContentDirectory($contentId);
-                
+
                 if (!$contentId) {
                     throw new Exception('Errore nella creazione del nuovo content');
                 }
-                
+
                 // Handle common files first
                 $this->handleCommonFiles($files, $contentDir, $contentId);
-                
-                foreach ($formData['languageVariants'] as $index => $variant) {
+
+                // Get language variants - use getVar for multipart requests
+                if ($isMultipart || !empty($files)) {
+                    $languageVariants = $this->request->getVar('languageVariants');
+                } else {
+                    $languageVariants = $formData['languageVariants'] ?? $this->request->getVar('languageVariants');
+                }
+
+                log_message('debug', 'Language variants received: ' . json_encode($languageVariants));
+
+                if (empty($languageVariants)) {
+                    throw new Exception('Nessuna variante linguistica fornita');
+                }
+
+                foreach ($languageVariants as $index => $variant) {
                     $metadataData = [
                         'content_id' => $contentId,
                         'language' => $variant['language'],
@@ -70,12 +120,14 @@
                         throw new Exception($uploadedFiles['message']);
                     }
                 }
-                
-                // Handle related articles
-                $this->handleRelatedArticles($formData['relatedArticles'] ?? [], $contentId);
-                
-                // Handle sponsors
-                $this->handleSponsors($formData['sponsors'] ?? [], $files['sponsorImages'] ?? [], $contentId, $contentDir);
+
+                // Handle related articles - try both getPost and getVar
+                $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
+                $this->handleRelatedArticles($relatedArticles, $contentId);
+
+                // Handle sponsors - try both getPost and getVar
+                $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
+                $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
                 
                 // Genera URL breve per il contenuto
                 $shortUrlModel = new ShortUrlModel();
@@ -116,85 +168,231 @@
             $uploadedFiles = [];
             $contentFilesModel = new ContentFilesModel();
             
-            // Handle audio/video file
+            // ====================================================================
+            // STEP 1: LOG DETTAGLIATO DELLA STRUTTURA DEI FILE
+            // ====================================================================
+            log_message('debug', '=== handleFileUploads START ===');
+            log_message('debug', 'Parameters:');
+            log_message('debug', '  - variantIndex: ' . $variantIndex);
+            log_message('debug', '  - contentType: ' . $contentType);
+            log_message('debug', '  - contentId: ' . $contentId);
+            log_message('debug', '  - metadataId: ' . $metadataId);
+            log_message('debug', '  - variant language: ' . ($variant['language'] ?? 'NONE'));
+            log_message('debug', '  - languageDir: ' . $languageDir);
+            
+            // Log la struttura completa di $files
+            log_message('debug', 'Files structure top-level keys: ' . json_encode(array_keys($files)));
+            
+            // Log dettagliato per ogni chiave
+            foreach ($files as $topKey => $topValue) {
+                if (is_array($topValue)) {
+                    log_message('debug', "files['{$topKey}'] is array with " . count($topValue) . " items");
+                    
+                    // Se è languageVariants, log più dettagliato
+                    if ($topKey === 'languageVariants') {
+                        log_message('debug', "  languageVariants has indices: " . json_encode(array_keys($topValue)));
+                        
+                        if (isset($topValue[$variantIndex])) {
+                            log_message('debug', "  languageVariants[{$variantIndex}] exists with keys: " . json_encode(array_keys($topValue[$variantIndex])));
+                            
+                            foreach ($topValue[$variantIndex] as $fileKey => $fileValue) {
+                                if ($fileValue instanceof UploadedFile) {
+                                    log_message('debug', "    - {$fileKey}: UploadedFile");
+                                    log_message('debug', "      * isValid: " . ($fileValue->isValid() ? 'YES' : 'NO'));
+                                    log_message('debug', "      * hasMoved: " . ($fileValue->hasMoved() ? 'YES' : 'NO'));
+                                    log_message('debug', "      * getName: " . $fileValue->getName());
+                                    log_message('debug', "      * getClientName: " . $fileValue->getClientName());
+                                    log_message('debug', "      * getSize: " . $fileValue->getSize());
+                                    log_message('debug', "      * getExtension: " . $fileValue->getExtension());
+                                    log_message('debug', "      * getError: " . $fileValue->getError());
+                                } else {
+                                    log_message('debug', "    - {$fileKey}: " . gettype($fileValue));
+                                }
+                            }
+                        } else {
+                            log_message('debug', "  languageVariants[{$variantIndex}] DOES NOT EXIST!");
+                        }
+                    }
+                } elseif ($topValue instanceof UploadedFile) {
+                    log_message('debug', "files['{$topKey}'] is UploadedFile");
+                    log_message('debug', "  * isValid: " . ($topValue->isValid() ? 'YES' : 'NO'));
+                    log_message('debug', "  * getClientName: " . $topValue->getClientName());
+                } else {
+                    log_message('debug', "files['{$topKey}'] type: " . gettype($topValue));
+                }
+            }
+            
+            // ====================================================================
+            // STEP 2: RICERCA FLESSIBILE DEL FILE
+            // ====================================================================
             $fileKey = $contentType === 'audio' || $contentType === 'audio_call' ? 'audioFile' : 'videoFile';
+            log_message('debug', 'Looking for fileKey: ' . $fileKey);
+            
+            $foundFile = null;
+            $foundLocation = '';
+            
+            // Strategia 1: Struttura nidificata standard
             if (isset($files['languageVariants'][$variantIndex][$fileKey]) &&
                 $files['languageVariants'][$variantIndex][$fileKey] instanceof UploadedFile) {
+                $foundFile = $files['languageVariants'][$variantIndex][$fileKey];
+                $foundLocation = "files['languageVariants'][{$variantIndex}]['{$fileKey}']";
+                log_message('debug', 'Found file using Strategy 1 (nested structure)');
+            }
+            
+            // Strategia 2: Struttura piatta con naming convention
+            if (!$foundFile && isset($files[$fileKey]) && $files[$fileKey] instanceof UploadedFile) {
+                $foundFile = $files[$fileKey];
+                $foundLocation = "files['{$fileKey}']";
+                log_message('debug', 'Found file using Strategy 2 (flat structure)');
+            }
+            
+            // Strategia 3: Ricerca con pattern matching (es: audioFile_0, audioFile_1, etc)
+            if (!$foundFile) {
+                $searchPattern = $fileKey . '_' . $variantIndex;
+                if (isset($files[$searchPattern]) && $files[$searchPattern] instanceof UploadedFile) {
+                    $foundFile = $files[$searchPattern];
+                    $foundLocation = "files['{$searchPattern}']";
+                    log_message('debug', 'Found file using Strategy 3 (pattern: ' . $searchPattern . ')');
+                }
+            }
+            
+            // Strategia 4: Ricerca per language code
+            if (!$foundFile && isset($variant['language'])) {
+                $searchPattern = $fileKey . '_' . $variant['language'];
+                if (isset($files[$searchPattern]) && $files[$searchPattern] instanceof UploadedFile) {
+                    $foundFile = $files[$searchPattern];
+                    $foundLocation = "files['{$searchPattern}']";
+                    log_message('debug', 'Found file using Strategy 4 (language pattern: ' . $searchPattern . ')');
+                }
+            }
+            
+            // ====================================================================
+            // STEP 3: PROCESSO IL FILE SE TROVATO
+            // ====================================================================
+            if ($foundFile) {
+                log_message('debug', 'FILE FOUND at: ' . $foundLocation);
                 
-                $file = $files['languageVariants'][$variantIndex][$fileKey];
-                
-                if ($file->isValid() && !$file->hasMoved()) {
+                if ($foundFile->isValid() && !$foundFile->hasMoved()) {
                     $destinationPath = $languageDir;
                     
                     try {
                         $contentGroup = ($contentType === 'audio' || $contentType === 'audio_call' ? 'audio' : 'video');
-                        $newName = $contentId . '_' . $variant['language'] . '_' . $contentGroup . '.' . $file->getExtension();
-                        $file->move($destinationPath, $newName);
+                        $newName = $contentId . '_' . $variant['language'] . '_' . $contentGroup . '.' . $foundFile->getExtension();
                         
-                        if ($file->hasMoved()) {
+                        log_message('debug', 'Attempting to move file:');
+                        log_message('debug', '  From: ' . $foundFile->getTempName());
+                        log_message('debug', '  To: ' . $destinationPath . '/' . $newName);
+                        
+                        $foundFile->move($destinationPath, $newName);
+                        
+                        if ($foundFile->hasMoved()) {
                             $filePath = $contentId . '/' . $variant['language'] . '/' . $newName;
+                            log_message('debug', 'File moved successfully to: ' . $filePath);
+                            
                             $uploadedFiles[] = [
                                 'success' => true,
                                 'message' => 'File salvato con successo',
                                 'filePath' => $filePath,
-                                'originalName' => $file->getClientName(),
+                                'originalName' => $foundFile->getClientName(),
                                 'newName' => $newName
                             ];
                             
                             // Insert into content_files table
-                            $contentFilesModel->insert([
+                            $insertData = [
                                 'content_id' => $contentId,
                                 'metadata_id' => $metadataId,
                                 'file_type' => $contentGroup,
                                 'file_url' => $filePath
-                            ]);
+                            ];
+                            log_message('debug', 'Inserting into content_files: ' . json_encode($insertData));
+                            
+                            $insertResult = $contentFilesModel->insert($insertData);
+                            log_message('debug', 'Insert result: ' . ($insertResult ? 'SUCCESS' : 'FAILED'));
+                            
+                            if (!$insertResult) {
+                                log_message('error', 'Database insert failed. Errors: ' . json_encode($contentFilesModel->errors()));
+                            }
                         } else {
+                            $errorMsg = 'Impossibile spostare il file';
+                            log_message('error', $errorMsg);
                             $uploadedFiles[] = [
                                 'success' => false,
-                                'message' => 'Impossibile spostare il file'
+                                'message' => $errorMsg
                             ];
                         }
                     } catch (Exception $e) {
+                        $errorMsg = 'Errore durante il salvataggio del file: ' . $e->getMessage();
+                        log_message('error', $errorMsg);
+                        log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+                        
                         $uploadedFiles[] = [
                             'success' => false,
-                            'message' => 'Errore durante il salvataggio del file: ' . $e->getMessage()
+                            'message' => $errorMsg
                         ];
                     }
                 } else {
+                    $reason = !$foundFile->isValid() ? 'File non valido (error code: ' . $foundFile->getError() . ')' : 'File già spostato';
+                    log_message('error', $reason);
                     $uploadedFiles[] = [
                         'success' => false,
-                        'message' => 'File non valido o già spostato'
+                        'message' => $reason
                     ];
                 }
+            } else {
+                log_message('error', "FILE NOT FOUND! Searched for: {$fileKey} in variant index {$variantIndex}");
+                log_message('error', 'Available files structure: ' . json_encode(array_keys($files)));
             }
             
-            // Handle HTML content for both text-only and non-text-only variants
+            // ====================================================================
+            // STEP 4: GESTIONE CONTENUTO HTML
+            // ====================================================================
             if (isset($variant['htmlContent']) && !empty($variant['htmlContent'])) {
+                log_message('debug', 'Processing HTML content for language: ' . $variant['language']);
+                
                 $htmlContent = $variant['htmlContent'];
-                $htmlFilePath = $languageDir . '/'.$contentId.'_'.$variant['language'].'_'.'content.html';
+                $htmlFileName = $contentId . '_' . $variant['language'] . '_content.html';
+                $htmlFilePath = $languageDir . '/' . $htmlFileName;
+                
+                log_message('debug', 'Writing HTML to: ' . $htmlFilePath);
+                
                 if (file_put_contents($htmlFilePath, $htmlContent) !== false) {
-                    $filePath = $contentId . '/' . $variant['language'] . '/'.$contentId.'_'.$variant['language'].'_'.'content.html';
+                    $filePath = $contentId . '/' . $variant['language'] . '/' . $htmlFileName;
+                    log_message('debug', 'HTML content saved successfully: ' . $filePath);
+                    
                     $uploadedFiles[] = [
                         'success' => true,
                         'message' => 'Contenuto HTML salvato con successo',
                         'filePath' => $filePath,
-                        'newName' => 'content.html'
+                        'newName' => $htmlFileName
                     ];
                     
                     // Insert into content_files table
-                    $contentFilesModel->insert([
+                    $insertData = [
                         'content_id' => $contentId,
                         'metadata_id' => $metadataId,
                         'file_type' => 'html',
                         'file_url' => $filePath
-                    ]);
+                    ];
+                    log_message('debug', 'Inserting HTML into content_files: ' . json_encode($insertData));
+                    
+                    $insertResult = $contentFilesModel->insert($insertData);
+                    log_message('debug', 'HTML insert result: ' . ($insertResult ? 'SUCCESS' : 'FAILED'));
+                    
+                    if (!$insertResult) {
+                        log_message('error', 'HTML database insert failed. Errors: ' . json_encode($contentFilesModel->errors()));
+                    }
                 } else {
+                    $errorMsg = 'Impossibile salvare il contenuto HTML';
+                    log_message('error', $errorMsg . ' at path: ' . $htmlFilePath);
                     $uploadedFiles[] = [
                         'success' => false,
-                        'message' => 'Impossibile salvare il contenuto HTML'
+                        'message' => $errorMsg
                     ];
                 }
             }
+            
+            log_message('debug', '=== handleFileUploads END ===');
+            log_message('debug', 'Total files processed: ' . count($uploadedFiles));
             
             return ['success' => !empty($uploadedFiles), 'files' => $uploadedFiles];
         }

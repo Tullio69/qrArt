@@ -42,26 +42,60 @@
         public function getContentWithRelations($contentId)
         {
             $db = \Config\Database::connect();
-            $builder = $db->table('content c');
             
-            $builder->select('c.caller_name,c.caller_title,c.content_type,cf.file_url,cf.file_type,cm.content_name,cm.language,cm.text_only')
-                ->join('content_files cf', 'c.id = cf.content_id', 'left')
-                ->join('content_metadata cm', 'cf.metadata_id = cm.id', 'left')
-                ->where('c.id', $contentId);
+            // 1. Ottieni i dati base del contenuto
+            $content = $db->table('content')
+                ->where('id', $contentId)
+                ->get()
+                ->getRowArray();
             
-            // Get the compiled SQL
-            $sql = $builder->getCompiledSelect();
-        
-            // Log the SQL query
-            log_message('debug', 'Query executed: ' . $sql);
+            if (!$content) {
+                return [
+                    'data_common' => [],
+                    'data_meta' => [],
+                    'content' => null
+                ];
+            }
             
-            // Execute the query
-            $query = $db->query($sql);
+            // 2. Ottieni i file comuni (quelli senza metadata_id)
+            $commonFiles = $db->table('content_files')
+                ->select('file_type, file_url')
+                ->where('content_id', $contentId)
+                ->where('metadata_id IS NULL')
+                ->get()
+                ->getResultArray();
             
-            // Return both the result and the SQL for debugging
+            // 3. Ottieni i metadata con i loro file associati
+            $metadataQuery = $db->table('content_metadata cm')
+                ->select('cm.id as metadata_id, cm.language, cm.content_name, cm.description, cm.text_only, cm.html_content')
+                ->where('cm.content_id', $contentId)
+                ->get()
+                ->getResultArray();
+            
+            // 4. Per ogni metadata, ottieni i file associati
+            $metadataWithFiles = [];
+            foreach ($metadataQuery as $metadata) {
+                $files = $db->table('content_files')
+                    ->select('file_type, file_url')
+                    ->where('content_id', $contentId)
+                    ->where('metadata_id', $metadata['metadata_id'])
+                    ->get()
+                    ->getResultArray();
+                
+                $metadata['files'] = $files;
+                $metadataWithFiles[] = $metadata;
+            }
+            
+            // Log per debug
+            log_message('debug', 'Content  Data: ' . print_r($content,true));
+            log_message('debug', 'Content ID: ' . $contentId);
+            log_message('debug', 'Common files count: ' . count($commonFiles));
+            log_message('debug', 'Metadata count: ' . count($metadataWithFiles));
+            
             return [
-                'data' => $query->getResultArray(),
-                'sql' => $sql
+                'content' => $content,
+                'data_common' => $commonFiles,
+                'data_meta' => $metadataWithFiles
             ];
         }
         

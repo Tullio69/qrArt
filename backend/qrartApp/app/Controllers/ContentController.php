@@ -8,7 +8,7 @@
     use App\Models\ShortUrlModel; // Aggiunto import mancante
     use App\Models\ContentMetadataModel;
     use App\Models\ContentFilesModel;  // ✅ Import corretto
-   
+    
     class ContentController extends Controller
     {
         protected $shortUrlModel;
@@ -113,8 +113,11 @@
                     ]);
                 }
                 $result = $this->contentModel->getContentWithRelations($contentId);
-                $rawData = $result['data'];
-                $sql = $result['sql'];
+              
+                $rawData = $result['content'];
+                $commonFiles = $result['data_common'];
+                $metadata = $result['data_meta'];
+                
                 
                 if (empty($rawData)) {
                     return $this->response->setStatusCode(404)->setJSON([
@@ -126,16 +129,16 @@
                 // Initialize content structure
                 $content = [
                     'id' => $contentId,
-                    'caller_name' => $rawData[0]['caller_name'],
-                    'caller_title' => $rawData[0]['caller_title'],
-                    'content_type' => $rawData[0]['content_type'],
+                    'caller_name' => $rawData['caller_name'],
+                    'caller_title' => $rawData['caller_title'],
+                    'content_type' => $rawData['content_type'],
                     'common_files' => [],
-                    'metadata' => []
+                    'metadata' => $metadata
                 ];
                 
-                $metadata = [];
+               
                 
-                foreach ($rawData as $row) {
+                foreach ($commonFiles as $row) {
                     if ($row['file_type'] === 'callerBackground' || $row['file_type'] === 'callerAvatar') {
                         $content['common_files'][] = [
                             'file_type' => $row['file_type'],
@@ -144,15 +147,7 @@
                     } elseif ($row['language'] !== null) {
                         $metadataKey = $row['language'] . '_' . ($row['text_only'] ? 'text_only' : 'audio');
                         
-                        if (!isset($metadata[$metadataKey])) {
-                            $metadata[$metadataKey] = [
-                                'language' => $row['language'],
-                                'content_name' => $row['content_name'],
-                                'text_only' => (bool)$row['text_only'],
-                                'file_type' => $row['file_type'],
-                                'file_url' => $row['file_url']
-                            ];
-                        }
+                       
                     }
                 }
                 
@@ -160,10 +155,7 @@
                 
                 $response = [
                     'status' => 200,
-                    'content' => $content,
-                    'debug' => [
-                        'sql' => $sql
-                    ]
+                    'content' => $content
                 ];
                 
                 return $this->response->setJSON($response);

@@ -43,18 +43,6 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
     }])
     // Controller esemplificativo
-    .controller('ContentManagerController', ['ContentService', function(ContentService) {
-        var vm = this;
-        vm.contents = [];
-
-        vm.loadContents = function() {
-            ContentService.getContents().then(function(response) {
-                vm.contents = response.data;
-            });
-        };
-
-        vm.loadContents(); // Carica i contenuti all'inizializzazione
-    }])
     .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
@@ -263,14 +251,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             }
 
             // Carica la lista dei contenuti
-            $scope.loadContents = function () {
+            $scope.loadContents = function() {
                 $scope.loading = true;
                 $http.get('/api/content/getlist')
-                    .then(function (response) {
+                    .then(function(response) {
                         $scope.contents = response.data.data;
                         $scope.loading = false;
                     })
-                    .catch(function (error) {
+                    .catch(function(error) {
                         $scope.error = 'Errore nel caricamento dei contenuti';
                         $scope.loading = false;
                         console.error('Errore:', error);
@@ -366,7 +354,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             };
 
             // Scarica il QR Code per il contenuto
-            $scope.downloadQrCode = function (content) {
+            $scope.downloadQrCode = function(content) {
                 var contentUrl = window.location.origin + '/content/' + content.short_code;
 
                 var qr = new QRCode(document.createElement("div"), {
@@ -384,13 +372,13 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             };
 
             // Apre il modal per modificare un contenuto
-            $scope.openEditModal = function (content) {
+            $scope.openEditModal = function(content) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/editContentModal.html',
                     controller: 'EditContentModalController',
                     size: 'lg',
                     resolve: {
-                        content: function () {
+                        content: function() {
                             return angular.copy(content);
                         }
                     }
@@ -406,7 +394,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 if (confirm("Sei sicuro di voler eliminare questo file?")) {
                     $http.delete('/api/content/file/' + fileId)
                         .then(function () {
-                            $scope.loadContents();
+            $scope.loadContents();
                         })
                         .catch(function (error) {
                             console.error("Errore nella rimozione del file:", error);
