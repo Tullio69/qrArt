@@ -765,6 +765,16 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 function FormController($http, $scope) {
     var vm = this;
 
+    // Tab management
+    vm.activeTab = 'base';
+    vm.isSubmitting = false;
+
+    vm.setActiveTab = function(tab) {
+        vm.activeTab = tab;
+        // Scroll to top when changing tabs
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     vm.formData = {
         callerName: '',
         callerTitle: '',
@@ -773,7 +783,9 @@ function FormController($http, $scope) {
         contentDescription: '',
         callerBackground: null,
         callerAvatar: null,
-        languageVariants: []
+        languageVariants: [],
+        relatedArticles: [],
+        sponsors: []
     };
 
     vm.addLanguageVariant = function() {
@@ -815,7 +827,34 @@ function FormController($http, $scope) {
         return languageMap[languageCode] || '';
     };
 
+    // Related Articles management
+    vm.addRelatedArticle = function() {
+        vm.formData.relatedArticles.push({
+            title: '',
+            link: ''
+        });
+    };
+
+    vm.removeRelatedArticle = function(index) {
+        vm.formData.relatedArticles.splice(index, 1);
+    };
+
+    // Sponsors management
+    vm.addSponsor = function() {
+        vm.formData.sponsors.push({
+            name: '',
+            link: '',
+            image: null
+        });
+    };
+
+    vm.removeSponsor = function(index) {
+        vm.formData.sponsors.splice(index, 1);
+    };
+
     vm.submitForm = function() {
+        // Set submitting state
+        vm.isSubmitting = true;
         var formData = new FormData();
 
         // Append main form data
@@ -873,19 +912,37 @@ function FormController($http, $scope) {
             headers: {'Content-Type': undefined},
             transformRequest: angular.identity
         }).then(function successCallback(response) {
+            vm.isSubmitting = false;
             if (response.data.success) {
                 console.log('Dati salvati con successo:', response.data);
-                alert('Dati salvati con successo!');
+                alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
+
+                // Reset form and return to first tab
+                vm.formData = {
+                    callerName: '',
+                    callerTitle: '',
+                    contentName: '',
+                    contentType: '',
+                    contentDescription: '',
+                    callerBackground: null,
+                    callerAvatar: null,
+                    languageVariants: [],
+                    relatedArticles: [],
+                    sponsors: []
+                };
+                vm.addLanguageVariant();
+                vm.setActiveTab('base');
             } else {
                 console.error('Errore nel salvataggio dei dati:', response.data.message);
-                alert('Errore nel salvataggio dei dati: ' + response.data.message);
+                alert('❌ Errore nel salvataggio\n\n' + response.data.message);
             }
         }, function errorCallback(response) {
+            vm.isSubmitting = false;
             console.error('Errore nella richiesta:', response);
             var errorMessage = response.data && response.data.message
                 ? response.data.message
                 : 'Si è verificato un errore imprevisto. Per favore, riprova.';
-            alert('Errore nella richiesta: ' + errorMessage);
+            alert('❌ Errore nella richiesta\n\n' + errorMessage);
         });
     };
 
