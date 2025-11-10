@@ -65,29 +65,40 @@
                 ->get()
                 ->getResultArray();
             
-            // 3. Ottieni i metadata con i loro file associati
+            // 3. Ottieni i metadata
             $metadataQuery = $db->table('content_metadata cm')
                 ->select('cm.id as metadata_id, cm.language, cm.content_name, cm.description, cm.text_only, cm.html_content')
                 ->where('cm.content_id', $contentId)
                 ->get()
                 ->getResultArray();
             
-            // 4. Per ogni metadata, ottieni i file associati
+            // 4. ✅ Per ogni metadata, ottieni IL file associato (uno solo)
+            //    e aggiungilo come proprietà diretta del metadata
             $metadataWithFiles = [];
             foreach ($metadataQuery as $metadata) {
-                $files = $db->table('content_files')
+                // Prendi UN SOLO file per questo metadata
+                $file = $db->table('content_files')
                     ->select('file_type, file_url')
                     ->where('content_id', $contentId)
                     ->where('metadata_id', $metadata['metadata_id'])
                     ->get()
-                    ->getResultArray();
+                    ->getRowArray(); // ✅ getRowArray() prende solo 1 record
                 
-                $metadata['files'] = $files;
+                // ✅ Aggiungi file_type e file_url come proprietà dirette
+                if ($file) {
+                    $metadata['file_type'] = $file['file_type'];
+                    $metadata['file_url'] = $file['file_url'];
+                } else {
+                    // Se non c'è file (es: solo html_content), metti null
+                    $metadata['file_type'] = null;
+                    $metadata['file_url'] = null;
+                }
+                
                 $metadataWithFiles[] = $metadata;
             }
             
             // Log per debug
-            log_message('debug', 'Content  Data: ' . print_r($content,true));
+            log_message('debug', 'Content Data: ' . print_r($content, true));
             log_message('debug', 'Content ID: ' . $contentId);
             log_message('debug', 'Common files count: ' . count($commonFiles));
             log_message('debug', 'Metadata count: ' . count($metadataWithFiles));
