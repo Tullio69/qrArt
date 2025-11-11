@@ -254,8 +254,10 @@
 								 class="bg-white rounded-lg p-3">
 								<div class="flex items-center justify-between mb-2">
 									<h5 class="font-medium text-gray-900 flex items-center gap-2">
-										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase cursor-pointer"
-											  ng-click="data.metadata.text_only ? toggleHtmlPreview(data.metadata.id) : toggleLanguageVariantPreview(lang, content.id)">
+										<!-- Tag lingua - cliccabile solo per HTML -->
+										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase"
+											  ng-class="{'cursor-pointer': data.metadata.text_only}"
+											  ng-click="data.metadata.text_only ? openEditModal(content) : null">
 											{{lang}}
 										</span>
 										<span>{{getLanguageName(lang)}}</span>
@@ -275,11 +277,12 @@
 										</span>
 									</h5>
 									<div class="flex gap-2">
-										<!-- Pulsante Modifica HTML / Sostituisci -->
-										<button ng-if="data.metadata.text_only"
-												ng-click="openEditModal(content)"
-												class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
-											<i class="fas fa-edit mr-1"></i> Modifica HTML
+										<!-- Pulsanti per Media: Anteprima + Sostituisci -->
+										<button ng-if="!data.metadata.text_only"
+												ng-click="toggleLanguageVariantPreview(lang, content.id)"
+												class="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded transition-colors">
+											<i class="fas" ng-class="data.showPreview ? 'fa-eye-slash' : 'fa-eye'"></i>
+											{{data.showPreview ? 'Nascondi' : 'Anteprima'}}
 										</button>
 										<button ng-if="!data.metadata.text_only"
 												ng-click="replaceLanguageVariantFile(data, lang)"
@@ -300,26 +303,6 @@
 									<p class="text-gray-700" ng-if="data.metadata.description">
 										<strong>Descrizione:</strong> {{data.metadata.description}}
 									</p>
-								</div>
-
-								<!-- Contenuto HTML (solo testo) - Preview -->
-								<div ng-if="data.metadata.text_only && data.metadata.showHtml" class="mt-3">
-									<div class="border border-gray-200 rounded-lg overflow-hidden bg-gradient-to-r from-yellow-50 to-orange-50">
-										<div class="px-3 py-2 flex justify-between items-center border-b border-yellow-200">
-											<span class="text-sm font-semibold text-gray-700">
-												<i class="fas fa-code mr-1"></i> Anteprima Contenuto HTML
-											</span>
-											<button ng-click="toggleHtmlPreview(data.metadata.id)"
-													class="text-xs text-gray-600 hover:text-gray-800">
-												<i class="fas fa-times"></i> Chiudi
-											</button>
-										</div>
-										<div class="bg-white p-3">
-											<div class="bg-gray-50 border border-gray-200 rounded p-3 max-h-48 overflow-y-auto">
-												<pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap">{{data.metadata.html_content || 'Nessun contenuto HTML'}}</pre>
-											</div>
-										</div>
-									</div>
 								</div>
 
 								<!-- File associati (con media) - Preview -->
