@@ -254,10 +254,8 @@
 								 class="bg-white rounded-lg p-3">
 								<div class="flex items-center justify-between mb-2">
 									<h5 class="font-medium text-gray-900 flex items-center gap-2">
-										<!-- Tag lingua - cliccabile solo per HTML -->
-										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase"
-											  ng-class="{'cursor-pointer': data.metadata.text_only}"
-											  ng-click="data.metadata.text_only ? openEditModal(content) : null">
+										<!-- Tag lingua -->
+										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase">
 											{{lang}}
 										</span>
 										<span>{{getLanguageName(lang)}}</span>
@@ -289,6 +287,18 @@
 												class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
 											<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
 										</button>
+										<!-- Pulsanti per HTML: Anteprima + Modifica -->
+										<button ng-if="data.metadata.text_only && data.metadata.html_content"
+												ng-click="toggleHtmlPreview(data.metadata.id)"
+												class="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded transition-colors">
+											<i class="fas" ng-class="data.metadata.showHtml ? 'fa-eye-slash' : 'fa-eye'"></i>
+											{{data.metadata.showHtml ? 'Nascondi' : 'Anteprima'}} HTML
+										</button>
+										<button ng-if="data.metadata.text_only"
+												ng-click="openEditModal(content)"
+												class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
+											<i class="fas fa-edit mr-1"></i> Modifica HTML
+										</button>
 										<!-- Pulsante Elimina Variante -->
 										<button ng-click="deleteMetadata(data.metadata.id)"
 												class="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors">
@@ -302,6 +312,16 @@
 									<p class="text-gray-700"><strong>Nome:</strong> {{data.metadata.content_name}}</p>
 									<p class="text-gray-700" ng-if="data.metadata.description">
 										<strong>Descrizione:</strong> {{data.metadata.description}}
+									</p>
+									<!-- Link anteprima per varianti con media -->
+									<p class="text-gray-700" ng-if="!data.metadata.text_only">
+										<strong>Link Anteprima:</strong>
+										<a ng-href="/content/{{content.short_code}}?lang={{lang}}"
+										   target="_blank"
+										   class="text-blue-600 hover:text-blue-800 underline ml-1">
+											<i class="fas fa-external-link-alt mr-1"></i>
+											Apri anteprima ({{lang}})
+										</a>
 									</p>
 								</div>
 
@@ -335,6 +355,25 @@
 												   controls
 												   class="w-full max-h-64 rounded"
 												   ng-src="{{base_url}}/media/{{file.file_url}}"></video>
+										</div>
+									</div>
+								</div>
+
+								<!-- Anteprima HTML - Preview -->
+								<div ng-if="data.metadata.text_only && data.metadata.showHtml && data.metadata.html_content" class="mt-3">
+									<div class="border border-gray-200 rounded-lg overflow-hidden">
+										<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
+											<div class="flex items-center gap-2">
+												<i class="fas fa-code text-yellow-600"></i>
+												<span class="text-sm font-semibold text-gray-700">Anteprima Contenuto HTML</span>
+											</div>
+											<button ng-click="toggleHtmlPreview(data.metadata.id)"
+													class="text-xs text-gray-600 hover:text-gray-800">
+												<i class="fas fa-times"></i> Chiudi
+											</button>
+										</div>
+										<div class="bg-white p-4 max-h-96 overflow-y-auto">
+											<div ng-bind-html="data.metadata.html_content" class="prose prose-sm max-w-none"></div>
 										</div>
 									</div>
 								</div>
