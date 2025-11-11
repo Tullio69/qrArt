@@ -32,9 +32,7 @@ use CodeIgniter\Router\RouteCollection;
     $routes->get('content/html/(:num)/(:alpha)', 'ContentController::getHtmlContent/$1/$2');
     $routes->get('analytics/overview', 'AnalyticsController::overview');
 // Rotte per l'applicazione principale
-    if (!isAllowedUserAgent()) {
-        $routes->get('(:any)', 'WipController::index');
-    } else {
+ 
         // Rotte specifiche per AngularJS
         
         $routes->get('dashboard', 'AngularController::dashboard');
@@ -42,7 +40,7 @@ use CodeIgniter\Router\RouteCollection;
         
         // Cattura le rimanenti richieste per AngularJS
         $routes->get('(:any)', 'AngularController::index');
-    }
+
 
 // Funzione per verificare l'user agent (considera di spostarla in un helper o in un middleware)
     function isAllowedUserAgent()
