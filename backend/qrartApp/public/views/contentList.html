@@ -1,99 +1,520 @@
-<div class="content-manager p-4">
-	<!-- Header con ricerca -->
-	<div class="flex justify-between items-center mb-6">
-		<h1 class="text-2xl font-bold">Gestione Contenuti</h1>
-		<div class="search-box">
-			<input type="text"
-				   ng-model="searchQuery"
-				   placeholder="Cerca contenuti..."
-				   class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2">
+<div class="content-manager p-4 max-w-7xl mx-auto">
+	<!-- Header -->
+	<div class="mb-6">
+		<h1 class="text-3xl font-bold mb-2">Gestione Contenuti</h1>
+		<p class="text-gray-600">Gestisci i contenuti esistenti con tutte le funzionalità CRUD</p>
+	</div>
+
+	<!-- Filtri e Ricerca -->
+	<div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+			<!-- Barra di ricerca -->
+			<div class="col-span-2">
+				<label class="block text-sm font-medium text-gray-700 mb-1">Cerca</label>
+				<div class="relative">
+					<input type="text"
+						   ng-model="searchQuery"
+						   placeholder="Cerca per nome, titolo o codice..."
+						   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+					<i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+				</div>
+			</div>
+
+			<!-- Filtro per tipo -->
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Tipo Contenuto</label>
+				<select ng-model="filterType"
+						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+					<option value="">Tutti</option>
+					<option value="audio">Audio</option>
+					<option value="video">Video</option>
+					<option value="audio_call">Audio Call</option>
+					<option value="video_call">Video Call</option>
+				</select>
+			</div>
+
+			<!-- Filtro per lingua -->
+			<div>
+				<label class="block text-sm font-medium text-gray-700 mb-1">Lingua</label>
+				<select ng-model="filterLanguage"
+						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+					<option value="">Tutte</option>
+					<option value="it">Italiano</option>
+					<option value="en">Inglese</option>
+					<option value="es">Spagnolo</option>
+					<option value="fr">Francese</option>
+					<option value="de">Tedesco</option>
+				</select>
+			</div>
+		</div>
+
+		<!-- Info e Reset -->
+		<div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+			<div class="text-sm text-gray-600">
+				Trovati <span class="font-semibold">{{(contents | filter:filterContents | filter:{content_type: filterType}).length}}</span> contenuti
+			</div>
+			<button ng-click="resetFilters()"
+					class="text-sm text-blue-600 hover:text-blue-800">
+				<i class="fas fa-redo-alt mr-1"></i> Reset Filtri
+			</button>
 		</div>
 	</div>
-	
+
 	<!-- Loading state -->
-	<div ng-if="loading" class="text-center py-8">
-		<div class="spinner"></div>
-		<p>Caricamento contenuti...</p>
+	<div ng-if="loading" class="text-center py-12">
+		<div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+		<p class="mt-4 text-gray-600">Caricamento contenuti...</p>
 	</div>
-	
+
+	<!-- Success message -->
+	<div ng-if="successMessage" class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded-lg animate-fade-in">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center">
+				<i class="fas fa-check-circle mr-2"></i>
+				<p>{{successMessage}}</p>
+			</div>
+			<button ng-click="successMessage = null" class="text-green-700 hover:text-green-900">
+				<i class="fas fa-times"></i>
+			</button>
+		</div>
+	</div>
+
 	<!-- Error state -->
-	<div ng-if="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-		<p>{{error}}</p>
+	<div ng-if="error" class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg animate-fade-in">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center">
+				<i class="fas fa-exclamation-circle mr-2"></i>
+				<p>{{error}}</p>
+			</div>
+			<button ng-click="error = null" class="text-red-700 hover:text-red-900">
+				<i class="fas fa-times"></i>
+			</button>
+		</div>
 	</div>
-	
+
 	<!-- Content list -->
-	<div ng-if="!loading && !error" class="overflow-x-auto">
-		<table class="min-w-full bg-white rounded-lg overflow-hidden">
-			<thead class="bg-gray-100">
-			<tr>
-				<th class="px-4 py-3 cursor-pointer" ng-click="sortField='caller_name'; sortReverse=!sortReverse">
-					Nome Chiamante
-					<i class="fas" ng-class="{'fa-sort-up': sortField=='caller_name' && !sortReverse, 'fa-sort-down': sortField=='caller_name' && sortReverse}"></i>
-				</th>
-				<th class="px-4 py-3">Titolo</th>
-				<th class="px-4 py-3">Tipo</th>
-				<th class="px-4 py-3">Short Code</th>
-				<th class="px-4 py-3">Lingue</th>
-				<th class="px-4 py-3 text-right">Azioni</th>
-			</tr>
-			</thead>
-			<tbody>
-			<tr ng-repeat="content in contents | filter:filterContents | orderBy:sortField:sortReverse"
-				class="border-b hover:bg-gray-50">
-				<td class="px-4 py-3">{{content.caller_name}}</td>
-				<td class="px-4 py-3">{{content.caller_title}}</td>
-				<td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded-full text-xs"
-							  ng-class="{
-                                'bg-blue-100 text-blue-800': content.content_type === 'audio',
-                                'bg-green-100 text-green-800': content.content_type === 'video',
-                                'bg-purple-100 text-purple-800': content.content_type === 'audio_call',
-                                'bg-yellow-100 text-yellow-800': content.content_type === 'video_call'
-                              }">
-                            {{content.content_type}}
-                        </span>
-				</td>
-				<td class="px-4 py-3 font-mono">{{content.short_code}}</td>
-				<td class="px-4 py-3">
-					<div class="flex gap-1">
-                            <span ng-repeat="lang in content.languages"
-								  class="px-2 py-1 bg-gray-100 rounded text-xs">
-                                {{lang}}
-                            </span>
+	<div ng-if="!loading && !error" class="space-y-4">
+		<!-- Card per ogni contenuto -->
+		<div ng-repeat="content in filteredContents = (contents | filter:filterContents | filter:{content_type: filterType} | filter:filterByLanguage | orderBy:sortField:sortReverse | limitTo:pageSize:((currentPage-1)*pageSize))"
+			 class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+
+			<!-- Header della card -->
+			<div class="p-4">
+				<div class="flex items-start justify-between">
+					<!-- Info principale -->
+					<div class="flex-1">
+						<div class="flex items-center gap-3 mb-2">
+							<h3 class="text-lg font-semibold text-gray-900">{{content.caller_name}}</h3>
+
+							<!-- Badge tipo -->
+							<span class="px-3 py-1 rounded-full text-xs font-medium"
+								  ng-class="{
+									'bg-blue-100 text-blue-800': content.content_type === 'audio',
+									'bg-green-100 text-green-800': content.content_type === 'video',
+									'bg-purple-100 text-purple-800': content.content_type === 'audio_call',
+									'bg-yellow-100 text-yellow-800': content.content_type === 'video_call'
+								  }">
+								<i class="fas" ng-class="{
+									'fa-volume-up': content.content_type === 'audio',
+									'fa-video': content.content_type === 'video',
+									'fa-phone': content.content_type === 'audio_call',
+									'fa-video-camera': content.content_type === 'video_call'
+								}"></i>
+								{{content.content_type}}
+							</span>
+						</div>
+
+						<p class="text-gray-600 mb-2">{{content.caller_title}}</p>
+
+						<!-- Lingue disponibili -->
+						<div class="flex flex-wrap gap-2 mb-2">
+							<span ng-repeat="lang in content.languages"
+								  class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+								<i class="fas fa-language mr-1"></i>
+								{{getLanguageName(lang)}}
+							</span>
+						</div>
+
+						<!-- Short code -->
+						<div class="flex items-center gap-2 mt-2">
+							<span class="text-sm text-gray-500">Short Code:</span>
+							<code class="px-2 py-1 bg-gray-100 rounded text-sm font-mono text-gray-800">{{content.short_code}}</code>
+							<button ng-click="copyToClipboard(content.short_code)"
+									class="text-xs text-blue-600 hover:text-blue-800"
+									title="Copia negli appunti">
+								<i class="fas fa-copy"></i>
+							</button>
+						</div>
 					</div>
-				</td>
-				<td class="px-4 py-3 text-right">
-					<div class="flex justify-end gap-2">
-						<!-- Pulsante QR Code -->
+
+					<!-- Azioni -->
+					<div class="flex items-center gap-2 ml-4">
+						<!-- Toggle dettagli -->
+						<button ng-click="toggleDetails(content)"
+								class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+								title="{{expandedContentId == content.id ? 'Nascondi dettagli' : 'Mostra dettagli'}}">
+							<i class="fas transition-transform duration-200"
+							   ng-class="{'fa-chevron-up': expandedContentId == content.id, 'fa-chevron-down': expandedContentId != content.id}"></i>
+						</button>
+
+						<!-- QR Code -->
 						<button ng-click="downloadQrCode(content)"
-								class="p-2 text-gray-600 hover:text-gray-900"
+								class="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
 								title="Scarica QR Code">
 							<i class="fas fa-qrcode"></i>
 						</button>
-						
-						<!-- Pulsante Preview -->
+
+						<!-- Preview -->
 						<a ng-href="/content/{{content.short_code}}"
 						   target="_blank"
-						   class="p-2 text-gray-600 hover:text-gray-900"
+						   class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
 						   title="Anteprima">
 							<i class="fas fa-eye"></i>
 						</a>
-						
-						<!-- Pulsante Modifica -->
+
+						<!-- Modifica -->
 						<button ng-click="openEditModal(content)"
-								class="p-2 text-gray-600 hover:text-gray-900"
+								class="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
 								title="Modifica">
 							<i class="fas fa-edit"></i>
 						</button>
+
+						<!-- Elimina -->
+						<button ng-click="confirmDelete(content)"
+								class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+								title="Elimina">
+							<i class="fas fa-trash-alt"></i>
+						</button>
 					</div>
-				</td>
-			</tr>
-			</tbody>
-		</table>
+				</div>
+			</div>
+
+			<!-- Dettagli espandibili -->
+			<div ng-if="expandedContentId == content.id"
+				 class="border-t border-gray-200 bg-gray-50 p-4"
+				 ng-class="{'expanding': expandedContentId == content.id}">
+
+				<div ng-if="!content.perLanguage" class="text-center py-4">
+					<div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+					<p class="text-sm text-gray-600 mt-2">Caricamento dettagli...</p>
+				</div>
+
+				<div ng-if="content.perLanguage">
+					<!-- File Comuni -->
+					<div ng-if="content.globalFiles && content.globalFiles.length > 0" class="mb-4">
+						<h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+							<i class="fas fa-folder-open mr-2 text-blue-600"></i>
+							File Comuni
+						</h4>
+						<div class="bg-white rounded-lg p-4 space-y-3">
+							<div ng-repeat="file in content.globalFiles" class="border border-gray-200 rounded-lg p-3">
+								<div class="flex items-start justify-between">
+									<div class="flex items-center gap-3 cursor-pointer" ng-click="toggleGlobalFilePreview(file.id)">
+										<i class="fas text-xl" ng-class="{
+											'fa-user-circle text-purple-600': file.file_type === 'callerAvatar',
+											'fa-image text-green-600': file.file_type === 'callerBackground'
+										}"></i>
+										<div>
+											<p class="text-sm font-semibold text-gray-900">
+												{{file.file_type === 'callerAvatar' ? 'Avatar Chiamante' : 'Background Chiamante'}}
+											</p>
+											<p class="text-xs text-gray-500 font-mono">{{file.file_url}}</p>
+										</div>
+									</div>
+									<div class="flex gap-2">
+										<button ng-click="replaceFile(file)"
+												class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
+											<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
+										</button>
+										<button ng-click="deleteFile(file.id)"
+												class="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors">
+											<i class="fas fa-trash-alt mr-1"></i> Elimina
+										</button>
+									</div>
+								</div>
+								<!-- Preview Immagine (visibile solo al click) -->
+								<div ng-if="file.showPreview" class="flex justify-center bg-gray-50 rounded-lg p-3 mt-3">
+									<img ng-src="{{base_url}}/media/{{file.file_url}}"
+										 class="max-h-32 border-2 border-gray-300"
+										 ng-class="file.file_type === 'callerAvatar' ? 'rounded-full' : 'rounded-lg'"
+										 alt="{{file.file_type}}">
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Varianti per Lingua -->
+					<div>
+						<h4 class="font-semibold text-gray-900 mb-2 flex items-center">
+							<i class="fas fa-language mr-2 text-purple-600"></i>
+							Varianti Linguistiche
+						</h4>
+						<div class="space-y-3">
+							<div ng-repeat="(lang, data) in content.perLanguage"
+								 class="bg-white rounded-lg p-3">
+								<div class="flex items-center justify-between mb-2">
+									<h5 class="font-medium text-gray-900 flex items-center gap-2">
+										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase cursor-pointer"
+											  ng-click="data.metadata.text_only ? toggleHtmlPreview(data.metadata.id) : toggleLanguageVariantPreview(lang, content.id)">
+											{{lang}}
+										</span>
+										<span>{{getLanguageName(lang)}}</span>
+										<!-- Badge tipo contenuto -->
+										<span class="px-2 py-1 rounded text-xs"
+											  ng-class="{
+												'bg-yellow-100 text-yellow-800': data.metadata.text_only,
+												'bg-blue-100 text-blue-800': !data.metadata.text_only && data.files.audio,
+												'bg-green-100 text-green-800': !data.metadata.text_only && data.files.video
+											  }">
+											<i class="fas" ng-class="{
+												'fa-code': data.metadata.text_only,
+												'fa-file-audio': !data.metadata.text_only && data.files.audio,
+												'fa-file-video': !data.metadata.text_only && data.files.video
+											}"></i>
+											{{data.metadata.text_only ? 'HTML' : (data.files.audio ? 'Audio' : 'Video')}}
+										</span>
+									</h5>
+									<div class="flex gap-2">
+										<!-- Pulsante Modifica HTML / Sostituisci -->
+										<button ng-if="data.metadata.text_only"
+												ng-click="openEditModal(content)"
+												class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
+											<i class="fas fa-edit mr-1"></i> Modifica HTML
+										</button>
+										<button ng-if="!data.metadata.text_only"
+												ng-click="replaceLanguageVariantFile(data, lang)"
+												class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
+											<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
+										</button>
+										<!-- Pulsante Elimina Variante -->
+										<button ng-click="deleteMetadata(data.metadata.id)"
+												class="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors">
+											<i class="fas fa-trash-alt mr-1"></i> Elimina Variante
+										</button>
+									</div>
+								</div>
+
+								<!-- Metadata info -->
+								<div class="mb-2 text-sm">
+									<p class="text-gray-700"><strong>Nome:</strong> {{data.metadata.content_name}}</p>
+									<p class="text-gray-700" ng-if="data.metadata.description">
+										<strong>Descrizione:</strong> {{data.metadata.description}}
+									</p>
+								</div>
+
+								<!-- Contenuto HTML (solo testo) - Preview -->
+								<div ng-if="data.metadata.text_only && data.metadata.showHtml" class="mt-3">
+									<div class="border border-gray-200 rounded-lg overflow-hidden bg-gradient-to-r from-yellow-50 to-orange-50">
+										<div class="px-3 py-2 flex justify-between items-center border-b border-yellow-200">
+											<span class="text-sm font-semibold text-gray-700">
+												<i class="fas fa-code mr-1"></i> Anteprima Contenuto HTML
+											</span>
+											<button ng-click="toggleHtmlPreview(data.metadata.id)"
+													class="text-xs text-gray-600 hover:text-gray-800">
+												<i class="fas fa-times"></i> Chiudi
+											</button>
+										</div>
+										<div class="bg-white p-3">
+											<div class="bg-gray-50 border border-gray-200 rounded p-3 max-h-48 overflow-y-auto">
+												<pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap">{{data.metadata.html_content || 'Nessun contenuto HTML'}}</pre>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- File associati (con media) - Preview -->
+								<div ng-if="!data.metadata.text_only && data.showPreview" class="mt-3">
+									<div ng-repeat="(type, file) in data.files" class="border border-gray-200 rounded-lg overflow-hidden">
+										<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
+											<div class="flex items-center gap-2">
+												<i class="fas" ng-class="{
+													'fa-file-audio text-blue-600': type === 'audio',
+													'fa-file-video text-green-600': type === 'video'
+												}"></i>
+												<div>
+													<span class="text-sm font-semibold text-gray-700">
+														Anteprima {{type === 'audio' ? 'Audio' : 'Video'}}
+													</span>
+													<p class="text-xs text-gray-500 font-mono">{{file.file_url}}</p>
+												</div>
+											</div>
+											<button ng-click="toggleLanguageVariantPreview(lang, content.id)"
+													class="text-xs text-gray-600 hover:text-gray-800">
+												<i class="fas fa-times"></i> Chiudi
+											</button>
+										</div>
+										<div class="bg-white p-3">
+											<audio ng-if="type === 'audio'"
+												   controls
+												   class="w-full"
+												   ng-src="{{base_url}}/media/{{file.file_url}}"></audio>
+											<video ng-if="type === 'video'"
+												   controls
+												   class="w-full max-h-64 rounded"
+												   ng-src="{{base_url}}/media/{{file.file_url}}"></video>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
-	
+
 	<!-- Empty state -->
-	<div ng-if="!loading && !error && contents.length === 0" class="text-center py-8">
-		<p class="text-gray-500">Nessun contenuto trovato</p>
+	<div ng-if="!loading && !error && filteredContents.length === 0" class="text-center py-12 bg-white rounded-lg shadow-sm">
+		<i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+		<p class="text-gray-500 text-lg">Nessun contenuto trovato</p>
+		<p class="text-gray-400 text-sm">Prova a modificare i filtri di ricerca</p>
+	</div>
+
+	<!-- Paginazione -->
+	<div ng-if="!loading && !error && (contents | filter:filterContents | filter:{content_type: filterType}).length > pageSize"
+		 class="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm p-4">
+		<div class="text-sm text-gray-600">
+			Mostrando {{((currentPage-1)*pageSize)+1}} - {{Math.min(currentPage*pageSize, (contents | filter:filterContents | filter:{content_type: filterType}).length)}}
+			di {{(contents | filter:filterContents | filter:{content_type: filterType}).length}} contenuti
+		</div>
+		<div class="flex gap-2">
+			<button ng-click="previousPage()"
+					ng-disabled="currentPage === 1"
+					class="px-4 py-2 border rounded-lg transition-colors"
+					ng-class="currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'">
+				<i class="fas fa-chevron-left"></i> Precedente
+			</button>
+			<div class="flex items-center gap-1">
+				<button ng-repeat="page in getPageNumbers()"
+						ng-click="goToPage(page)"
+						class="w-10 h-10 rounded-lg transition-colors"
+						ng-class="page === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border'">
+					{{page}}
+				</button>
+			</div>
+			<button ng-click="nextPage()"
+					ng-disabled="currentPage === totalPages()"
+					class="px-4 py-2 border rounded-lg transition-colors"
+					ng-class="currentPage === totalPages() ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'">
+				Successiva <i class="fas fa-chevron-right"></i>
+			</button>
+		</div>
+	</div>
+
+	<!-- Modal per sostituzione file -->
+	<div ng-if="modalVisible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+		 ng-click="closeReplaceModal()">
+		<div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" ng-click="$event.stopPropagation()">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-xl font-semibold text-gray-900">Sostituisci File</h3>
+				<button ng-click="closeReplaceModal()" class="text-gray-400 hover:text-gray-600">
+					<i class="fas fa-times text-xl"></i>
+				</button>
+			</div>
+
+			<!-- Success Message -->
+			<div ng-if="replaceSuccess" class="mb-4 bg-green-50 border-l-4 border-green-500 text-green-700 p-3 rounded">
+				<div class="flex items-center">
+					<i class="fas fa-check-circle mr-2"></i>
+					<p class="text-sm">File sostituito con successo!</p>
+				</div>
+			</div>
+
+			<!-- Error Message -->
+			<div ng-if="replaceError" class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-3 rounded">
+				<div class="flex items-center">
+					<i class="fas fa-exclamation-circle mr-2"></i>
+					<p class="text-sm">{{replaceError}}</p>
+				</div>
+			</div>
+
+			<div class="mb-4">
+				<p class="text-sm text-gray-600 mb-2">File corrente:</p>
+				<div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+					<p class="text-xs font-mono text-gray-700 break-all">{{selectedFileToReplace.file_url}}</p>
+
+					<!-- Preview file corrente -->
+					<div class="mt-3" ng-if="selectedFileToReplace.file_type">
+						<!-- Audio Preview -->
+						<audio ng-if="selectedFileToReplace.file_type === 'audio' || selectedFileToReplace.file_type === 'audio_call'"
+							   controls
+							   class="w-full"
+							   ng-src="{{base_url}}/media/{{selectedFileToReplace.file_url}}"></audio>
+
+						<!-- Video Preview -->
+						<video ng-if="selectedFileToReplace.file_type === 'video' || selectedFileToReplace.file_type === 'video_call'"
+							   controls
+							   class="w-full max-h-48 rounded"
+							   ng-src="{{base_url}}/media/{{selectedFileToReplace.file_url}}"></video>
+
+						<!-- Image Preview -->
+						<img ng-if="selectedFileToReplace.file_type === 'callerAvatar' || selectedFileToReplace.file_type === 'callerBackground'"
+							 ng-src="{{base_url}}/media/{{selectedFileToReplace.file_url}}"
+							 class="max-h-32 rounded"
+							 ng-class="selectedFileToReplace.file_type === 'callerAvatar' ? 'rounded-full' : ''">
+					</div>
+				</div>
+			</div>
+
+			<div class="mb-4">
+				<label class="block text-sm font-medium text-gray-700 mb-2">Seleziona nuovo file</label>
+				<input type="file"
+					   id="file-input-replace"
+					   onchange="angular.element(this).scope().handleFileSelect(this.files[0])"
+					   accept="{{getAcceptType(selectedFileToReplace.file_type)}}"
+					   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+				<p class="text-xs text-gray-500 mt-1" ng-if="newFile">
+					<i class="fas fa-file mr-1"></i> Selezionato: {{newFile.name}} ({{(newFile.size / 1024 / 1024).toFixed(2)}} MB)
+				</p>
+			</div>
+
+			<div class="flex gap-3 justify-end">
+				<button ng-click="closeReplaceModal()"
+						ng-disabled="replacingFile"
+						class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+						ng-class="replacingFile ? 'opacity-50 cursor-not-allowed' : ''">
+					<i class="fas fa-times mr-1"></i> Annulla
+				</button>
+				<button ng-click="confirmReplace()"
+						ng-disabled="!newFile || replacingFile"
+						class="px-4 py-2 text-white rounded-lg transition-colors flex items-center"
+						ng-class="(!newFile || replacingFile) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'">
+					<i class="fas mr-2" ng-class="replacingFile ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+					{{replacingFile ? 'Caricamento...' : 'Conferma'}}
+				</button>
+			</div>
+		</div>
 	</div>
 </div>
+
+<style>
+.expanding {
+	animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		max-height: 0;
+	}
+	to {
+		opacity: 1;
+		max-height: 2000px;
+	}
+}
+
+.animate-fade-in {
+	animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+</style>

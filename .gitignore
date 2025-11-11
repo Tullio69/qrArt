@@ -1,0 +1,38 @@
+# CodeIgniter
+backend/qrartApp/writable/logs/*.log
+backend/qrartApp/writable/cache/*
+backend/qrartApp/writable/session/*
+backend/qrartApp/writable/uploads/*
+backend/qrartApp/writable/debugbar/*
+
+# Keep directory structure
+!backend/qrartApp/writable/logs/.gitkeep
+!backend/qrartApp/writable/cache/.gitkeep
+!backend/qrartApp/writable/session/.gitkeep
+!backend/qrartApp/writable/uploads/.gitkeep
+!backend/qrartApp/writable/debugbar/.gitkeep
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+vendor/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
