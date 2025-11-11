@@ -1,118 +1,284 @@
-<div class="modal-content p-4">
-	<div class="modal-header flex justify-between items-center mb-4">
-		<h3 class="text-xl font-bold">Modifica Contenuto</h3>
-		<button type="button" class="text-gray-600 hover:text-gray-900" ng-click="$dismiss()">
-			<i class="fas fa-times"></i>
+<div class="modal-content bg-white rounded-lg shadow-xl max-w-4xl mx-auto" style="max-height: 90vh; overflow-y: auto;">
+	<div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
+		<div>
+			<h3 class="text-2xl font-bold text-gray-900">Modifica Contenuto</h3>
+			<p class="text-sm text-gray-600 mt-1">Aggiorna le informazioni del contenuto esistente</p>
+		</div>
+		<button type="button" class="text-gray-400 hover:text-gray-600 transition-colors" ng-click="cancel()">
+			<i class="fas fa-times text-2xl"></i>
 		</button>
 	</div>
-	
-	<div class="modal-body">
-		<form name="editForm" ng-submit="save()" class="space-y-4">
+
+	<div class="p-6">
+		<!-- Messaggio di errore -->
+		<div ng-if="error" class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+			<div class="flex items-center">
+				<i class="fas fa-exclamation-circle mr-2"></i>
+				<p>{{error}}</p>
+			</div>
+		</div>
+
+		<form name="editForm" ng-submit="save()" class="space-y-6">
 			<!-- Informazioni di base -->
-			<div class="grid grid-cols-2 gap-4">
-				<div class="form-group">
-					<label class="block text-sm font-medium mb-1">Nome Chiamante</label>
-					<input type="text"
-						   ng-model="content.caller_name"
-						   class="w-full px-3 py-2 border rounded-lg"
-						   required>
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+					<i class="fas fa-info-circle mr-2 text-blue-600"></i>
+					Informazioni Base
+				</h4>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div class="form-group">
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Nome Chiamante <span class="text-red-500">*</span>
+						</label>
+						<input type="text"
+							   ng-model="content.caller_name"
+							   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+							   required>
+					</div>
+					<div class="form-group">
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Titolo Chiamante <span class="text-red-500">*</span>
+						</label>
+						<input type="text"
+							   ng-model="content.caller_title"
+							   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+							   required>
+					</div>
 				</div>
-				<div class="form-group">
-					<label class="block text-sm font-medium mb-1">Titolo Chiamante</label>
-					<input type="text"
-						   ng-model="content.caller_title"
-						   class="w-full px-3 py-2 border rounded-lg"
-						   required>
+
+				<div class="mt-4">
+					<label class="block text-sm font-medium text-gray-700 mb-2">Tipo di Contenuto</label>
+					<div class="flex items-center gap-2">
+						<span class="px-4 py-2 rounded-lg text-sm font-medium"
+							  ng-class="{
+								'bg-blue-100 text-blue-800': content.content_type === 'audio',
+								'bg-green-100 text-green-800': content.content_type === 'video',
+								'bg-purple-100 text-purple-800': content.content_type === 'audio_call',
+								'bg-yellow-100 text-yellow-800': content.content_type === 'video_call'
+							  }">
+							<i class="fas" ng-class="{
+								'fa-volume-up': content.content_type === 'audio',
+								'fa-video': content.content_type === 'video',
+								'fa-phone': content.content_type === 'audio_call',
+								'fa-video-camera': content.content_type === 'video_call'
+							}"></i>
+							{{content.content_type}}
+						</span>
+						<span class="text-sm text-gray-500 italic">(Il tipo di contenuto non può essere modificato)</span>
+					</div>
 				</div>
 			</div>
-			
+
 			<!-- File comuni -->
-			<div class="grid grid-cols-2 gap-4">
-				<div class="form-group">
-					<label class="block text-sm font-medium mb-1">Avatar Chiamante</label>
-					<div class="flex items-center space-x-2">
-						<img ng-if="content.avatar_url"
-							 ng-src="{{content.avatar_url}}"
-							 class="w-12 h-12 rounded-full object-cover">
-						<input type="file"
-							   accept="image/*"
-							   file-model="content.new_avatar"
-							   class="flex-1">
+			<div class="bg-gray-50 rounded-lg p-4">
+				<h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+					<i class="fas fa-folder-open mr-2 text-purple-600"></i>
+					File Comuni
+				</h4>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div class="form-group">
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							<i class="fas fa-user-circle mr-1"></i> Avatar Chiamante
+						</label>
+						<div class="space-y-2">
+							<div ng-if="content.avatar_url" class="flex items-center gap-3 p-2 bg-white rounded border">
+								<img ng-src="{{content.avatar_url}}"
+									 class="w-16 h-16 rounded-full object-cover border-2 border-gray-200">
+								<div class="flex-1 text-xs text-gray-600">
+									<p class="font-mono">{{content.avatar_url}}</p>
+								</div>
+							</div>
+							<input type="file"
+								   accept="image/*"
+								   onchange="angular.element(this).scope().handleAvatarChange(this.files[0])"
+								   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+							<p class="text-xs text-gray-500 mt-1">Carica un nuovo file per sostituire quello esistente</p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="block text-sm font-medium mb-1">Background Chiamante</label>
-					<div class="flex items-center space-x-2">
-						<img ng-if="content.background_url"
-							 ng-src="{{content.background_url}}"
-							 class="w-12 h-12 rounded object-cover">
-						<input type="file"
-							   accept="image/*"
-							   file-model="content.new_background"
-							   class="flex-1">
+					<div class="form-group">
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							<i class="fas fa-image mr-1"></i> Background Chiamante
+						</label>
+						<div class="space-y-2">
+							<div ng-if="content.background_url" class="flex items-center gap-3 p-2 bg-white rounded border">
+								<img ng-src="{{content.background_url}}"
+									 class="w-16 h-16 rounded object-cover border-2 border-gray-200">
+								<div class="flex-1 text-xs text-gray-600">
+									<p class="font-mono">{{content.background_url}}</p>
+								</div>
+							</div>
+							<input type="file"
+								   accept="image/*"
+								   onchange="angular.element(this).scope().handleBackgroundChange(this.files[0])"
+								   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+							<p class="text-xs text-gray-500 mt-1">Carica un nuovo file per sostituire quello esistente</p>
+						</div>
 					</div>
 				</div>
 			</div>
-			
+
 			<!-- Varianti linguistiche -->
-			<div class="space-y-4">
-				<h4 class="font-medium">Varianti Linguistiche</h4>
-				<div ng-repeat="variant in content.metadata" class="border p-4 rounded-lg">
-					<div class="grid grid-cols-2 gap-4">
-						<div class="form-group">
-							<label class="block text-sm font-medium mb-1">Lingua</label>
-							<input type="text"
-								   ng-model="variant.language"
-								   class="w-full px-3 py-2 border rounded-lg"
-								   readonly>
-						</div>
-						<div class="form-group">
-							<label class="block text-sm font-medium mb-1">Nome Contenuto</label>
-							<input type="text"
-								   ng-model="variant.content_name"
-								   class="w-full px-3 py-2 border rounded-lg"
-								   required>
+			<div class="space-y-3">
+				<div class="flex justify-between items-center">
+					<h4 class="font-semibold text-gray-900 flex items-center">
+						<i class="fas fa-language mr-2 text-blue-600"></i>
+						Varianti Linguistiche
+					</h4>
+					<span class="text-sm text-gray-600">{{content.metadata.length}} variante/i</span>
+				</div>
+
+				<div ng-repeat="variant in content.metadata" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+					<!-- Header variante con toggle -->
+					<div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 cursor-pointer hover:from-blue-100 hover:to-purple-100 transition-colors"
+						 ng-click="variant.minimized = !variant.minimized">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<button type="button" class="text-gray-600 hover:text-gray-900 transition-transform"
+										ng-class="{'rotate-180': !variant.minimized}">
+									<i class="fas fa-chevron-down"></i>
+								</button>
+								<span class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold uppercase">
+									{{variant.language}}
+								</span>
+								<span class="font-medium text-gray-900">{{getLanguageName(variant.language)}}</span>
+								<span class="px-2 py-1 rounded text-xs"
+									  ng-class="variant.text_only ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'">
+									<i class="fas" ng-class="variant.text_only ? 'fa-file-alt' : 'fa-file-audio'"></i>
+									{{variant.text_only ? 'Solo Testo' : 'Con Media'}}
+								</span>
+							</div>
+							<div class="flex items-center gap-2">
+								<span class="text-xs text-gray-500">{{variant.minimized ? 'Clicca per espandere' : 'Clicca per minimizzare'}}</span>
+							</div>
 						</div>
 					</div>
-					
-					<div class="mt-4" ng-if="!variant.text_only">
-						<label class="block text-sm font-medium mb-1">File {{content.content_type}}</label>
-						<div class="flex items-center space-x-2">
-							<audio ng-if="content.content_type.includes('audio')"
-								   ng-src="{{variant.file_url}}"
-								   controls></audio>
-							<video ng-if="content.content_type.includes('video')"
-								   ng-src="{{variant.file_url}}"
-								   controls></video>
-							<input type="file"
-								   accept="{{content.content_type.includes('audio') ? 'audio/*' : 'video/*'}}"
-								   file-model="variant.new_file"
-								   class="flex-1">
+
+					<!-- Contenuto variante (collapsible) -->
+					<div ng-if="!variant.minimized" class="p-4 space-y-4 bg-gray-50"
+						 style="animation: slideDown 0.3s ease-out;">
+
+						<div class="grid grid-cols-1 gap-4">
+							<div class="form-group">
+								<label class="block text-sm font-medium text-gray-700 mb-2">
+									Nome Contenuto <span class="text-red-500">*</span>
+								</label>
+								<input type="text"
+									   ng-model="variant.content_name"
+									   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+									   required>
+							</div>
+
+							<div class="form-group" ng-if="variant.description !== undefined">
+								<label class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
+								<textarea ng-model="variant.description"
+										  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+										  rows="2"></textarea>
+							</div>
 						</div>
-					</div>
-					
-					<div class="mt-4" ng-if="variant.text_only">
-						<label class="block text-sm font-medium mb-1">Contenuto HTML</label>
-						<textarea ng-model="variant.html_content"
-								  class="w-full px-3 py-2 border rounded-lg"
-								  rows="4"></textarea>
+
+						<!-- File media (se non è solo testo) -->
+						<div ng-if="!variant.text_only" class="form-group">
+							<label class="block text-sm font-medium text-gray-700 mb-2">
+								<i class="fas" ng-class="content.content_type.includes('audio') ? 'fa-file-audio' : 'fa-file-video'"></i>
+								File {{content.content_type.includes('audio') ? 'Audio' : 'Video'}}
+							</label>
+							<div class="space-y-2">
+								<!-- Preview file esistente -->
+								<div ng-if="variant.file_url" class="bg-white border rounded-lg p-3">
+									<p class="text-xs text-gray-600 mb-2">File corrente:</p>
+									<audio ng-if="content.content_type.includes('audio')"
+										   ng-src="{{variant.file_url}}"
+										   controls
+										   class="w-full"></audio>
+									<video ng-if="content.content_type.includes('video')"
+										   ng-src="{{variant.file_url}}"
+										   controls
+										   class="w-full max-h-48"></video>
+								</div>
+								<!-- Upload nuovo file -->
+								<input type="file"
+									   accept="{{content.content_type.includes('audio') ? 'audio/*' : 'video/*'}}"
+									   onchange="angular.element(this).scope().handleVariantFileChange(this.files[0], {{$index}})"
+									   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+								<p class="text-xs text-gray-500">Carica un nuovo file per sostituire quello esistente</p>
+							</div>
+						</div>
+
+						<!-- Contenuto HTML (se è solo testo) -->
+						<div ng-if="variant.text_only" class="form-group">
+							<div class="flex justify-between items-center mb-2">
+								<label class="block text-sm font-medium text-gray-700">
+									<i class="fas fa-code"></i> Contenuto HTML
+								</label>
+								<button type="button"
+										ng-click="variant.htmlMinimized = !variant.htmlMinimized"
+										class="text-xs text-blue-600 hover:text-blue-800">
+									<i class="fas" ng-class="variant.htmlMinimized ? 'fa-expand' : 'fa-compress'"></i>
+									{{variant.htmlMinimized ? 'Espandi' : 'Comprimi'}}
+								</button>
+							</div>
+							<div ng-if="!variant.htmlMinimized">
+								<textarea ng-model="variant.html_content"
+										  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+										  rows="8"
+										  placeholder="Inserisci il contenuto HTML..."></textarea>
+								<p class="text-xs text-gray-500 mt-1">
+									<i class="fas fa-info-circle"></i>
+									Puoi utilizzare tag HTML per formattare il contenuto
+								</p>
+							</div>
+							<div ng-if="variant.htmlMinimized" class="text-center py-4 bg-gray-100 rounded border-2 border-dashed border-gray-300">
+								<i class="fas fa-code text-gray-400 text-2xl mb-2"></i>
+								<p class="text-sm text-gray-500">Editor HTML minimizzato</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
 		</form>
 	</div>
-	
-	<div class="modal-footer mt-6 flex justify-end space-x-2">
-		<button type="button"
-				class="px-4 py-2 border rounded-lg hover:bg-gray-100"
-				ng-click="$dismiss()">
-			Annulla
-		</button>
-		<button type="submit"
-				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-				ng-click="save()"
-				ng-disabled="editForm.$invalid || saving">
-			{{saving ? 'Salvataggio...' : 'Salva'}}
-		</button>
+
+	<!-- Footer con pulsanti -->
+	<div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center">
+		<div class="text-sm text-gray-600">
+			<i class="fas fa-info-circle mr-1"></i>
+			I campi contrassegnati con <span class="text-red-500">*</span> sono obbligatori
+		</div>
+		<div class="flex gap-3">
+			<button type="button"
+					class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+					ng-click="cancel()">
+				<i class="fas fa-times mr-2"></i> Annulla
+			</button>
+			<button type="submit"
+					class="px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+					ng-class="saving || editForm.$invalid ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'"
+					ng-click="save()"
+					ng-disabled="editForm.$invalid || saving">
+				<i class="fas" ng-class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+				{{saving ? 'Salvataggio in corso...' : 'Salva Modifiche'}}
+			</button>
+		</div>
 	</div>
 </div>
+
+<style>
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		max-height: 0;
+	}
+	to {
+		opacity: 1;
+		max-height: 2000px;
+	}
+}
+
+.rotate-180 {
+	transform: rotate(180deg);
+}
+
+.transition-transform {
+	transition: transform 0.3s ease;
+}
+</style>

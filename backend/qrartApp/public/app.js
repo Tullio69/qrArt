@@ -206,6 +206,139 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             $scope.searchQuery = '';
             $scope.expandedContent = null; // ID del contenuto espanso
 
+            // Filtri
+            $scope.filterType = '';
+            $scope.filterLanguage = '';
+
+            // Paginazione
+            $scope.currentPage = 1;
+            $scope.pageSize = 10;
+            $scope.Math = window.Math;
+
+            // Mappa per traduzione nomi lingue
+            $scope.languageNames = {
+                'it': 'Italiano',
+                'en': 'Inglese',
+                'es': 'Spagnolo',
+                'fr': 'Francese',
+                'de': 'Tedesco',
+                'pt': 'Portoghese',
+                'ru': 'Russo',
+                'zh': 'Cinese',
+                'ja': 'Giapponese',
+                'ar': 'Arabo'
+            };
+
+            // Ottieni nome lingua tradotto
+            $scope.getLanguageName = function(languageCode) {
+                return $scope.languageNames[languageCode] || languageCode.toUpperCase();
+            };
+
+            // Funzione di filtro per la ricerca
+            $scope.filterContents = function(content) {
+                if (!$scope.searchQuery) return true;
+                var query = $scope.searchQuery.toLowerCase();
+                return (content.caller_name && content.caller_name.toLowerCase().includes(query)) ||
+                       (content.caller_title && content.caller_title.toLowerCase().includes(query)) ||
+                       (content.short_code && content.short_code.toLowerCase().includes(query));
+            };
+
+            // Funzione di filtro per lingua
+            $scope.filterByLanguage = function(content) {
+                if (!$scope.filterLanguage) return true;
+                return content.languages && content.languages.includes($scope.filterLanguage);
+            };
+
+            // Reset filtri
+            $scope.resetFilters = function() {
+                $scope.searchQuery = '';
+                $scope.filterType = '';
+                $scope.filterLanguage = '';
+                $scope.currentPage = 1;
+            };
+
+            // Copia negli appunti
+            $scope.copyToClipboard = function(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        // Mostra feedback temporaneo
+                        $scope.copiedShortCode = text;
+                        $timeout(function() {
+                            $scope.copiedShortCode = null;
+                        }, 2000);
+                    });
+                } else {
+                    // Fallback per browser più vecchi
+                    var textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        $scope.copiedShortCode = text;
+                        $timeout(function() {
+                            $scope.copiedShortCode = null;
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Errore nella copia:', err);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            };
+
+            // Paginazione
+            $scope.totalPages = function() {
+                var filteredLength = $scope.contents.filter($scope.filterContents)
+                    .filter(function(c) { return !$scope.filterType || c.content_type === $scope.filterType; })
+                    .filter($scope.filterByLanguage).length;
+                return Math.ceil(filteredLength / $scope.pageSize) || 1;
+            };
+
+            $scope.previousPage = function() {
+                if ($scope.currentPage > 1) {
+                    $scope.currentPage--;
+                }
+            };
+
+            $scope.nextPage = function() {
+                if ($scope.currentPage < $scope.totalPages()) {
+                    $scope.currentPage++;
+                }
+            };
+
+            $scope.goToPage = function(page) {
+                $scope.currentPage = page;
+            };
+
+            $scope.getPageNumbers = function() {
+                var total = $scope.totalPages();
+                var current = $scope.currentPage;
+                var pages = [];
+
+                if (total <= 7) {
+                    for (var i = 1; i <= total; i++) {
+                        pages.push(i);
+                    }
+                } else {
+                    if (current <= 4) {
+                        pages = [1, 2, 3, 4, 5, '...', total];
+                    } else if (current >= total - 3) {
+                        pages = [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+                    } else {
+                        pages = [1, '...', current - 1, current, current + 1, '...', total];
+                    }
+                }
+
+                return pages;
+            };
+
+            // Gestione selezione file per sostituzione
+            $scope.handleFileSelect = function(file) {
+                $scope.$apply(function() {
+                    $scope.newFile = file;
+                });
+            };
+
             function groupByLanguage(files, metadata) {
                 const grouped = {};
 
@@ -292,22 +425,55 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             };
 
             $scope.confirmDelete = function (content) {
-                if (confirm(`Sei sicuro di voler eliminare il contenuto "${content.caller_name}"?`)) {
-                    $scope.deleteContent(content.id);
+                var confirmMessage = `⚠️ ATTENZIONE: Stai per eliminare il contenuto "${content.caller_name}"\n\n` +
+                    `Questa operazione eliminerà:\n` +
+                    `- Il contenuto principale\n` +
+                    `- Tutti i file associati\n` +
+                    `- Tutte le varianti linguistiche (${content.languages ? content.languages.length : 0})\n` +
+                    `- Gli short URLs associati\n\n` +
+                    `Questa azione è IRREVERSIBILE!\n\n` +
+                    `Sei sicuro di voler continuare?`;
+
+                if (confirm(confirmMessage)) {
+                    $scope.deleteContent(content);
                 }
             };
 
-            $scope.deleteContent = function (contentId) {
+            $scope.deleteContent = function (content) {
                 $scope.loading = true;
                 $scope.error = null;
+                $scope.successMessage = null;
 
-                $http.delete($scope.base_url + '/api/content/delete/' + contentId)
-                    .then(function () {
-                        $scope.contents = $scope.contents.filter(c => c.id !== contentId);
+                $http.delete($scope.base_url + '/api/content/delete/' + content.id)
+                    .then(function (response) {
+                        // Rimuovi il contenuto dalla lista
+                        $scope.contents = $scope.contents.filter(c => c.id !== content.id);
+
+                        // Mostra messaggio di successo
+                        $scope.successMessage = `✅ Contenuto "${content.caller_name}" eliminato con successo!`;
+
+                        // Nasconde il messaggio dopo 5 secondi
+                        $timeout(function() {
+                            $scope.successMessage = null;
+                        }, 5000);
                     })
                     .catch(function (error) {
-                        $scope.error = "Errore durante l'eliminazione del contenuto.";
-                        console.error(error);
+                        console.error('Errore durante l\'eliminazione:', error);
+
+                        var errorMessage = "❌ Errore durante l'eliminazione del contenuto.";
+                        if (error.data && error.data.error) {
+                            errorMessage += " " + error.data.error;
+                        }
+                        if (error.data && error.data.details) {
+                            errorMessage += " Dettagli: " + error.data.details;
+                        }
+
+                        $scope.error = errorMessage;
+
+                        // Nasconde il messaggio di errore dopo 10 secondi
+                        $timeout(function() {
+                            $scope.error = null;
+                        }, 10000);
                     })
                     .finally(function () {
                         $scope.loading = false;
@@ -391,26 +557,80 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
             // Elimina un file associato a un contenuto
             $scope.deleteFile = function (fileId) {
-                if (confirm("Sei sicuro di voler eliminare questo file?")) {
-                    $http.delete('/api/content/file/' + fileId)
-                        .then(function () {
-            $scope.loadContents();
+                var confirmMessage = "⚠️ Sei sicuro di voler eliminare questo file?\n\n" +
+                    "Questa azione è irreversibile!";
+
+                if (confirm(confirmMessage)) {
+                    $scope.loading = true;
+                    $scope.error = null;
+
+                    $http.delete($scope.base_url + '/api/content/file/' + fileId)
+                        .then(function (response) {
+                            $scope.successMessage = "✅ File eliminato con successo!";
+                            $scope.loadContents();
+
+                            $timeout(function() {
+                                $scope.successMessage = null;
+                            }, 3000);
                         })
                         .catch(function (error) {
                             console.error("Errore nella rimozione del file:", error);
+
+                            var errorMessage = "❌ Errore durante l'eliminazione del file.";
+                            if (error.data && error.data.error) {
+                                errorMessage += " " + error.data.error;
+                            }
+
+                            $scope.error = errorMessage;
+
+                            $timeout(function() {
+                                $scope.error = null;
+                            }, 5000);
+                        })
+                        .finally(function() {
+                            $scope.loading = false;
                         });
                 }
             };
 
             // Elimina un metadato associato a un contenuto
             $scope.deleteMetadata = function (metadataId) {
-                if (confirm("Sei sicuro di voler eliminare questo metadato?")) {
-                    $http.delete('/api/content/metadata/' + metadataId)
-                        .then(function () {
+                var confirmMessage = "⚠️ Sei sicuro di voler eliminare questa variante linguistica?\n\n" +
+                    "Questa operazione eliminerà:\n" +
+                    "- I metadati della lingua\n" +
+                    "- Tutti i file associati\n" +
+                    "- Il contenuto HTML (se presente)\n\n" +
+                    "Questa azione è IRREVERSIBILE!";
+
+                if (confirm(confirmMessage)) {
+                    $scope.loading = true;
+                    $scope.error = null;
+
+                    $http.delete($scope.base_url + '/api/content/metadata/' + metadataId)
+                        .then(function (response) {
+                            $scope.successMessage = "✅ Variante linguistica eliminata con successo!";
                             $scope.loadContents();
+
+                            $timeout(function() {
+                                $scope.successMessage = null;
+                            }, 3000);
                         })
                         .catch(function (error) {
                             console.error("Errore nella rimozione del metadato:", error);
+
+                            var errorMessage = "❌ Errore durante l'eliminazione della variante linguistica.";
+                            if (error.data && error.data.error) {
+                                errorMessage += " " + error.data.error;
+                            }
+
+                            $scope.error = errorMessage;
+
+                            $timeout(function() {
+                                $scope.error = null;
+                            }, 5000);
+                        })
+                        .finally(function() {
+                            $scope.loading = false;
                         });
                 }
             };
@@ -483,6 +703,47 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
         function($scope, $uibModalInstance, $http, content) {
             $scope.content = angular.copy(content);
             $scope.saving = false;
+            $scope.error = null;
+
+            // Mappa per traduzione nomi lingue
+            $scope.languageNames = {
+                'it': 'Italiano',
+                'en': 'Inglese',
+                'es': 'Spagnolo',
+                'fr': 'Francese',
+                'de': 'Tedesco',
+                'pt': 'Portoghese',
+                'ru': 'Russo',
+                'zh': 'Cinese',
+                'ja': 'Giapponese',
+                'ar': 'Arabo'
+            };
+
+            // Ottieni nome lingua tradotto
+            $scope.getLanguageName = function(languageCode) {
+                return $scope.languageNames[languageCode] || languageCode.toUpperCase();
+            };
+
+            // Gestione file avatar
+            $scope.handleAvatarChange = function(file) {
+                $scope.$apply(function() {
+                    $scope.content.new_avatar = file;
+                });
+            };
+
+            // Gestione file background
+            $scope.handleBackgroundChange = function(file) {
+                $scope.$apply(function() {
+                    $scope.content.new_background = file;
+                });
+            };
+
+            // Gestione file varianti
+            $scope.handleVariantFileChange = function(file, index) {
+                $scope.$apply(function() {
+                    $scope.content.metadata[index].new_file = file;
+                });
+            };
 
             $scope.save = function() {
                 $scope.saving = true;

@@ -358,28 +358,28 @@
         {
             $fileKey = $variant['textOnly'] ? null :
                 ($variant['contentType'] === 'audio' || $variant['contentType'] === 'audio_call' ? 'audioFile' : 'videoFile');
-            
+
             if ($fileKey && isset($files['languageVariants'][$variant['language']][$fileKey])) {
                 $file = $files['languageVariants'][$variant['language']][$fileKey];
-                
+
                 if ($file->isValid()) {
                     // Elimina il file esistente
                     $existingFile = $this->contentFilesModel
                         ->where('content_id', $contentId)
                         ->where('metadata_id', $metadataId)
                         ->first();
-                    
+
                     if ($existingFile && file_exists(FCPATH . 'media/' . $existingFile['file_url'])) {
                         unlink(FCPATH . 'media/' . $existingFile['file_url']);
                     }
-                    
+
                     // Carica il nuovo file
                     $newName = $contentId . '_' . $variant['language'] . '_' .
                         ($variant['contentType'] === 'audio' || $variant['contentType'] === 'audio_call' ? 'audio' : 'video') .
                         '.' . $file->getExtension();
-                    
+
                     $file->move(FCPATH . 'media/' . $contentId . '/' . $variant['language'], $newName);
-                    
+
                     // Aggiorna o inserisce il record nel database
                     $fileData = [
                         'content_id' => $contentId,
@@ -387,7 +387,7 @@
                         'file_type' => $variant['contentType'],
                         'file_url' => $contentId . '/' . $variant['language'] . '/' . $newName
                     ];
-                    
+
                     if ($existingFile) {
                         $this->contentFilesModel->update($existingFile['id'], $fileData);
                     } else {
@@ -395,13 +395,260 @@
                     }
                 }
             }
-            
+
             // Gestione del contenuto HTML
             if (isset($variant['htmlContent']) && !empty($variant['htmlContent'])) {
                 $htmlFilePath = FCPATH . 'media/' . $contentId . '/' . $variant['language'] . '/' .
                     $contentId . '_' . $variant['language'] . '_content.html';
-                
+
                 file_put_contents($htmlFilePath, $variant['htmlContent']);
+            }
+        }
+
+        /**
+         * Elimina un contenuto e tutti i suoi dati associati
+         */
+        public function deleteContent($contentId): ResponseInterface
+        {
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            try {
+                // Verifica che il contenuto esista
+                $content = $this->contentModel->find($contentId);
+                if (!$content) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'success' => false,
+                        'error' => 'Contenuto non trovato'
+                    ]);
+                }
+
+                // Recupera tutti i file associati per eliminarli fisicamente
+                $contentFilesModel = new ContentFilesModel();
+                $files = $contentFilesModel->where('content_id', $contentId)->findAll();
+
+                // Elimina i file dal filesystem
+                foreach ($files as $file) {
+                    $filePath = FCPATH . 'media/' . $file['file_url'];
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                }
+
+                // Elimina la directory del contenuto se esiste
+                $contentDir = FCPATH . 'media/' . $contentId;
+                if (is_dir($contentDir)) {
+                    $this->deleteDirectory($contentDir);
+                }
+
+                // Elimina i record dal database (rispettando l'ordine per le foreign key)
+                $contentFilesModel->where('content_id', $contentId)->delete();
+                $this->contentMetadataModel->where('content_id', $contentId)->delete();
+                $this->shortUrlModel->where('content_id', $contentId)->delete();
+                $this->contentModel->delete($contentId);
+
+                $db->transCommit();
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Contenuto eliminato con successo'
+                ]);
+
+            } catch (\Exception $e) {
+                $db->transRollback();
+                log_message('error', 'Errore in deleteContent: ' . $e->getMessage());
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'error' => 'Si è verificato un errore durante l\'eliminazione del contenuto',
+                    'details' => $e->getMessage()
+                ]);
+            }
+        }
+
+        /**
+         * Elimina una directory ricorsivamente
+         */
+        private function deleteDirectory($dir): bool
+        {
+            if (!is_dir($dir)) {
+                return false;
+            }
+
+            $items = array_diff(scandir($dir), ['.', '..']);
+            foreach ($items as $item) {
+                $path = $dir . DIRECTORY_SEPARATOR . $item;
+                is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+            }
+
+            return rmdir($dir);
+        }
+
+        /**
+         * Sostituisce un file esistente
+         */
+        public function replaceFile(): ResponseInterface
+        {
+            try {
+                $fileId = $this->request->getPost('file_id');
+                $files = $this->request->getFiles();
+
+                if (!$fileId || empty($files['file'])) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false,
+                        'error' => 'File ID e file sono richiesti'
+                    ]);
+                }
+
+                $contentFilesModel = new ContentFilesModel();
+                $existingFile = $contentFilesModel->find($fileId);
+
+                if (!$existingFile) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'success' => false,
+                        'error' => 'File non trovato'
+                    ]);
+                }
+
+                $newFile = $files['file'];
+
+                if (!$newFile->isValid()) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false,
+                        'error' => 'Il file caricato non è valido'
+                    ]);
+                }
+
+                // Elimina il vecchio file
+                $oldFilePath = FCPATH . 'media/' . $existingFile['file_url'];
+                if (file_exists($oldFilePath)) {
+                    unlink($oldFilePath);
+                }
+
+                // Carica il nuovo file con lo stesso nome
+                $pathInfo = pathinfo($existingFile['file_url']);
+                $newName = $pathInfo['basename'];
+                $directory = $pathInfo['dirname'];
+
+                $newFile->move(FCPATH . 'media/' . $directory, $newName, true);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'File sostituito con successo',
+                    'file_url' => $existingFile['file_url']
+                ]);
+
+            } catch (\Exception $e) {
+                log_message('error', 'Errore in replaceFile: ' . $e->getMessage());
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'error' => 'Si è verificato un errore durante la sostituzione del file',
+                    'details' => $e->getMessage()
+                ]);
+            }
+        }
+
+        /**
+         * Elimina un singolo file
+         */
+        public function deleteFile($fileId): ResponseInterface
+        {
+            try {
+                $contentFilesModel = new ContentFilesModel();
+                $file = $contentFilesModel->find($fileId);
+
+                if (!$file) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'success' => false,
+                        'error' => 'File non trovato'
+                    ]);
+                }
+
+                // Elimina il file dal filesystem
+                $filePath = FCPATH . 'media/' . $file['file_url'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+
+                // Elimina il record dal database
+                $contentFilesModel->delete($fileId);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'File eliminato con successo'
+                ]);
+
+            } catch (\Exception $e) {
+                log_message('error', 'Errore in deleteFile: ' . $e->getMessage());
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'error' => 'Si è verificato un errore durante l\'eliminazione del file',
+                    'details' => $e->getMessage()
+                ]);
+            }
+        }
+
+        /**
+         * Elimina i metadati di una specifica lingua
+         */
+        public function deleteMetadata($metadataId): ResponseInterface
+        {
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            try {
+                $metadata = $this->contentMetadataModel->find($metadataId);
+
+                if (!$metadata) {
+                    return $this->response->setStatusCode(404)->setJSON([
+                        'success' => false,
+                        'error' => 'Metadati non trovati'
+                    ]);
+                }
+
+                // Elimina i file associati a questi metadati
+                $contentFilesModel = new ContentFilesModel();
+                $files = $contentFilesModel->where('metadata_id', $metadataId)->findAll();
+
+                foreach ($files as $file) {
+                    $filePath = FCPATH . 'media/' . $file['file_url'];
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                    $contentFilesModel->delete($file['id']);
+                }
+
+                // Elimina il file HTML se esiste
+                $contentId = $metadata['content_id'];
+                $language = $metadata['language'];
+                $htmlFilePath = FCPATH . 'media/' . $contentId . '/' . $language . '/' .
+                    $contentId . '_' . $language . '_content.html';
+
+                if (file_exists($htmlFilePath)) {
+                    unlink($htmlFilePath);
+                }
+
+                // Elimina i metadati
+                $this->contentMetadataModel->delete($metadataId);
+
+                $db->transCommit();
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Variante linguistica eliminata con successo'
+                ]);
+
+            } catch (\Exception $e) {
+                $db->transRollback();
+                log_message('error', 'Errore in deleteMetadata: ' . $e->getMessage());
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'error' => 'Si è verificato un errore durante l\'eliminazione dei metadati',
+                    'details' => $e->getMessage()
+                ]);
             }
         }
     }
