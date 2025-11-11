@@ -4,53 +4,182 @@
 	.variant-content.minimized { max-height: 0; }
 	.editor-content { max-height: 1000px; overflow: hidden; transition: max-height 0.5s ease-in-out; }
 	.editor-content.minimized { max-height: 0; }
+
+	/* Tab styles */
+	.tab-button {
+		padding: 0.75rem 1.5rem;
+		cursor: pointer;
+		border-bottom: 3px solid transparent;
+		transition: all 0.3s ease;
+		font-weight: 500;
+	}
+	.tab-button:hover { background-color: #f3f4f6; }
+	.tab-button.active {
+		border-bottom-color: #2563eb;
+		color: #2563eb;
+		background-color: #eff6ff;
+	}
+	.tab-content { display: none; }
+	.tab-content.active { display: block; }
+
+	/* Loading overlay */
+	.loading-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.6);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 9999;
+	}
+	.loading-content {
+		background: white;
+		padding: 2rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		text-align: center;
+	}
+	.spinner {
+		border: 4px solid #f3f4f6;
+		border-top: 4px solid #2563eb;
+		border-radius: 50%;
+		width: 48px;
+		height: 48px;
+		animation: spin 1s linear infinite;
+		margin: 0 auto 1rem;
+	}
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	/* Badge counter */
+	.badge-counter {
+		display: inline-block;
+		padding: 0.25rem 0.5rem;
+		border-radius: 9999px;
+		background-color: #2563eb;
+		color: white;
+		font-size: 0.75rem;
+		font-weight: 600;
+		margin-left: 0.5rem;
+	}
+
+	/* Card hover effect */
+	.card-item {
+		transition: all 0.2s ease;
+		border-left: 4px solid transparent;
+	}
+	.card-item:hover {
+		border-left-color: #2563eb;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
 </style>
-<div class="container mx-auto max-w-4xl p-6">
-	<form ng-submit="vm.submitForm()" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-			<div>
-				<label for="callerName" class="block mb-2 text-sm font-medium text-gray-900">Nome Chiamante</label>
-				<input type="text" id="callerName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerName" required>
+<div class="container mx-auto max-w-6xl p-6">
+	<!-- Loading Overlay -->
+	<div ng-show="vm.isSubmitting" class="loading-overlay">
+		<div class="loading-content">
+			<div class="spinner"></div>
+			<h3 class="text-lg font-semibold mb-2">Creazione in corso...</h3>
+			<p class="text-gray-600">Attendere mentre il contenuto viene salvato</p>
+		</div>
+	</div>
+
+	<form ng-submit="vm.submitForm()" class="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+		<h1 class="text-2xl font-bold mb-6 text-gray-800">Crea Nuovo Contenuto</h1>
+
+		<!-- Tab Navigation -->
+		<div class="border-b border-gray-200 mb-6">
+			<nav class="flex space-x-2">
+				<button type="button" class="tab-button" ng-class="{'active': vm.activeTab === 'base'}" ng-click="vm.setActiveTab('base')">
+					📋 Informazioni Base
+				</button>
+				<button type="button" class="tab-button" ng-class="{'active': vm.activeTab === 'variants'}" ng-click="vm.setActiveTab('variants')">
+					🌍 Varianti Linguistiche
+					<span class="badge-counter" ng-if="vm.formData.languageVariants.length > 0">{{vm.formData.languageVariants.length}}</span>
+				</button>
+				<button type="button" class="tab-button" ng-class="{'active': vm.activeTab === 'extras'}" ng-click="vm.setActiveTab('extras')">
+					🔗 Articoli e Sponsor
+					<span class="badge-counter" ng-if="vm.formData.relatedArticles.length + vm.formData.sponsors.length > 0">
+						{{vm.formData.relatedArticles.length + vm.formData.sponsors.length}}
+					</span>
+				</button>
+			</nav>
+		</div>
+
+		<!-- Tab 1: Base Information -->
+		<div class="tab-content" ng-class="{'active': vm.activeTab === 'base'}" id="base-tab">
+			<h2 class="text-xl font-semibold mb-4 text-gray-700">📝 Dati Principali</h2>
+
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+				<div>
+					<label for="callerName" class="block mb-2 text-sm font-medium text-gray-900">Nome Chiamante</label>
+					<input type="text" id="callerName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerName" ng-disabled="vm.isSubmitting" required>
+				</div>
+				<div>
+					<label for="callerTitle" class="block mb-2 text-sm font-medium text-gray-900">Sottotitolo Chiamante</label>
+					<input type="text" id="callerTitle" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerTitle" ng-disabled="vm.isSubmitting" required>
+				</div>
+				<div>
+					<label for="contentName" class="block mb-2 text-sm font-medium text-gray-900">Nome Contenuto</label>
+					<input type="text" id="contentName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentName" ng-disabled="vm.isSubmitting" required>
+				</div>
+				<div>
+					<label for="contentType" class="block mb-2 text-sm font-medium text-gray-900">Tipo di Contenuto</label>
+					<select id="contentType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentType" ng-disabled="vm.isSubmitting" required>
+						<option value="">Seleziona tipo di contenuto</option>
+						<option value="audio">Audio</option>
+						<option value="video">Video</option>
+						<option value="audio_call">Chiamata Audio</option>
+						<option value="video_call">Chiamata Video</option>
+					</select>
+				</div>
 			</div>
-			<div>
-				<label for="callerTitle" class="block mb-2 text-sm font-medium text-gray-900">Sottotitolo Chiamante</label>
-				<input type="text" id="callerTitle" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.callerTitle" required>
+
+			<div ng-if="vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call'">
+				<h2 class="text-xl font-semibold mb-4 mt-6 text-gray-700">🖼️ Immagini Chiamata</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+					<div>
+						<label for="callerBackground" class="block mb-2 text-sm font-medium text-gray-900">Sfondo Chiamante</label>
+						<input type="file" id="callerBackground" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-disabled="vm.isSubmitting">
+					</div>
+					<div>
+						<label for="callerAvatar" class="block mb-2 text-sm font-medium text-gray-900">Avatar Chiamante</label>
+						<input type="file" id="callerAvatar" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-disabled="vm.isSubmitting">
+					</div>
+				</div>
 			</div>
-			<div>
-				<label for="contentName" class="block mb-2 text-sm font-medium text-gray-900">Nome Contenuto</label>
-				<input type="text" id="contentName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentName" required>
-			</div>
-			<div>
-				<label for="contentType" class="block mb-2 text-sm font-medium text-gray-900">Tipo di Contenuto</label>
-				<select id="contentType" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="vm.formData.contentType" required>
-					<option value="">Seleziona tipo di contenuto</option>
-					<option value="audio">Audio</option>
-					<option value="video">Video</option>
-					<option value="audio_call">Chiamata Audio</option>
-					<option value="video_call">Chiamata Video</option>
-				</select>
+
+			<div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
+				<button type="button" ng-click="vm.setActiveTab('variants')" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					Continua a Varianti Linguistiche →
+				</button>
 			</div>
 		</div>
-		
-		<div ng-if="vm.formData.contentType === 'audio_call' || vm.formData.contentType === 'video_call'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-			<div>
-				<label for="callerBackground" class="block mb-2 text-sm font-medium text-gray-900">Sfondo Chiamante</label>
-				<input type="file" id="callerBackground" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
+
+		<!-- Tab 2: Language Variants -->
+		<div class="tab-content" ng-class="{'active': vm.activeTab === 'variants'}" id="variants-tab">
+			<div class="mb-6">
+				<div class="flex justify-between items-center">
+					<h2 class="text-xl font-semibold text-gray-700">🌍 Varianti Linguistiche</h2>
+					<button type="button" ng-click="vm.addLanguageVariant()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+						➕ Aggiungi Variante
+					</button>
+				</div>
+				<p class="text-sm text-gray-500 mt-2 mb-4">Aggiungi le traduzioni del contenuto in diverse lingue</p>
 			</div>
-			<div>
-				<label for="callerAvatar" class="block mb-2 text-sm font-medium text-gray-900">Avatar Chiamante</label>
-				<input type="file" id="callerAvatar" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*">
+
+			<div ng-if="vm.formData.languageVariants.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+				<p class="text-gray-500 mb-4">Nessuna variante linguistica aggiunta</p>
+				<button type="button" ng-click="vm.addLanguageVariant()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					Aggiungi Prima Variante
+				</button>
 			</div>
-		</div>
-		
-		<div class="mb-6">
-			<h2 class="text-lg font-semibold mb-2">Varianti Linguistiche</h2>
-			<button type="button" ng-click="vm.addLanguageVariant()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-				Aggiungi Variante Linguistica
-			</button>
-		</div>
-		
-		<div ng-repeat="variant in vm.formData.languageVariants" class="mb-6 p-4 border border-gray-200 rounded-lg">
+
+			<div ng-repeat="variant in vm.formData.languageVariants" class="mb-6 p-4 border border-gray-200 rounded-lg card-item bg-white">
 			<div class="flex justify-between items-center mb-4">
 				<h3 class="text-md font-semibold">
 					<span ng-if="!variant.language">Linguaggio {{$index + 1}}</span>
@@ -117,64 +246,110 @@
 					</div>
 				</div>
 				
-				<button type="button" ng-click="vm.removeLanguageVariant($index)" class="mt-4 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-					Rimuovi Variante Linguistica
+				<button type="button" ng-click="vm.removeLanguageVariant($index)" class="mt-4 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					🗑️ Rimuovi Variante
+				</button>
+			</div>
+			</div>
+
+			<div class="flex justify-between mt-6 pt-4 border-t border-gray-200">
+				<button type="button" ng-click="vm.setActiveTab('base')" class="text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					← Torna a Informazioni Base
+				</button>
+				<button type="button" ng-click="vm.setActiveTab('extras')" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					Continua a Articoli e Sponsor →
 				</button>
 			</div>
 		</div>
-		
-		<!-- New section for Related Articles -->
-		<div class="mb-6">
-			<h2 class="text-lg font-semibold mb-2">Articoli Correlati</h2>
-			<div ng-repeat="article in vm.formData.relatedArticles track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg">
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+		<!-- Tab 3: Articles and Sponsors -->
+		<div class="tab-content" ng-class="{'active': vm.activeTab === 'extras'}" id="extras-tab">
+			<!-- Related Articles -->
+			<div class="mb-8">
+				<div class="flex justify-between items-center mb-4">
 					<div>
-						<label for="articleTitle-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Titolo Articolo</label>
-						<input type="text" id="articleTitle-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.title" required>
+						<h2 class="text-xl font-semibold text-gray-700">📰 Articoli Correlati</h2>
+						<p class="text-sm text-gray-500 mt-1">Aggiungi link ad articoli correlati al contenuto</p>
 					</div>
-					<div>
-						<label for="articleLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Articolo</label>
-						<input type="url" id="articleLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.link" required>
+					<button type="button" ng-click="vm.addRelatedArticle()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+						➕ Aggiungi Articolo
+					</button>
+				</div>
+
+				<div ng-if="vm.formData.relatedArticles.length === 0" class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+					<p class="text-gray-500">Nessun articolo aggiunto</p>
+				</div>
+
+				<div ng-repeat="article in vm.formData.relatedArticles track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg card-item bg-white">
+					<div class="flex justify-between items-start mb-3">
+						<h4 class="font-medium text-gray-700">Articolo #{{$index + 1}}</h4>
+						<button type="button" ng-click="vm.removeRelatedArticle($index)" class="text-red-600 hover:text-red-800" ng-disabled="vm.isSubmitting">
+							🗑️
+						</button>
+					</div>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label for="articleTitle-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Titolo Articolo</label>
+							<input type="text" id="articleTitle-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.title" ng-disabled="vm.isSubmitting" required>
+						</div>
+						<div>
+							<label for="articleLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Articolo</label>
+							<input type="url" id="articleLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="article.link" ng-disabled="vm.isSubmitting" required>
+						</div>
 					</div>
 				</div>
-				<button type="button" ng-click="vm.removeRelatedArticle($index)" class="mt-2 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-					Rimuovi Articolo
-				</button>
 			</div>
-			<button type="button" ng-click="vm.addRelatedArticle()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-				Aggiungi Articolo Correlato
-			</button>
-		</div>
-		
-		<!-- New section for Sponsors -->
-		<div class="mb-6">
-			<h2 class="text-lg font-semibold mb-2">Sponsor</h2>
-			<div ng-repeat="sponsor in vm.formData.sponsors track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg">
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+			<!-- Sponsors -->
+			<div class="mb-8">
+				<div class="flex justify-between items-center mb-4">
 					<div>
-						<label for="sponsorName-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Nome Sponsor</label>
-						<input type="text" id="sponsorName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.name" required>
+						<h2 class="text-xl font-semibold text-gray-700">💼 Sponsor</h2>
+						<p class="text-sm text-gray-500 mt-1">Aggiungi informazioni sugli sponsor del contenuto</p>
 					</div>
-					<div>
-						<label for="sponsorLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Sponsor</label>
-						<input type="url" id="sponsorLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.link" required>
+					<button type="button" ng-click="vm.addSponsor()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+						➕ Aggiungi Sponsor
+					</button>
+				</div>
+
+				<div ng-if="vm.formData.sponsors.length === 0" class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+					<p class="text-gray-500">Nessuno sponsor aggiunto</p>
+				</div>
+
+				<div ng-repeat="sponsor in vm.formData.sponsors track by $index" class="mb-4 p-4 border border-gray-200 rounded-lg card-item bg-white">
+					<div class="flex justify-between items-start mb-3">
+						<h4 class="font-medium text-gray-700">Sponsor #{{$index + 1}}</h4>
+						<button type="button" ng-click="vm.removeSponsor($index)" class="text-red-600 hover:text-red-800" ng-disabled="vm.isSubmitting">
+							🗑️
+						</button>
 					</div>
-					<div>
-						<label for="sponsorImage-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Immagine Sponsor</label>
-						<input type="file" id="sponsorImage-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-model="sponsor.image" required>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+						<div>
+							<label for="sponsorName-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Nome Sponsor</label>
+							<input type="text" id="sponsorName-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.name" ng-disabled="vm.isSubmitting" required>
+						</div>
+						<div>
+							<label for="sponsorLink-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Link Sponsor</label>
+							<input type="url" id="sponsorLink-{{$index}}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" ng-model="sponsor.link" ng-disabled="vm.isSubmitting" required>
+						</div>
+						<div>
+							<label for="sponsorImage-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Immagine Sponsor</label>
+							<input type="file" id="sponsorImage-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-model="sponsor.image" ng-disabled="vm.isSubmitting" required>
+						</div>
 					</div>
 				</div>
-				<button type="button" ng-click="vm.removeSponsor($index)" class="mt-2 text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-					Rimuovi Sponsor
+			</div>
+
+			<!-- Navigation buttons -->
+			<div class="flex justify-between mt-6 pt-4 border-t border-gray-200">
+				<button type="button" ng-click="vm.setActiveTab('variants')" class="text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" ng-disabled="vm.isSubmitting">
+					← Torna a Varianti Linguistiche
+				</button>
+				<button type="submit" class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-8 py-2.5 text-center flex items-center" ng-disabled="vm.isSubmitting">
+					<span ng-if="!vm.isSubmitting">✅ Crea Contenuto</span>
+					<span ng-if="vm.isSubmitting">⏳ Creazione in corso...</span>
 				</button>
 			</div>
-			<button type="button" ng-click="vm.addSponsor()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-				Aggiungi Sponsor
-			</button>
-		</div>
-		
-		<div class="flex items-center justify-end">
-			<button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Invia</button>
 		</div>
 	</form>
 </div>
