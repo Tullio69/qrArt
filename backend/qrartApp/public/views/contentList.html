@@ -328,23 +328,39 @@
 								<!-- File associati (con media) - Preview -->
 								<div ng-if="!data.metadata.text_only && data.showPreview" class="mt-3">
 									<div ng-repeat="(type, file) in data.files" class="border border-gray-200 rounded-lg overflow-hidden">
-										<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
-											<div class="flex items-center gap-2">
-												<i class="fas" ng-class="{
-													'fa-file-audio text-blue-600': type === 'audio',
-													'fa-file-video text-green-600': type === 'video'
-												}"></i>
-												<div>
-													<span class="text-sm font-semibold text-gray-700">
-														Anteprima {{type === 'audio' ? 'Audio' : 'Video'}}
-													</span>
-													<p class="text-xs text-gray-500 font-mono">{{file.file_url}}</p>
+										<div class="bg-gray-50 px-3 py-2">
+											<div class="flex items-center justify-between mb-2">
+												<div class="flex items-center gap-2">
+													<i class="fas" ng-class="{
+														'fa-file-audio text-blue-600': type === 'audio',
+														'fa-file-video text-green-600': type === 'video'
+													}"></i>
+													<div>
+														<span class="text-sm font-semibold text-gray-700">
+															Anteprima {{type === 'audio' ? 'Audio' : 'Video'}}
+														</span>
+														<p class="text-xs text-gray-700"><strong>Nome contenuto:</strong> {{data.metadata.content_name}}</p>
+														<p class="text-xs text-gray-500 font-mono">File: {{file.file_url}}</p>
+													</div>
 												</div>
+												<button ng-click="toggleLanguageVariantPreview(lang, content.id)"
+														class="text-xs text-gray-600 hover:text-gray-800">
+													<i class="fas fa-times"></i> Chiudi
+												</button>
 											</div>
-											<button ng-click="toggleLanguageVariantPreview(lang, content.id)"
-													class="text-xs text-gray-600 hover:text-gray-800">
-												<i class="fas fa-times"></i> Chiudi
-											</button>
+											<!-- Link anteprima -->
+											<div class="flex gap-2">
+												<a ng-href="/content/{{content.short_code}}?lang={{lang}}"
+												   target="_blank"
+												   class="text-xs px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors inline-flex items-center">
+													<i class="fas fa-external-link-alt mr-1"></i>
+													Apri anteprima completa
+												</a>
+												<button ng-click="replaceLanguageVariantFile(data, lang)"
+														class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors border border-blue-600">
+													<i class="fas fa-exchange-alt mr-1"></i> Sostituisci file
+												</button>
+											</div>
 										</div>
 										<div class="bg-white p-3">
 											<audio ng-if="type === 'audio'"
@@ -362,15 +378,28 @@
 								<!-- Anteprima HTML - Preview -->
 								<div ng-if="data.metadata.text_only && data.metadata.showHtml && data.metadata.html_content" class="mt-3">
 									<div class="border border-gray-200 rounded-lg overflow-hidden">
-										<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
-											<div class="flex items-center gap-2">
-												<i class="fas fa-code text-yellow-600"></i>
-												<span class="text-sm font-semibold text-gray-700">Anteprima Contenuto HTML</span>
+										<div class="bg-gray-50 px-3 py-2">
+											<div class="flex items-center justify-between mb-2">
+												<div class="flex items-center gap-2">
+													<i class="fas fa-code text-yellow-600"></i>
+													<div>
+														<span class="text-sm font-semibold text-gray-700">Anteprima Contenuto HTML</span>
+														<p class="text-xs text-gray-700"><strong>Nome contenuto:</strong> {{data.metadata.content_name}}</p>
+													</div>
+												</div>
+												<button ng-click="toggleHtmlPreview(data.metadata.id)"
+														class="text-xs text-gray-600 hover:text-gray-800">
+													<i class="fas fa-times"></i> Chiudi
+												</button>
 											</div>
-											<button ng-click="toggleHtmlPreview(data.metadata.id)"
-													class="text-xs text-gray-600 hover:text-gray-800">
-												<i class="fas fa-times"></i> Chiudi
-											</button>
+											<!-- Pulsante modifica -->
+											<div class="flex gap-2">
+												<button ng-click="openEditModal(content)"
+														class="text-xs px-3 py-1.5 bg-orange-600 text-white hover:bg-orange-700 rounded transition-colors inline-flex items-center">
+													<i class="fas fa-edit mr-1"></i>
+													Modifica HTML
+												</button>
+											</div>
 										</div>
 										<div class="bg-white p-4 max-h-96 overflow-y-auto">
 											<div ng-bind-html="data.metadata.html_content" class="prose prose-sm max-w-none"></div>
