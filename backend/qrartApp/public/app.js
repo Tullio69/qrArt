@@ -745,7 +745,46 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 });
             };
 
-            // Toggle preview media
+            // Toggle preview per file globali (avatar, background)
+            $scope.toggleGlobalFilePreview = function(fileId) {
+                $scope.contents.forEach(function(content) {
+                    if (content.globalFiles) {
+                        content.globalFiles.forEach(function(file) {
+                            if (file.id === fileId) {
+                                file.showPreview = !file.showPreview;
+                            }
+                        });
+                    }
+                });
+            };
+
+            // Toggle preview per varianti linguistiche (audio/video)
+            $scope.toggleLanguageVariantPreview = function(lang, contentId) {
+                $scope.contents.forEach(function(content) {
+                    if (content.id === contentId && content.perLanguage && content.perLanguage[lang]) {
+                        content.perLanguage[lang].showPreview = !content.perLanguage[lang].showPreview;
+                    }
+                });
+            };
+
+            // Sostituisci file di una variante linguistica
+            $scope.replaceLanguageVariantFile = function(data, lang) {
+                // Trova il file da sostituire (audio o video)
+                var fileToReplace = null;
+                if (data.files.audio) {
+                    fileToReplace = data.files.audio;
+                } else if (data.files.video) {
+                    fileToReplace = data.files.video;
+                }
+
+                if (fileToReplace) {
+                    $scope.replaceFile(fileToReplace);
+                } else {
+                    console.warn('Nessun file media trovato per la variante linguistica:', lang);
+                }
+            };
+
+            // Toggle preview media (mantenuto per retrocompatibilità)
             $scope.toggleMediaPreview = function(fileId) {
                 // Trova il file e toggle lo stato
                 $scope.contents.forEach(function(content) {

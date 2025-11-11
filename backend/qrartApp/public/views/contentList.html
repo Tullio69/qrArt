@@ -208,8 +208,8 @@
 						</h4>
 						<div class="bg-white rounded-lg p-4 space-y-3">
 							<div ng-repeat="file in content.globalFiles" class="border border-gray-200 rounded-lg p-3">
-								<div class="flex items-start justify-between mb-3">
-									<div class="flex items-center gap-3">
+								<div class="flex items-start justify-between">
+									<div class="flex items-center gap-3 cursor-pointer" ng-click="toggleGlobalFilePreview(file.id)">
 										<i class="fas text-xl" ng-class="{
 											'fa-user-circle text-purple-600': file.file_type === 'callerAvatar',
 											'fa-image text-green-600': file.file_type === 'callerBackground'
@@ -232,8 +232,8 @@
 										</button>
 									</div>
 								</div>
-								<!-- Preview Immagine -->
-								<div class="flex justify-center bg-gray-50 rounded-lg p-3">
+								<!-- Preview Immagine (visibile solo al click) -->
+								<div ng-if="file.showPreview" class="flex justify-center bg-gray-50 rounded-lg p-3 mt-3">
 									<img ng-src="{{base_url}}/media/{{file.file_url}}"
 										 class="max-h-32 border-2 border-gray-300"
 										 ng-class="file.file_type === 'callerAvatar' ? 'rounded-full' : 'rounded-lg'"
@@ -254,99 +254,104 @@
 								 class="bg-white rounded-lg p-3">
 								<div class="flex items-center justify-between mb-2">
 									<h5 class="font-medium text-gray-900 flex items-center gap-2">
-										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase">{{lang}}</span>
-										{{getLanguageName(lang)}}
+										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase cursor-pointer"
+											  ng-click="data.metadata.text_only ? toggleHtmlPreview(data.metadata.id) : toggleLanguageVariantPreview(lang, content.id)">
+											{{lang}}
+										</span>
+										<span>{{getLanguageName(lang)}}</span>
+										<!-- Badge tipo contenuto -->
+										<span class="px-2 py-1 rounded text-xs"
+											  ng-class="{
+												'bg-yellow-100 text-yellow-800': data.metadata.text_only,
+												'bg-blue-100 text-blue-800': !data.metadata.text_only && data.files.audio,
+												'bg-green-100 text-green-800': !data.metadata.text_only && data.files.video
+											  }">
+											<i class="fas" ng-class="{
+												'fa-code': data.metadata.text_only,
+												'fa-file-audio': !data.metadata.text_only && data.files.audio,
+												'fa-file-video': !data.metadata.text_only && data.files.video
+											}"></i>
+											{{data.metadata.text_only ? 'HTML' : (data.files.audio ? 'Audio' : 'Video')}}
+										</span>
 									</h5>
-									<button ng-click="deleteMetadata(data.metadata.id)"
-											class="text-xs px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors">
-										<i class="fas fa-trash-alt mr-1"></i> Elimina Variante
-									</button>
+									<div class="flex gap-2">
+										<!-- Pulsante Modifica HTML / Sostituisci -->
+										<button ng-if="data.metadata.text_only"
+												ng-click="openEditModal(content)"
+												class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
+											<i class="fas fa-edit mr-1"></i> Modifica HTML
+										</button>
+										<button ng-if="!data.metadata.text_only"
+												ng-click="replaceLanguageVariantFile(data, lang)"
+												class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
+											<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
+										</button>
+										<!-- Pulsante Elimina Variante -->
+										<button ng-click="deleteMetadata(data.metadata.id)"
+												class="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors">
+											<i class="fas fa-trash-alt mr-1"></i> Elimina Variante
+										</button>
+									</div>
 								</div>
 
 								<!-- Metadata info -->
-								<div class="mb-3 text-sm">
+								<div class="mb-2 text-sm">
 									<p class="text-gray-700"><strong>Nome:</strong> {{data.metadata.content_name}}</p>
 									<p class="text-gray-700" ng-if="data.metadata.description">
 										<strong>Descrizione:</strong> {{data.metadata.description}}
 									</p>
-									<span class="inline-block mt-2 px-2 py-1 rounded text-xs"
-										  ng-class="data.metadata.text_only ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'">
-										<i class="fas" ng-class="data.metadata.text_only ? 'fa-file-alt' : 'fa-file-audio'"></i>
-										{{data.metadata.text_only ? 'Solo Testo' : 'Con Media'}}
-									</span>
 								</div>
 
-								<!-- Contenuto HTML (solo testo) -->
-								<div ng-if="data.metadata.text_only" class="mt-3">
-									<div class="border border-gray-200 rounded-lg overflow-hidden">
-										<div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 flex justify-between items-center">
+								<!-- Contenuto HTML (solo testo) - Preview -->
+								<div ng-if="data.metadata.text_only && data.metadata.showHtml" class="mt-3">
+									<div class="border border-gray-200 rounded-lg overflow-hidden bg-gradient-to-r from-yellow-50 to-orange-50">
+										<div class="px-3 py-2 flex justify-between items-center border-b border-yellow-200">
 											<span class="text-sm font-semibold text-gray-700">
-												<i class="fas fa-code mr-1"></i> Contenuto HTML
+												<i class="fas fa-code mr-1"></i> Anteprima Contenuto HTML
 											</span>
 											<button ng-click="toggleHtmlPreview(data.metadata.id)"
-													class="text-xs text-blue-600 hover:text-blue-800">
-												<i class="fas" ng-class="data.metadata.showHtml ? 'fa-eye-slash' : 'fa-eye'"></i>
-												{{data.metadata.showHtml ? 'Nascondi' : 'Mostra'}}
+													class="text-xs text-gray-600 hover:text-gray-800">
+												<i class="fas fa-times"></i> Chiudi
 											</button>
 										</div>
-										<div ng-if="data.metadata.showHtml" class="bg-white p-3">
+										<div class="bg-white p-3">
 											<div class="bg-gray-50 border border-gray-200 rounded p-3 max-h-48 overflow-y-auto">
 												<pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap">{{data.metadata.html_content || 'Nessun contenuto HTML'}}</pre>
-											</div>
-											<div class="mt-2 flex gap-2">
-												<button ng-click="openEditModal(content)"
-														class="text-xs px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors">
-													<i class="fas fa-edit mr-1"></i> Modifica con Editor
-												</button>
 											</div>
 										</div>
 									</div>
 								</div>
 
-								<!-- File associati (con media) -->
-								<div ng-if="!data.metadata.text_only && Object.keys(data.files).length > 0" class="mt-3">
-									<div class="space-y-2">
-										<div ng-repeat="(type, file) in data.files"
-											 class="border border-gray-200 rounded-lg overflow-hidden">
-											<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
-												<div class="flex items-center gap-2">
-													<i class="fas" ng-class="{
-														'fa-file-audio text-blue-600': type === 'audio',
-														'fa-file-video text-green-600': type === 'video'
-													}"></i>
-													<div>
-														<span class="text-sm font-semibold text-gray-700">
-															{{type === 'audio' ? 'File Audio' : 'File Video'}}
-														</span>
-														<p class="text-xs text-gray-500 font-mono">{{file.file_url}}</p>
-													</div>
-												</div>
-												<div class="flex gap-1">
-													<button ng-click="toggleMediaPreview(file.id)"
-															class="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-														<i class="fas" ng-class="file.showPreview ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-													</button>
-													<button ng-click="replaceFile(file)"
-															class="px-2 py-1 text-blue-600 hover:bg-blue-50 rounded">
-														<i class="fas fa-exchange-alt"></i>
-													</button>
-													<button ng-click="deleteFile(file.id)"
-															class="px-2 py-1 text-red-600 hover:bg-red-50 rounded">
-														<i class="fas fa-trash-alt"></i>
-													</button>
+								<!-- File associati (con media) - Preview -->
+								<div ng-if="!data.metadata.text_only && data.showPreview" class="mt-3">
+									<div ng-repeat="(type, file) in data.files" class="border border-gray-200 rounded-lg overflow-hidden">
+										<div class="bg-gray-50 px-3 py-2 flex justify-between items-center">
+											<div class="flex items-center gap-2">
+												<i class="fas" ng-class="{
+													'fa-file-audio text-blue-600': type === 'audio',
+													'fa-file-video text-green-600': type === 'video'
+												}"></i>
+												<div>
+													<span class="text-sm font-semibold text-gray-700">
+														Anteprima {{type === 'audio' ? 'Audio' : 'Video'}}
+													</span>
+													<p class="text-xs text-gray-500 font-mono">{{file.file_url}}</p>
 												</div>
 											</div>
-											<!-- Preview Media -->
-											<div ng-if="file.showPreview" class="bg-white p-3">
-												<audio ng-if="type === 'audio'"
-													   controls
-													   class="w-full"
-													   ng-src="{{base_url}}/media/{{file.file_url}}"></audio>
-												<video ng-if="type === 'video'"
-													   controls
-													   class="w-full max-h-64 rounded"
-													   ng-src="{{base_url}}/media/{{file.file_url}}"></video>
-											</div>
+											<button ng-click="toggleLanguageVariantPreview(lang, content.id)"
+													class="text-xs text-gray-600 hover:text-gray-800">
+												<i class="fas fa-times"></i> Chiudi
+											</button>
+										</div>
+										<div class="bg-white p-3">
+											<audio ng-if="type === 'audio'"
+												   controls
+												   class="w-full"
+												   ng-src="{{base_url}}/media/{{file.file_url}}"></audio>
+											<video ng-if="type === 'video'"
+												   controls
+												   class="w-full max-h-64 rounded"
+												   ng-src="{{base_url}}/media/{{file.file_url}}"></video>
 										</div>
 									</div>
 								</div>
