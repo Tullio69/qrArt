@@ -635,63 +635,135 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 }
             };
 
-            $scope.selectedFile = null;
-
-            $scope.isReplaceFileModalOpen = false;
-            $scope.selectedFile = null;
-
-// Aprire il modale con Tailwind
-            $scope.openReplaceFileModal = function (file) {
-                $scope.selectedFile = file;
-                $scope.isReplaceFileModalOpen = true;
-            };
-
-// Chiudere il modale
-            $scope.closeReplaceFileModal = function () {
-                $scope.isReplaceFileModalOpen = false;
-            };
-
-// Sostituire il file
-            $scope.replaceFile = function (file) {
-                alert("🔄 Sostituzione file per: " + file.file_name + " (ID: " + file.id + ")");
-            };
-
-
-            // Inizializza la lista dei contenuti
-            $scope.loadContents();
-
+            // Gestione modal sostituzione file
             $scope.modalVisible = false;
             $scope.selectedFileToReplace = null;
             $scope.newFile = null;
+            $scope.replacingFile = false;
+            $scope.replaceSuccess = false;
+            $scope.replaceError = null;
 
+            // Apre il modal di sostituzione file
             $scope.replaceFile = function (file) {
                 $scope.selectedFileToReplace = file;
                 $scope.newFile = null;
+                $scope.replacingFile = false;
+                $scope.replaceSuccess = false;
+                $scope.replaceError = null;
                 $scope.modalVisible = true;
+
+                // Reset input file
+                $timeout(function() {
+                    var fileInput = document.getElementById('file-input-replace');
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                }, 100);
             };
 
+            // Chiude il modal e resetta lo stato
+            $scope.closeReplaceModal = function () {
+                $scope.modalVisible = false;
+                $scope.selectedFileToReplace = null;
+                $scope.newFile = null;
+                $scope.replacingFile = false;
+                $scope.replaceSuccess = false;
+                $scope.replaceError = null;
+            };
+
+            // Determina il tipo di file accettato in base al tipo
+            $scope.getAcceptType = function(fileType) {
+                if (!fileType) return '*/*';
+                if (fileType === 'audio' || fileType === 'audio_call') return 'audio/*';
+                if (fileType === 'video' || fileType === 'video_call') return 'video/*';
+                if (fileType === 'callerAvatar' || fileType === 'callerBackground') return 'image/*';
+                return '*/*';
+            };
+
+            // Conferma sostituzione file con feedback
             $scope.confirmReplace = function () {
                 if (!$scope.newFile) {
-                    alert("Seleziona un file prima di confermare.");
+                    $scope.replaceError = "Seleziona un file prima di confermare.";
                     return;
                 }
+
+                $scope.replacingFile = true;
+                $scope.replaceSuccess = false;
+                $scope.replaceError = null;
 
                 const formData = new FormData();
                 formData.append('file', $scope.newFile);
                 formData.append('file_id', $scope.selectedFileToReplace.id);
 
                 $http.post($scope.base_url + '/api/content/replaceFile', formData, {
-                    headers: { 'Content-Type': undefined } // lascia che il browser imposti multipart/form-data
-                }).then(response => {
-                    alert("File sostituito con successo!");
-                    $scope.modalVisible = false;
-                    $scope.newFile = null;
-                    // puoi ricaricare i dati del content se vuoi
-                }).catch(err => {
-                    alert("Errore durante la sostituzione del file.");
-                    console.error(err);
+                    headers: { 'Content-Type': undefined }
+                }).then(function(response) {
+                    $scope.replaceSuccess = true;
+                    $scope.replacingFile = false;
+
+                    // Chiudi il modal dopo 1.5 secondi
+                    $timeout(function() {
+                        $scope.closeReplaceModal();
+                        $scope.successMessage = "✅ File sostituito con successo!";
+
+                        // Ricarica i dettagli del contenuto espanso
+                        var expandedContent = $scope.contents.find(c => c.id === $scope.expandedContentId);
+                        if (expandedContent) {
+                            $scope.toggleDetails(expandedContent);
+                            $timeout(function() {
+                                $scope.toggleDetails(expandedContent);
+                            }, 100);
+                        }
+
+                        $timeout(function() {
+                            $scope.successMessage = null;
+                        }, 3000);
+                    }, 1500);
+                }).catch(function(err) {
+                    $scope.replacingFile = false;
+                    var errorMsg = "Errore durante la sostituzione del file.";
+                    if (err.data && err.data.error) {
+                        errorMsg = err.data.error;
+                    }
+                    $scope.replaceError = errorMsg;
+                    console.error('Replace error:', err);
                 });
             };
+
+            // Toggle preview HTML content
+            $scope.toggleHtmlPreview = function(metadataId) {
+                // Trova il metadata e toggle lo stato
+                $scope.contents.forEach(function(content) {
+                    if (content.perLanguage) {
+                        Object.keys(content.perLanguage).forEach(function(lang) {
+                            if (content.perLanguage[lang].metadata.id === metadataId) {
+                                content.perLanguage[lang].metadata.showHtml =
+                                    !content.perLanguage[lang].metadata.showHtml;
+                            }
+                        });
+                    }
+                });
+            };
+
+            // Toggle preview media
+            $scope.toggleMediaPreview = function(fileId) {
+                // Trova il file e toggle lo stato
+                $scope.contents.forEach(function(content) {
+                    if (content.perLanguage) {
+                        Object.keys(content.perLanguage).forEach(function(lang) {
+                            var files = content.perLanguage[lang].files;
+                            Object.keys(files).forEach(function(type) {
+                                if (files[type].id === fileId) {
+                                    files[type].showPreview = !files[type].showPreview;
+                                }
+                            });
+                        });
+                    }
+                });
+            };
+
+            // Inizializza la lista dei contenuti
+            $scope.loadContents();
 
         }
     ])
