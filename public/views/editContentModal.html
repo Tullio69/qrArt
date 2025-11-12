@@ -214,22 +214,22 @@
 										ng-click="variant.htmlMinimized = !variant.htmlMinimized"
 										class="text-xs text-blue-600 hover:text-blue-800">
 									<i class="fas" ng-class="variant.htmlMinimized ? 'fa-expand' : 'fa-compress'"></i>
-									{{variant.htmlMinimized ? 'Espandi' : 'Comprimi'}}
+									{{variant.htmlMinimized ? 'Espandi Editor' : 'Comprimi Editor'}}
 								</button>
 							</div>
 							<div ng-if="!variant.htmlMinimized">
-								<textarea ng-model="variant.html_content"
-										  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-										  rows="8"
-										  placeholder="Inserisci il contenuto HTML..."></textarea>
-								<p class="text-xs text-gray-500 mt-1">
+								<div class="bg-white border border-gray-300 rounded-lg p-2">
+									<wysiwyg-editor content="variant.html_content"></wysiwyg-editor>
+								</div>
+								<p class="text-xs text-gray-500 mt-2">
 									<i class="fas fa-info-circle"></i>
-									Puoi utilizzare tag HTML per formattare il contenuto
+									Utilizza l'editor WYSIWYG per formattare il contenuto HTML in modo visuale
 								</p>
 							</div>
 							<div ng-if="variant.htmlMinimized" class="text-center py-4 bg-gray-100 rounded border-2 border-dashed border-gray-300">
-								<i class="fas fa-code text-gray-400 text-2xl mb-2"></i>
-								<p class="text-sm text-gray-500">Editor HTML minimizzato</p>
+								<i class="fas fa-edit text-gray-400 text-2xl mb-2"></i>
+								<p class="text-sm text-gray-500">Editor WYSIWYG minimizzato</p>
+								<p class="text-xs text-gray-400 mt-1">Clicca su "Espandi Editor" per modificare</p>
 							</div>
 						</div>
 					</div>
