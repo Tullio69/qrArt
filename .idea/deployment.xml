@@ -20,7 +20,7 @@
       <paths name="QrArt">
         <serverdata>
           <mappings>
-            <mapping deploy="/qrArtApp" local="$PROJECT_DIR$/backend/qrartApp" web="/" />
+            <mapping deploy="/qrart" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
