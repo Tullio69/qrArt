@@ -460,17 +460,129 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 formData.append('file', $scope.newFile);
                 formData.append('file_id', $scope.selectedFileToReplace.id);
 
+                $scope.replacingFile = true;
+                $scope.replaceError = null;
+                $scope.replaceSuccess = false;
+
                 $http.post($scope.base_url + '/api/content/replaceFile', formData, {
-                    headers: { 'Content-Type': undefined } // lascia che il browser imposti multipart/form-data
+                    headers: { 'Content-Type': undefined }
                 }).then(response => {
-                    alert("File sostituito con successo!");
-                    $scope.modalVisible = false;
-                    $scope.newFile = null;
-                    // puoi ricaricare i dati del content se vuoi
+                    $scope.replaceSuccess = true;
+                    $scope.replacingFile = false;
+                    $timeout(function() {
+                        $scope.modalVisible = false;
+                        $scope.newFile = null;
+                        $scope.replaceSuccess = false;
+                        $scope.loadContents();
+                    }, 1500);
                 }).catch(err => {
-                    alert("Errore durante la sostituzione del file.");
+                    $scope.replaceError = "Errore durante la sostituzione del file.";
+                    $scope.replacingFile = false;
                     console.error(err);
                 });
+            };
+
+            $scope.closeReplaceModal = function() {
+                $scope.modalVisible = false;
+                $scope.newFile = null;
+                $scope.replaceError = null;
+                $scope.replaceSuccess = false;
+            };
+
+            $scope.handleFileSelect = function(file) {
+                $scope.$apply(function() {
+                    $scope.newFile = file;
+                });
+            };
+
+            $scope.getAcceptType = function(fileType) {
+                if (!fileType) return '*';
+                if (fileType === 'audio' || fileType === 'audio_call') return 'audio/*';
+                if (fileType === 'video' || fileType === 'video_call') return 'video/*';
+                if (fileType === 'callerAvatar' || fileType === 'callerBackground') return 'image/*';
+                return '*';
+            };
+
+            $scope.getLanguageName = function(languageCode) {
+                const languageMap = {
+                    'it': 'Italiano',
+                    'en': 'Inglese',
+                    'es': 'Spagnolo',
+                    'fr': 'Francese',
+                    'de': 'Tedesco',
+                    'sv': 'Svedese'
+                };
+                return languageMap[languageCode] || languageCode;
+            };
+
+            $scope.toggleGlobalFilePreview = function(fileId) {
+                $scope.contents.forEach(function(content) {
+                    if (content.globalFiles) {
+                        content.globalFiles.forEach(function(file) {
+                            if (file.id === fileId) {
+                                file.showPreview = !file.showPreview;
+                            }
+                        });
+                    }
+                });
+            };
+
+            $scope.toggleLanguageVariantPreview = function(lang, contentId) {
+                var content = $scope.contents.find(c => c.id === contentId);
+                if (content && content.perLanguage && content.perLanguage[lang]) {
+                    content.perLanguage[lang].showPreview = !content.perLanguage[lang].showPreview;
+                }
+            };
+
+            $scope.toggleHtmlPreview = function(metadataId) {
+                $scope.contents.forEach(function(content) {
+                    if (content.perLanguage) {
+                        Object.keys(content.perLanguage).forEach(function(lang) {
+                            var metadata = content.perLanguage[lang].metadata;
+                            if (metadata && metadata.id === metadataId) {
+                                metadata.showHtml = !metadata.showHtml;
+                            }
+                        });
+                    }
+                });
+            };
+
+            $scope.copyToClipboard = function(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        alert('Short code copiato negli appunti: ' + text);
+                    }).catch(function(err) {
+                        console.error('Errore nella copia:', err);
+                        fallbackCopyToClipboard(text);
+                    });
+                } else {
+                    fallbackCopyToClipboard(text);
+                }
+            };
+
+            function fallbackCopyToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.top = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Short code copiato negli appunti: ' + text);
+                } catch (err) {
+                    console.error('Errore nella copia:', err);
+                    alert('Impossibile copiare negli appunti. Copia manualmente: ' + text);
+                }
+                document.body.removeChild(textArea);
+            }
+
+            $scope.replaceLanguageVariantFile = function(data, lang) {
+                var file = data.files.audio || data.files.video;
+                if (file) {
+                    $scope.replaceFile(file);
+                }
             };
 
         }
