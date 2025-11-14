@@ -1,25 +1,28 @@
 <?php
     
     namespace App\Controllers;
-    
+
     use CodeIgniter\Controller;
     use CodeIgniter\HTTP\ResponseInterface;
     use App\Models\ContentModel;
     use App\Models\ShortUrlModel; // Aggiunto import mancante
     use App\Models\ContentMetadataModel;
     use App\Models\ContentFilesModel;  // ✅ Import corretto
+    use App\Libraries\AnalyticsEventService;
     
     class ContentController extends Controller
     {
         protected $shortUrlModel;
         protected $contentModel;
         protected $contentMetadataModel;
-        
+        protected $analyticsService;
+
         public function __construct()
         {
             $this->contentModel = new ContentModel();
             $this->shortUrlModel = new ShortUrlModel(); // Aggiunta inizializzazione mancante
             $this->contentMetadataModel = new ContentMetadataModel();
+            $this->analyticsService = new AnalyticsEventService();
         }
         
         public function handleShortCode($shortCode): ResponseInterface
@@ -78,14 +81,21 @@
         {
             try {
                 $htmlContent = $this->contentModel->getHtmlContent($contentId, $language);
-                
+
                 if (empty($htmlContent)) {
                     return $this->response->setStatusCode(404)->setJSON([
                         'status' => 404,
                         'error' => 'Contenuto HTML non trovato'
                     ]);
                 }
-                
+
+                // Traccia accesso al contenuto HTML
+                $this->analyticsService->trackEvent('content_view', [
+                    'content_id' => $contentId,
+                    'language' => $language,
+                    'metadata' => ['content_type' => 'html']
+                ]);
+
                 return $this->response->setJSON([
                     'status' => 200,
                     'content_name' => $htmlContent['content_name'],
@@ -105,13 +115,20 @@
             try {
                 // Recupera il contentId dallo shortcode
                 $contentId = $this->shortUrlModel->getContentIdByShortCode($shortCode);
-                
+
                 if (!$contentId) {
                     return $this->response->setStatusCode(404)->setJSON([
                         'status' => 404,
                         'error' => 'Content not found'
                     ]);
                 }
+
+                // Traccia evento di scansione QR code
+                $this->analyticsService->trackEvent('qr_scan', [
+                    'content_id' => $contentId,
+                    'short_code' => $shortCode
+                ]);
+
                 $result = $this->contentModel->getContentWithRelations($contentId);
               
                 $rawData = $result['content'];

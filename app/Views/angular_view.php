@@ -42,6 +42,7 @@
     var contentId = <?= isset($contentId) ? json_encode($contentId) : 'null'; ?>;
 </script>
 <script src="app.js"></script>
+<script src="services/analyticsService.js"></script>
 <script src="components/audioPlayer/audioPlayer.js"></script>
 <script src="components/videoPlayer/videoPlayer.js"></script>
 <script src="components/htmlContent/htmlContent.js"></script>

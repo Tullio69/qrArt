@@ -31,6 +31,16 @@ use CodeIgniter\Router\RouteCollection;
     $routes->get('media/audio/(:any)', 'MediaController::serveAudio/$1');
     $routes->get('content/html/(:num)/(:alpha)', 'ContentController::getHtmlContent/$1/$2');
     $routes->get('analytics/overview', 'AnalyticsController::overview');
+
+    // Analytics API - New endpoints
+    $routes->post('api/analytics/track', 'AnalyticsController::trackEvent');
+    $routes->get('api/analytics/stats/overview', 'AnalyticsController::getStatsOverview');
+    $routes->get('api/analytics/stats', 'AnalyticsController::getStats');
+    $routes->get('api/analytics/metrics', 'AnalyticsController::getMetrics');
+    $routes->get('api/analytics/sessions', 'AnalyticsController::getSessions');
+    $routes->get('api/analytics/content/(:num)', 'AnalyticsController::getContentStats/$1');
+    $routes->get('api/analytics/content/(:num)/events', 'AnalyticsController::getContentEvents/$1');
+    $routes->get('analytics/dashboard', 'AnalyticsController::dashboard');
 // Rotte per l'applicazione principale
  
         // Rotte specifiche per AngularJS
