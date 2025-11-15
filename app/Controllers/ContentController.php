@@ -266,11 +266,7 @@
                     $this->handleLanguageVariantUpdate($variant, $contentId, $files);
                 }
                 
-                // Commit della transazione
                 $db->transCommit();
-                
-                // Recupera i dati aggiornati
-                $updatedContent = $this->getContentData($shortCode);
                 
                 return $this->response->setJSON([
                     'success' => true,
@@ -286,6 +282,50 @@
                     'success' => false,
                     'error' => 'Si è verificato un errore durante l\'aggiornamento del contenuto'
                 ]);
+            }
+        }
+        
+        public function updateHtmlContent($contentId): ResponseInterface
+        {
+            $db = \Config\Database::connect();
+            $db->transStart();
+            
+            try {
+                $data = $this->request->getJSON(true);
+                
+                // Aggiorna content
+                $this->contentModel->update($contentId, [
+                    'caller_name' => $data['caller_name'],
+                    'caller_title' => $data['caller_title']
+                ]);
+                
+                // Aggiorna metadata
+                if (isset($data['metadata'])) {
+                    foreach ($data['metadata'] as $meta) {
+                        $this->contentMetadataModel->update($meta['id'], [
+                            'content_name' => $meta['content_name'],
+                            'description' => $meta['description'],
+                            'html_content' => $meta['html_content'],
+                            'text_only' => $meta['text_only']
+                        ]);
+                    }
+                }
+                
+                $db->transCommit();
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Contenuto aggiornato con successo'
+                ]);
+                
+            } catch (\Exception $e) {
+                $db->transRollback();
+                log_message('error', 'Errore update: ' . $e->getMessage());
+                
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ])->setStatusCode(500);
             }
         }
         
