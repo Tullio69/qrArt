@@ -71,14 +71,20 @@
                     'content_name' => $formData['contentName'],
                     'content_type' => $formData['contentType']
                 ];
-                
+
+                log_message('debug', 'Tentativo di inserimento content: ' . json_encode($contentData));
+
                 $contentId = $contentModel->insert($contentData);
 
-                $contentDir = $this->createContentDirectory($contentId);
-
                 if (!$contentId) {
-                    throw new Exception('Errore nella creazione del nuovo content');
+                    $errors = $contentModel->errors();
+                    log_message('error', 'Errore inserimento content: ' . json_encode($errors));
+                    throw new Exception('Errore nella creazione del nuovo content: ' . json_encode($errors));
                 }
+
+                log_message('debug', 'Content creato con ID: ' . $contentId);
+
+                $contentDir = $this->createContentDirectory($contentId);
 
                 // Handle common files first
                 $this->handleCommonFiles($files, $contentDir, $contentId);
