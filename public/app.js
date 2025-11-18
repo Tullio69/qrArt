@@ -473,6 +473,107 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 });
             };
 
+            // Add Language Variant Modal Functions
+            $scope.addLanguageVariantModalVisible = false;
+            $scope.selectedContentForLanguage = null;
+            $scope.newLanguageVariant = {};
+            $scope.addingLanguageVariant = false;
+            $scope.addLanguageSuccess = false;
+            $scope.addLanguageError = null;
+
+            $scope.openAddLanguageVariantModal = function(content) {
+                $scope.selectedContentForLanguage = content;
+                $scope.newLanguageVariant = {
+                    language: '',
+                    contentName: '',
+                    description: '',
+                    textOnly: false,
+                    file: null,
+                    htmlContent: ''
+                };
+                $scope.addLanguageSuccess = false;
+                $scope.addLanguageError = null;
+                $scope.addLanguageVariantModalVisible = true;
+            };
+
+            $scope.closeAddLanguageVariantModal = function() {
+                $scope.addLanguageVariantModalVisible = false;
+                $scope.selectedContentForLanguage = null;
+                $scope.newLanguageVariant = {};
+
+                // Reset file input
+                var fileInput = document.getElementById('language-variant-file-input');
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+
+                // If success, reload the content details
+                if ($scope.addLanguageSuccess) {
+                    $scope.loadContents();
+                }
+            };
+
+            $scope.handleLanguageVariantFileSelect = function(file) {
+                $scope.$apply(function() {
+                    $scope.newLanguageVariant.file = file;
+                });
+            };
+
+            $scope.isLanguageVariantFormValid = function() {
+                if (!$scope.newLanguageVariant.language || !$scope.newLanguageVariant.contentName) {
+                    return false;
+                }
+
+                if ($scope.newLanguageVariant.textOnly) {
+                    return !!$scope.newLanguageVariant.htmlContent;
+                } else {
+                    return !!$scope.newLanguageVariant.file;
+                }
+            };
+
+            $scope.confirmAddLanguageVariant = function() {
+                if (!$scope.isLanguageVariantFormValid()) {
+                    return;
+                }
+
+                $scope.addingLanguageVariant = true;
+                $scope.addLanguageError = null;
+                $scope.addLanguageSuccess = false;
+
+                var formData = new FormData();
+                formData.append('contentId', $scope.selectedContentForLanguage.id);
+                formData.append('language', $scope.newLanguageVariant.language);
+                formData.append('contentName', $scope.newLanguageVariant.contentName);
+                formData.append('description', $scope.newLanguageVariant.description);
+                formData.append('textOnly', $scope.newLanguageVariant.textOnly ? '1' : '0');
+
+                if ($scope.newLanguageVariant.textOnly) {
+                    formData.append('htmlContent', $scope.newLanguageVariant.htmlContent);
+                } else {
+                    formData.append('file', $scope.newLanguageVariant.file);
+                }
+
+                $http.post($scope.base_url + '/api/qrart/addLanguageVariant', formData, {
+                    headers: { 'Content-Type': undefined }
+                }).then(function(response) {
+                    console.log('✅ Variante linguistica aggiunta:', response.data);
+                    $scope.addLanguageSuccess = true;
+                    $scope.addingLanguageVariant = false;
+
+                    // Close modal after 1.5 seconds
+                    $timeout(function() {
+                        $scope.closeAddLanguageVariantModal();
+                    }, 1500);
+
+                }).catch(function(error) {
+                    console.error('❌ Errore aggiunta variante:', error);
+                    $scope.addLanguageError = error.data && error.data.message
+                        ? error.data.message
+                        : 'Errore durante l\'aggiunta della variante linguistica';
+                    $scope.addingLanguageVariant = false;
+                });
+            };
+
         }
     ])
     .controller('EditContentModalController', [
