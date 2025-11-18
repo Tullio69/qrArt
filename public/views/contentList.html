@@ -250,10 +250,10 @@
 								<i class="fas fa-language mr-2 text-purple-600"></i>
 								Varianti Linguistiche
 							</h4>
-							<button ng-click="openAddLanguageVariantModal(content)"
-									class="px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded transition-colors text-sm flex items-center">
+							<a ng-href="#!/editor?contentId={{content.id}}"
+							   class="px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded transition-colors text-sm flex items-center">
 								<i class="fas fa-plus mr-1"></i> Aggiungi Lingua
-							</button>
+							</a>
 						</div>
 						<div class="space-y-3">
 							<div ng-repeat="(lang, data) in content.perLanguage"
@@ -538,162 +538,6 @@
 						ng-class="(!newFile || replacingFile) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'">
 					<i class="fas mr-2" ng-class="replacingFile ? 'fa-spinner fa-spin' : 'fa-check'"></i>
 					{{replacingFile ? 'Caricamento...' : 'Conferma'}}
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal per aggiunta variante linguistica -->
-	<div ng-if="addLanguageVariantModalVisible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-		 ng-click="closeAddLanguageVariantModal()">
-		<div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" ng-click="$event.stopPropagation()">
-			<div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-lg">
-				<div class="flex items-center justify-between">
-					<h3 class="text-xl font-semibold text-gray-900 flex items-center">
-						<i class="fas fa-language mr-2 text-purple-600"></i>
-						Aggiungi Variante Linguistica
-					</h3>
-					<button ng-click="closeAddLanguageVariantModal()" class="text-gray-400 hover:text-gray-600">
-						<i class="fas fa-times text-xl"></i>
-					</button>
-				</div>
-				<p class="text-sm text-gray-600 mt-2">Aggiungi una nuova lingua per: <strong>{{selectedContentForLanguage.caller_name}}</strong></p>
-			</div>
-
-			<div class="p-6">
-				<!-- Success Message -->
-				<div ng-if="addLanguageSuccess" class="mb-4 bg-green-50 border-l-4 border-green-500 text-green-700 p-3 rounded">
-					<div class="flex items-center">
-						<i class="fas fa-check-circle mr-2"></i>
-						<p class="text-sm">Variante linguistica aggiunta con successo!</p>
-					</div>
-				</div>
-
-				<!-- Error Message -->
-				<div ng-if="addLanguageError" class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-3 rounded">
-					<div class="flex items-center">
-						<i class="fas fa-exclamation-circle mr-2"></i>
-						<p class="text-sm">{{addLanguageError}}</p>
-					</div>
-				</div>
-
-				<!-- Form -->
-				<div class="space-y-4">
-					<!-- Lingua -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Lingua <span class="text-red-500">*</span>
-						</label>
-						<select ng-model="newLanguageVariant.language"
-								class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-								required>
-							<option value="">Seleziona una lingua</option>
-							<option value="it">Italiano</option>
-							<option value="en">English</option>
-							<option value="es">Español</option>
-							<option value="fr">Français</option>
-							<option value="de">Deutsch</option>
-							<option value="pt">Português</option>
-							<option value="ru">Русский</option>
-							<option value="zh">中文</option>
-							<option value="ja">日本語</option>
-							<option value="ar">العربية</option>
-						</select>
-					</div>
-
-					<!-- Nome Contenuto -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Nome Contenuto <span class="text-red-500">*</span>
-						</label>
-						<input type="text"
-							   ng-model="newLanguageVariant.contentName"
-							   placeholder="Es: Messaggio di Benvenuto"
-							   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-							   required>
-					</div>
-
-					<!-- Descrizione -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Descrizione
-						</label>
-						<textarea ng-model="newLanguageVariant.description"
-								  placeholder="Descrizione opzionale del contenuto"
-								  rows="3"
-								  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
-					</div>
-
-					<!-- Tipo di contenuto -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Tipo di Contenuto
-						</label>
-						<div class="flex gap-4">
-							<label class="flex items-center cursor-pointer">
-								<input type="radio"
-									   ng-model="newLanguageVariant.textOnly"
-									   ng-value="false"
-									   name="contentTypeRadio"
-									   class="mr-2">
-								<span class="text-sm text-gray-700">File Media (Audio/Video)</span>
-							</label>
-							<label class="flex items-center cursor-pointer">
-								<input type="radio"
-									   ng-model="newLanguageVariant.textOnly"
-									   ng-value="true"
-									   name="contentTypeRadio"
-									   class="mr-2">
-								<span class="text-sm text-gray-700">Contenuto HTML</span>
-							</label>
-						</div>
-					</div>
-
-					<!-- Upload File (se non text-only) -->
-					<div ng-if="!newLanguageVariant.textOnly">
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							File Media <span class="text-red-500">*</span>
-						</label>
-						<input type="file"
-							   id="language-variant-file-input"
-							   onchange="angular.element(this).scope().handleLanguageVariantFileSelect(this.files[0])"
-							   accept="audio/*,video/*"
-							   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
-						<p class="text-xs text-gray-500 mt-1" ng-if="newLanguageVariant.file">
-							<i class="fas fa-file mr-1"></i> Selezionato: {{newLanguageVariant.file.name}} ({{(newLanguageVariant.file.size / 1024 / 1024).toFixed(2)}} MB)
-						</p>
-					</div>
-
-					<!-- Editor HTML (se text-only) -->
-					<div ng-if="newLanguageVariant.textOnly">
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Contenuto HTML <span class="text-red-500">*</span>
-						</label>
-						<textarea ng-model="newLanguageVariant.htmlContent"
-								  placeholder="Inserisci il contenuto HTML qui..."
-								  rows="8"
-								  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"></textarea>
-						<p class="text-xs text-gray-500 mt-1">
-							<i class="fas fa-info-circle mr-1"></i> Puoi usare HTML e CSS per formattare il contenuto
-						</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Footer con pulsanti -->
-			<div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-lg flex gap-3 justify-end">
-				<button ng-click="closeAddLanguageVariantModal()"
-						ng-disabled="addingLanguageVariant"
-						class="px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
-						ng-class="addingLanguageVariant ? 'opacity-50 cursor-not-allowed' : ''">
-					<i class="fas fa-times mr-1"></i> Annulla
-				</button>
-				<button ng-click="confirmAddLanguageVariant()"
-						ng-disabled="!isLanguageVariantFormValid() || addingLanguageVariant"
-						class="px-4 py-2 text-white rounded-lg transition-colors flex items-center"
-						ng-class="(!isLanguageVariantFormValid() || addingLanguageVariant) ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'">
-					<i class="fas mr-2" ng-class="addingLanguageVariant ? 'fa-spinner fa-spin' : 'fa-check'"></i>
-					{{addingLanguageVariant ? 'Aggiunta in corso...' : 'Aggiungi Variante'}}
 				</button>
 			</div>
 		</div>

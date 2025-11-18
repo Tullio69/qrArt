@@ -191,7 +191,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     .controller('TabsController', function($scope) {
 
     })
-    .controller('FormController', ['$http', '$scope', FormController])
+    .controller('FormController', ['$http', '$scope', '$location', FormController])
     .controller('ThemeTestController', function($scope) {
         $scope.title = "Verifica il tuo tema Tailwind";
         $scope.description = "Questo componente utilizza classi Tailwind e Flowbite per testare se il tuo tema è configurato correttamente.";
@@ -470,107 +470,6 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 }).catch(err => {
                     alert("Errore durante la sostituzione del file.");
                     console.error(err);
-                });
-            };
-
-            // Add Language Variant Modal Functions
-            $scope.addLanguageVariantModalVisible = false;
-            $scope.selectedContentForLanguage = null;
-            $scope.newLanguageVariant = {};
-            $scope.addingLanguageVariant = false;
-            $scope.addLanguageSuccess = false;
-            $scope.addLanguageError = null;
-
-            $scope.openAddLanguageVariantModal = function(content) {
-                $scope.selectedContentForLanguage = content;
-                $scope.newLanguageVariant = {
-                    language: '',
-                    contentName: '',
-                    description: '',
-                    textOnly: false,
-                    file: null,
-                    htmlContent: ''
-                };
-                $scope.addLanguageSuccess = false;
-                $scope.addLanguageError = null;
-                $scope.addLanguageVariantModalVisible = true;
-            };
-
-            $scope.closeAddLanguageVariantModal = function() {
-                $scope.addLanguageVariantModalVisible = false;
-                $scope.selectedContentForLanguage = null;
-                $scope.newLanguageVariant = {};
-
-                // Reset file input
-                var fileInput = document.getElementById('language-variant-file-input');
-                if (fileInput) {
-                    fileInput.value = '';
-                }
-
-                // If success, reload the content details
-                if ($scope.addLanguageSuccess) {
-                    $scope.loadContents();
-                }
-            };
-
-            $scope.handleLanguageVariantFileSelect = function(file) {
-                $scope.$apply(function() {
-                    $scope.newLanguageVariant.file = file;
-                });
-            };
-
-            $scope.isLanguageVariantFormValid = function() {
-                if (!$scope.newLanguageVariant.language || !$scope.newLanguageVariant.contentName) {
-                    return false;
-                }
-
-                if ($scope.newLanguageVariant.textOnly) {
-                    return !!$scope.newLanguageVariant.htmlContent;
-                } else {
-                    return !!$scope.newLanguageVariant.file;
-                }
-            };
-
-            $scope.confirmAddLanguageVariant = function() {
-                if (!$scope.isLanguageVariantFormValid()) {
-                    return;
-                }
-
-                $scope.addingLanguageVariant = true;
-                $scope.addLanguageError = null;
-                $scope.addLanguageSuccess = false;
-
-                var formData = new FormData();
-                formData.append('contentId', $scope.selectedContentForLanguage.id);
-                formData.append('language', $scope.newLanguageVariant.language);
-                formData.append('contentName', $scope.newLanguageVariant.contentName);
-                formData.append('description', $scope.newLanguageVariant.description);
-                formData.append('textOnly', $scope.newLanguageVariant.textOnly ? '1' : '0');
-
-                if ($scope.newLanguageVariant.textOnly) {
-                    formData.append('htmlContent', $scope.newLanguageVariant.htmlContent);
-                } else {
-                    formData.append('file', $scope.newLanguageVariant.file);
-                }
-
-                $http.post($scope.base_url + '/api/qrart/addLanguageVariant', formData, {
-                    headers: { 'Content-Type': undefined }
-                }).then(function(response) {
-                    console.log('✅ Variante linguistica aggiunta:', response.data);
-                    $scope.addLanguageSuccess = true;
-                    $scope.addingLanguageVariant = false;
-
-                    // Close modal after 1.5 seconds
-                    $timeout(function() {
-                        $scope.closeAddLanguageVariantModal();
-                    }, 1500);
-
-                }).catch(function(error) {
-                    console.error('❌ Errore aggiunta variante:', error);
-                    $scope.addLanguageError = error.data && error.data.message
-                        ? error.data.message
-                        : 'Errore durante l\'aggiunta della variante linguistica';
-                    $scope.addingLanguageVariant = false;
                 });
             };
 
@@ -863,12 +762,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     }])
 
 
-function FormController($http, $scope) {
+function FormController($http, $scope, $location) {
     var vm = this;
 
     // Tab management
     vm.activeTab = 'base';
     vm.isSubmitting = false;
+    vm.isAddingVariant = false; // Flag per indicare se stiamo aggiungendo una variante
+    vm.existingContentId = null;
 
     vm.setActiveTab = function(tab) {
         vm.activeTab = tab;
@@ -888,6 +789,41 @@ function FormController($http, $scope) {
         relatedArticles: [],
         sponsors: []
     };
+
+    // Check if we're adding a language variant to existing content
+    var contentId = $location.search().contentId;
+    if (contentId) {
+        vm.isAddingVariant = true;
+        vm.existingContentId = contentId;
+
+        // Load existing content data
+        $http.get(window.BASE_URL + '/api/content/details/' + contentId)
+            .then(function(response) {
+                var content = response.data.content;
+
+                // Pre-fill form with existing content data
+                vm.formData.callerName = content.caller_name;
+                vm.formData.callerTitle = content.caller_title;
+                vm.formData.contentName = content.content_name;
+                vm.formData.contentType = content.content_type;
+
+                // Add info banner
+                vm.existingContentInfo = {
+                    name: content.caller_name,
+                    shortCode: content.short_code,
+                    existingLanguages: response.data.metadata.map(function(m) { return m.language; })
+                };
+
+                // Navigate to variants tab
+                vm.setActiveTab('variants');
+
+                console.log('✅ Contenuto caricato per aggiunta variante:', content);
+            })
+            .catch(function(error) {
+                console.error('❌ Errore caricamento contenuto:', error);
+                alert('Errore nel caricamento dei dati del contenuto');
+            });
+    }
 
     vm.addLanguageVariant = function() {
         vm.formData.languageVariants.push({
@@ -964,6 +900,11 @@ function FormController($http, $scope) {
         formData.append('contentName', vm.formData.contentName);
         formData.append('contentType', vm.formData.contentType);
 
+        // If we're adding a variant to existing content, include the existingContentId
+        if (vm.existingContentId) {
+            formData.append('existingContentId', vm.existingContentId);
+        }
+
         // Append language variants
         vm.formData.languageVariants.forEach((variant, index) => {
             formData.append(`languageVariants[${index}][contentName]`, variant.contentName);
@@ -1016,23 +957,31 @@ function FormController($http, $scope) {
             vm.isSubmitting = false;
             if (response.data.success) {
                 console.log('Dati salvati con successo:', response.data);
-                alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
 
-                // Reset form and return to first tab
-                vm.formData = {
-                    callerName: '',
-                    callerTitle: '',
-                    contentName: '',
-                    contentType: '',
-                    contentDescription: '',
-                    callerBackground: null,
-                    callerAvatar: null,
-                    languageVariants: [],
-                    relatedArticles: [],
-                    sponsors: []
-                };
-                vm.addLanguageVariant();
-                vm.setActiveTab('base');
+                if (response.data.isAddingVariant) {
+                    alert('✅ Variante linguistica aggiunta con successo!\n\nLa nuova variante è stata aggiunta al contenuto esistente.');
+
+                    // Redirect back to content manager
+                    window.location.href = '#!/content-manager';
+                } else {
+                    alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
+
+                    // Reset form and return to first tab
+                    vm.formData = {
+                        callerName: '',
+                        callerTitle: '',
+                        contentName: '',
+                        contentType: '',
+                        contentDescription: '',
+                        callerBackground: null,
+                        callerAvatar: null,
+                        languageVariants: [],
+                        relatedArticles: [],
+                        sponsors: []
+                    };
+                    vm.addLanguageVariant();
+                    vm.setActiveTab('base');
+                }
             } else {
                 console.error('Errore nel salvataggio dei dati:', response.data.message);
                 alert('❌ Errore nel salvataggio\n\n' + response.data.message);
