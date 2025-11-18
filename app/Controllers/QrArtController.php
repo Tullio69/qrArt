@@ -11,7 +11,6 @@
     use CodeIgniter\HTTP\Files\UploadedFile;
     use CodeIgniter\HTTP\RequestInterface;
     use CodeIgniter\HTTP\ResponseInterface;
-    use CodeIgniter\Database\Exceptions\DatabaseException;
     use Config\Database;
     use Exception;
     use Psr\Log\LoggerInterface;

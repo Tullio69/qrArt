@@ -21,20 +21,19 @@ class Database extends Config
 
     /**
      * The default database connection.
-     * Legge le credenziali dal file .env
      *
      * @var array<string, mixed>
      */
     public array $default = [
         'DSN'      => '',
-        'hostname' => env('database.default.hostname', 'localhost'),
-        'database' => env('database.default.database', 'qrart'),
-        'username' => env('database.default.username', 'qrart'),
-        'password' => env('database.default.password', ''),
-        'DBDriver' => env('database.default.DBDriver', 'MySQLi'),
-        'DBPrefix' => env('database.default.DBPrefix', ''),
+        'hostname' => 'localhost',
+        'database' => 'qrart',
+        'username' => 'qrart',
+        'password' => '5gpedYRVyI2x6ezCtnzLNCZ8s',
+        'DBDriver' => 'MySQLi',
+        'DBPrefix' => '',
         'pConnect' => false,
-        'DBDebug'  => env('CI_ENVIRONMENT', 'production') !== 'production',
+        'DBDebug'  => true,
         'charset'  => 'utf8',
         'DBCollat' => 'utf8_general_ci',
         'swapPre'  => '',
@@ -42,7 +41,7 @@ class Database extends Config
         'compress' => false,
         'strictOn' => true,
         'failover' => [],
-        'port'     => env('database.default.port', 3306)
+        'port'     => 3306
     ];
 
     //    /**

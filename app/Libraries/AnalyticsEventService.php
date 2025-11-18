@@ -229,21 +229,22 @@ class AnalyticsEventService
         }
     }
 
-    /**
-     * Analizza lo user agent per estrarre informazioni dispositivo
-     *
-     * @return array
-     */
-    protected function parseUserAgent(): array
-    {
-        $agent = $this->request->getUserAgent();
+   
+ /**
+ * Analizza le informazioni dello User Agent
+ *
+ * @return array
+ */
+protected function parseUserAgent(): array
+{
+    $agent = $this->request->getUserAgent();
 
-        return [
-            'device_type' => $agent->isMobile() ? 'mobile' : ($agent->isTablet() ? 'tablet' : 'desktop'),
-            'browser' => $agent->getBrowser(),
-            'os' => $agent->getPlatform(),
-        ];
-    }
+    return [
+        'device_type' => $agent->isMobile() ? 'mobile' : 'desktop',
+        'browser' => $agent->getBrowser(),
+        'os' => $agent->getPlatform(),
+    ];
+}
 
     /**
      * Ottiene statistiche per un contenuto specifico
