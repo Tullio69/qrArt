@@ -198,8 +198,8 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
         $scope.linkText = "Scopri di più";
     })
     .controller('ContentListController', [
-        '$scope', '$http', '$uibModal','$timeout',
-        function ($scope, $http, $uibModal,$timeout) {
+        '$scope', '$http', '$uibModal','$timeout', '$location',
+        function ($scope, $http, $uibModal,$timeout, $location) {
             $scope.contents = [];
             $scope.loading = true;
             $scope.error = null;
@@ -471,6 +471,11 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                     alert("Errore durante la sostituzione del file.");
                     console.error(err);
                 });
+            };
+
+            // Add language variant - navigate to editor with contentId
+            $scope.addLanguageVariant = function(content) {
+                $location.path('/editor').search('contentId', content.id);
             };
 
         }
