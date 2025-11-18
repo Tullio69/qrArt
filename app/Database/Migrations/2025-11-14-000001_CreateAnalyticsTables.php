@@ -73,9 +73,7 @@ class CreateAnalyticsTables extends Migration
                 'null' => true, // Dati aggiuntivi specifici per tipo di evento
             ],
             'created_at' => [
-                'type' => 'TIMESTAMP',
-                'null' => false,
-                'default' => 'CURRENT_TIMESTAMP',
+                'type' => 'TIMESTAMP'
             ]
         ]);
         $this->forge->addKey('id', true);
@@ -84,7 +82,7 @@ class CreateAnalyticsTables extends Migration
         $this->forge->addKey('session_id');
         $this->forge->addKey('created_at');
         $this->forge->addForeignKey('content_id', 'content', 'id', 'CASCADE', 'SET NULL');
-        $this->forge->createTable('analytics_events');
+        $this->forge->createTable('analytics_events',true);
 
         // Tabella per metriche aggregate per contenuto
         $this->forge->addField([
@@ -156,7 +154,7 @@ class CreateAnalyticsTables extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('content_id');
         $this->forge->addForeignKey('content_id', 'content', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('content_metrics');
+        $this->forge->createTable('content_metrics',true);
 
         // Tabella per sessioni utente
         $this->forge->addField([
@@ -172,15 +170,13 @@ class CreateAnalyticsTables extends Migration
             ],
             'first_seen' => [
                 'type' => 'TIMESTAMP',
-                'null' => false,
-                'default' => 'CURRENT_TIMESTAMP',
+                'null' => false
+               
             ],
             'last_seen' => [
                 'type' => 'TIMESTAMP',
-                'null' => false,
-                'default' => 'CURRENT_TIMESTAMP',
-                'on_update' => 'CURRENT_TIMESTAMP',
-            ],
+                'null' => false
+                            ],
             'ip_address' => [
                 'type' => 'VARCHAR',
                 'constraint' => 45,
@@ -209,7 +205,7 @@ class CreateAnalyticsTables extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('session_id');
         $this->forge->addKey('first_seen');
-        $this->forge->createTable('user_sessions');
+        $this->forge->createTable('user_sessions',true);
     }
 
     public function down()
