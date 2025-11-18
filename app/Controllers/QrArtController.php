@@ -7,6 +7,7 @@
     use App\Models\ContentModel;
     use App\Models\RelatedArticlesModel;
     use App\Models\SponsorsModel;
+    use CodeIgniter\Database\Exceptions\DatabaseException;
     use CodeIgniter\HTTP\Files\UploadedFile;
     use CodeIgniter\HTTP\RequestInterface;
     use CodeIgniter\HTTP\ResponseInterface;
