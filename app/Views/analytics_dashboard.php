@@ -284,6 +284,7 @@
                 renderOverview(overview.data);
                 renderStats(stats.data);
                 renderMetrics(metrics.data);
+                renderRecentEvents(overview.data.recent_events || []);
 
                 $('#loadingIndicator').hide();
                 $('#dashboardContent').show();
@@ -469,6 +470,66 @@
                 </div>
             `).join('');
             $('#topContents').html(topContentsHtml);
+        }
+
+        function renderRecentEvents(events) {
+            if (!events || events.length === 0) {
+                $('#recentEvents').html('<p class="text-muted">Nessun evento nelle ultime 24 ore</p>');
+                return;
+            }
+
+            const eventTypeLabels = {
+                'qr_scan': 'Scansione QR',
+                'content_view': 'Visualizzazione',
+                'playback_start': 'Avvio Riproduzione',
+                'playback_pause': 'Pausa',
+                'playback_complete': 'Completamento',
+                'playback_error': 'Errore'
+            };
+
+            const eventIcons = {
+                'qr_scan': 'fa-qrcode',
+                'content_view': 'fa-eye',
+                'playback_start': 'fa-play',
+                'playback_pause': 'fa-pause',
+                'playback_complete': 'fa-check',
+                'playback_error': 'fa-exclamation-triangle'
+            };
+
+            const eventsHtml = events.slice(0, 20).map(event => {
+                const eventLabel = eventTypeLabels[event.event_type] || event.event_type;
+                const eventIcon = eventIcons[event.event_type] || 'fa-circle';
+                const date = new Date(event.created_at);
+                const timeString = date.toLocaleString('it-IT');
+
+                return `
+                    <div class="content-row">
+                        <div class="row align-items-center">
+                            <div class="col-md-1 text-center">
+                                <i class="fas ${eventIcon}"></i>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>${eventLabel}</strong>
+                            </div>
+                            <div class="col-md-2">
+                                Content ID: ${event.content_id || 'N/A'}
+                            </div>
+                            <div class="col-md-2">
+                                ${event.language ? `<span class="badge badge-info">${event.language}</span>` : ''}
+                            </div>
+                            <div class="col-md-2">
+                                <i class="fas fa-${event.device_type === 'mobile' ? 'mobile-alt' : 'desktop'}"></i>
+                                ${event.device_type || 'N/A'}
+                            </div>
+                            <div class="col-md-2 text-muted small">
+                                ${timeString}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $('#recentEvents').html(eventsHtml);
         }
 
         function applyFilters() {
