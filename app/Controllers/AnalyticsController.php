@@ -297,7 +297,7 @@ class AnalyticsController extends BaseController
 
             // Ottiene tutte le metriche con info contenuto
             $metrics = $db->table('content_metrics cm')
-                ->select('cm.*, c.title as content_title, c.content_type, c.created_at as content_created_at')
+                ->select('cm.*, c.content_name as content_title, c.content_type, c.created_at as content_created_at')
                 ->join('content c', 'cm.content_id = c.id')
                 ->orderBy('cm.total_scans', 'DESC')
                 ->get()
