@@ -295,7 +295,7 @@ protected function parseUserAgent(): array
     {
         // Top contents per scans
         $topByScans = $this->db->table('content_metrics cm')
-            ->select('cm.*, c.title, c.content_type')
+            ->select('cm.*, c.content_name as title, c.content_type')
             ->join('content c', 'cm.content_id = c.id')
             ->orderBy('cm.total_scans', 'DESC')
             ->limit(10)
