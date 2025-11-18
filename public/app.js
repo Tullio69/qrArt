@@ -212,8 +212,137 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             $scope.searchQuery = '';
             $scope.expandedContent = null; // ID del contenuto espanso
 
+            // Variabili per il modal di sostituzione file
+            $scope.modalVisible = false;
+            $scope.selectedFileToReplace = null;
+            $scope.newFile = null;
+            $scope.replacingFile = false;
+            $scope.replaceSuccess = false;
+            $scope.replaceError = null;
+
+            // Toggle dettagli variante completa
+            $scope.toggleLanguageVariantDetails = function(language, contentId) {
+                var content = $scope.contents.find(c => c.id === contentId);
+                if (content && content.perLanguage && content.perLanguage[language]) {
+                    content.perLanguage[language].showDetails = !content.perLanguage[language].showDetails;
+                }
+            };
+
+// Toggle preview media
+            $scope.toggleMediaPreview = function(language, contentId) {
+                var content = $scope.contents.find(c => c.id === contentId);
+                if (content && content.perLanguage && content.perLanguage[language]) {
+                    content.perLanguage[language].showMediaPreview = !content.perLanguage[language].showMediaPreview;
+                }
+            };
+
+// Sostituisci file multimediale
+            $scope.replaceMediaFile = function(variantData, language) {
+                var fileToReplace = variantData.files.audio || variantData.files.video;
+                $scope.selectedFileToReplace = {
+                    id: fileToReplace.id,
+                    file_url: fileToReplace.file_url,
+                    file_type: fileToReplace.file_type,
+                    language: language
+                };
+                $scope.modalVisible = true;
+            };
+
+// Helper per contare le chiavi
+            $scope.getObjectKeysLength = function(obj) {
+                return obj ? Object.keys(obj).length : 0;
+            };
+            // Chiudi il modal di sostituzione file
+            $scope.closeReplaceModal = function() {
+                $scope.modalVisible = false;
+                $scope.selectedFileToReplace = null;
+                $scope.newFile = null;
+                $scope.replaceSuccess = false;
+                $scope.replaceError = null;
+
+                // Reset del file input
+                var fileInput = document.getElementById('file-input-replace');
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+            };
+
+// Gestisci selezione nuovo file
+            $scope.handleFileSelect = function(file) {
+                if (file) {
+                    $scope.$apply(function() {
+                        $scope.newFile = file;
+                        $scope.replaceError = null;
+                    });
+                }
+            };
+
+// Conferma sostituzione file
+            $scope.confirmReplace = function() {
+                if (!$scope.newFile || !$scope.selectedFileToReplace) {
+                    return;
+                }
+
+                $scope.replacingFile = true;
+                $scope.replaceError = null;
+                $scope.replaceSuccess = false;
+
+                var formData = new FormData();
+                formData.append('file', $scope.newFile);
+                formData.append('file_id', $scope.selectedFileToReplace.id);
+
+                $http.post('/api/content/replace-file', formData, {
+                    headers: { 'Content-Type': undefined },
+                    transformRequest: angular.identity
+                })
+                    .then(function(response) {
+                        if (response.data.success) {
+                            $scope.replaceSuccess = true;
+                            $scope.successMessage = 'File sostituito con successo!';
+
+                            // Chiudi il modal dopo 1.5 secondi
+                            setTimeout(function() {
+                                $scope.$apply(function() {
+                                    $scope.closeReplaceModal();
+                                    // Ricarica i dettagli del contenuto
+                                    if ($scope.expandedContentId) {
+                                        var content = $scope.contents.find(c => c.id === $scope.expandedContentId);
+                                        if (content) {
+                                            $scope.loadContentDetails(content);
+                                        }
+                                    }
+                                });
+                            }, 1500);
+                        } else {
+                            $scope.replaceError = response.data.error || 'Errore durante la sostituzione del file';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Replace file error:', error);
+                        $scope.replaceError = error.data?.error || 'Errore durante la sostituzione del file';
+                    })
+                    .finally(function() {
+                        $scope.replacingFile = false;
+                    });
+            };
+
+// Ottieni il tipo di file accettato in base al tipo
+            $scope.getAcceptType = function(fileType) {
+                if (!fileType) return '*/*';
+
+                if (fileType === 'audio' || fileType === 'audio_call') {
+                    return 'audio/*';
+                } else if (fileType === 'video' || fileType === 'video_call') {
+                    return 'video/*';
+                } else if (fileType === 'callerAvatar' || fileType === 'callerBackground') {
+                    return 'image/*';
+                }
+                return '*/*';
+            };
+
             function groupByLanguage(files, metadata) {
                 const grouped = {};
+
 
                 files.forEach(file => {
                     if (!grouped[file.language]) grouped[file.language] = {};
@@ -377,22 +506,122 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 document.body.removeChild(link);
             };
 
-            // Apre il modal per modificare un contenuto
+            // Nel controller di contentList
+            $scope.showEditModal = false;
+            $scope.editingContent = null;
+            $scope.savingEdit = false;
+            $scope.editError = null;
+            $scope.editSuccessMessage = null;
+
             $scope.openEditModal = function(content) {
-                var modalInstance = $uibModal.open({
-                    templateUrl: 'views/editContentModal.html',
-                    controller: 'EditContentModalController',
-                    size: 'lg',
-                    resolve: {
-                        content: function() {
-                            return angular.copy(content);
-                        }
-                    }
+                // Fai una copia del contenuto
+                $scope.editingContent = angular.copy(content);
+
+                // Carica i dettagli se non presenti
+                if (!content.perLanguage) {
+                    $http.get('/api/content/' + content.short_code)
+                        .then(function(response) {
+                            if (response.data.status === 200) {
+                                // Organizza i dati
+                                var contentData = response.data.content;
+                                $scope.editingContent.perLanguage = {};
+
+                                // Raggruppa metadata per lingua
+                                contentData.metadata.forEach(function(meta) {
+                                    if (!$scope.editingContent.perLanguage[meta.language]) {
+                                        $scope.editingContent.perLanguage[meta.language] = {
+                                            metadata: meta,
+                                            files: {}
+                                        };
+                                    }
+
+                                    // Aggiungi file se presente
+                                    if (meta.file_url) {
+                                        var fileType = meta.file_type || 'audio';
+                                        $scope.editingContent.perLanguage[meta.language].files[fileType] = {
+                                            id: meta.metadata_id,
+                                            file_url: meta.file_url,
+                                            file_type: fileType
+                                        };
+                                    }
+                                });
+
+                                // Aggiungi file comuni
+                                $scope.editingContent.globalFiles = contentData.common_files || [];
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading content:', error);
+                            $scope.error = 'Errore nel caricamento dei dettagli';
+                        });
+                }
+
+                // Mostra il modal
+                $scope.showEditModal = true;
+
+                // Previeni scroll del body
+                document.body.style.overflow = 'hidden';
+            };
+
+            $scope.closeEditModal = function() {
+                $scope.showEditModal = false;
+                $scope.editingContent = null;
+                $scope.editError = null;
+                $scope.editSuccessMessage = null;
+
+                // Ripristina scroll del body
+                document.body.style.overflow = '';
+            };
+
+            $scope.saveEditContent = function() {
+                if ($scope.savingEdit) {
+                    return;
+                }
+
+                $scope.savingEdit = true;
+                $scope.editError = null;
+                $scope.editSuccessMessage = null;
+
+                // Prepara i dati per il salvataggio
+                var dataToSave = {
+                    caller_name: $scope.editingContent.caller_name,
+                    caller_title: $scope.editingContent.caller_title,
+                    metadata: []
+                };
+
+                // Converti perLanguage in array metadata
+                angular.forEach($scope.editingContent.perLanguage, function(variantData, language) {
+                    dataToSave.metadata.push({
+                        id: variantData.metadata.id || variantData.metadata.metadata_id,
+                        language: language,
+                        content_name: variantData.metadata.content_name,
+                        description: variantData.metadata.description || '',
+                        html_content: variantData.metadata.html_content || '',
+                        text_only: variantData.metadata.text_only
+                    });
                 });
 
-                modalInstance.result.then(function () {
-                    $scope.loadContents();
-                });
+                $http.put('/api/content/update/' + $scope.editingContent.id, dataToSave)
+                    .then(function(response) {
+                        if (response.data.success) {
+                            $scope.editSuccessMessage = 'Contenuto aggiornato con successo!';
+
+                            // Chiudi modal dopo 1.5 secondi e ricarica
+                            $timeout(function() {
+                                $scope.closeEditModal();
+                                $scope.loadContents();
+                            }, 1500);
+                        } else {
+                            $scope.editError = response.data.error || 'Errore durante il salvataggio';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Save error:', error);
+                        $scope.editError = error.data?.error || 'Errore durante il salvataggio';
+                    })
+                    .finally(function() {
+                        $scope.savingEdit = false;
+                    });
             };
 
             // Elimina un file associato a un contenuto
@@ -489,7 +718,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     .controller('EditContentModalController', [
         '$scope',
         '$uibModalInstance', // Torniamo a usare $uibModalInstance
-        '$http',
+        '$http','$timeout',
         'content',
         function($scope, $uibModalInstance, $http, content) {
             $scope.content = angular.copy(content);
