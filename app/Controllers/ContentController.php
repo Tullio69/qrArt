@@ -189,12 +189,25 @@
         {
             $contentFilesModel = new ContentFilesModel();
             $contentMetadataModel = new ContentMetadataModel();
-            
+
+            // Get content data
+            $content = $this->contentModel->find($contentId);
+
+            // Get short code
+            $shortUrlModel = new ShortUrlModel();
+            $shortUrlData = $shortUrlModel->where('content_id', $contentId)->first();
+
+            // Add short_code to content if exists
+            if ($content && $shortUrlData) {
+                $content['short_code'] = $shortUrlData['short_code'];
+            }
+
             $files = $contentFilesModel->where('content_id', $contentId)->findAll();
             $metadata = $contentMetadataModel->where('content_id', $contentId)->findAll();
-            
+
             return $this->response->setJSON([
                 'status' => 200,
+                'content' => $content,
                 'files' => $files,
                 'metadata' => $metadata
             ]);
