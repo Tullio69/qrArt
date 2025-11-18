@@ -43,7 +43,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
     }])
     // Controller esemplificativo
-    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
+    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', 'AnalyticsService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService, AnalyticsService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
         $scope.contentid=contentId;
@@ -73,8 +73,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
         $scope.selectLanguage = function(metadata, filterTextOnly) {
 
-            // Qui dobbiamo aggiungere la logica per il caricamento del contenuto corrispondente al linguaggio selezionato
-            // con la variante textOnly corrispondente al valore di filterTextOnly
+            // Track content view with language
+            AnalyticsService.trackContentView(
+                $scope.content.id,
+                $scope.content.content_type,
+                metadata.language
+            ).catch(function(error) {
+                console.error('Error tracking content view:', error);
+            });
 
             var callerAvatar = $scope.getFileByType('callerAvatar');
             var callerBackground = $scope.getFileByType('callerBackground');
@@ -191,15 +197,15 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     .controller('TabsController', function($scope) {
 
     })
-    .controller('FormController', ['$http', '$scope', FormController])
+    .controller('FormController', ['$http', '$scope', '$location', FormController])
     .controller('ThemeTestController', function($scope) {
         $scope.title = "Verifica il tuo tema Tailwind";
         $scope.description = "Questo componente utilizza classi Tailwind e Flowbite per testare se il tuo tema è configurato correttamente.";
         $scope.linkText = "Scopri di più";
     })
     .controller('ContentListController', [
-        '$scope', '$http', '$uibModal','$timeout',
-        function ($scope, $http, $uibModal,$timeout) {
+        '$scope', '$http', '$uibModal','$timeout', '$location',
+        function ($scope, $http, $uibModal,$timeout, $location) {
             $scope.contents = [];
             $scope.loading = true;
             $scope.error = null;
@@ -702,6 +708,11 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                 });
             };
 
+            // Add language variant - navigate to editor with contentId
+            $scope.addLanguageVariant = function(content) {
+                $location.path('/editor').search('contentId', content.id);
+            };
+
         }
     ])
     .controller('EditContentModalController', [
@@ -991,12 +1002,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     }])
 
 
-function FormController($http, $scope) {
+function FormController($http, $scope, $location) {
     var vm = this;
 
     // Tab management
     vm.activeTab = 'base';
     vm.isSubmitting = false;
+    vm.isAddingVariant = false; // Flag per indicare se stiamo aggiungendo una variante
+    vm.existingContentId = null;
 
     vm.setActiveTab = function(tab) {
         vm.activeTab = tab;
@@ -1016,6 +1029,41 @@ function FormController($http, $scope) {
         relatedArticles: [],
         sponsors: []
     };
+
+    // Check if we're adding a language variant to existing content
+    var contentId = $location.search().contentId;
+    if (contentId) {
+        vm.isAddingVariant = true;
+        vm.existingContentId = contentId;
+
+        // Load existing content data
+        $http.get(window.BASE_URL + '/api/content/details/' + contentId)
+            .then(function(response) {
+                var content = response.data.content;
+
+                // Pre-fill form with existing content data
+                vm.formData.callerName = content.caller_name;
+                vm.formData.callerTitle = content.caller_title;
+                vm.formData.contentName = content.content_name;
+                vm.formData.contentType = content.content_type;
+
+                // Add info banner
+                vm.existingContentInfo = {
+                    name: content.caller_name,
+                    shortCode: content.short_code,
+                    existingLanguages: response.data.metadata.map(function(m) { return m.language; })
+                };
+
+                // Navigate to variants tab
+                vm.setActiveTab('variants');
+
+                console.log('✅ Contenuto caricato per aggiunta variante:', content);
+            })
+            .catch(function(error) {
+                console.error('❌ Errore caricamento contenuto:', error);
+                alert('Errore nel caricamento dei dati del contenuto');
+            });
+    }
 
     vm.addLanguageVariant = function() {
         vm.formData.languageVariants.push({
@@ -1092,6 +1140,11 @@ function FormController($http, $scope) {
         formData.append('contentName', vm.formData.contentName);
         formData.append('contentType', vm.formData.contentType);
 
+        // If we're adding a variant to existing content, include the existingContentId
+        if (vm.existingContentId) {
+            formData.append('existingContentId', vm.existingContentId);
+        }
+
         // Append language variants
         vm.formData.languageVariants.forEach((variant, index) => {
             formData.append(`languageVariants[${index}][contentName]`, variant.contentName);
@@ -1144,23 +1197,31 @@ function FormController($http, $scope) {
             vm.isSubmitting = false;
             if (response.data.success) {
                 console.log('Dati salvati con successo:', response.data);
-                alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
 
-                // Reset form and return to first tab
-                vm.formData = {
-                    callerName: '',
-                    callerTitle: '',
-                    contentName: '',
-                    contentType: '',
-                    contentDescription: '',
-                    callerBackground: null,
-                    callerAvatar: null,
-                    languageVariants: [],
-                    relatedArticles: [],
-                    sponsors: []
-                };
-                vm.addLanguageVariant();
-                vm.setActiveTab('base');
+                if (response.data.isAddingVariant) {
+                    alert('✅ Variante linguistica aggiunta con successo!\n\nLa nuova variante è stata aggiunta al contenuto esistente.');
+
+                    // Redirect back to content manager
+                    window.location.href = '#!/content-manager';
+                } else {
+                    alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
+
+                    // Reset form and return to first tab
+                    vm.formData = {
+                        callerName: '',
+                        callerTitle: '',
+                        contentName: '',
+                        contentType: '',
+                        contentDescription: '',
+                        callerBackground: null,
+                        callerAvatar: null,
+                        languageVariants: [],
+                        relatedArticles: [],
+                        sponsors: []
+                    };
+                    vm.addLanguageVariant();
+                    vm.setActiveTab('base');
+                }
             } else {
                 console.error('Errore nel salvataggio dei dati:', response.data.message);
                 alert('❌ Errore nel salvataggio\n\n' + response.data.message);

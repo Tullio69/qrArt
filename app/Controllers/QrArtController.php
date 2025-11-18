@@ -7,6 +7,7 @@
     use App\Models\ContentModel;
     use App\Models\RelatedArticlesModel;
     use App\Models\SponsorsModel;
+    use CodeIgniter\Database\Exceptions\DatabaseException;
     use CodeIgniter\HTTP\Files\UploadedFile;
     use CodeIgniter\HTTP\RequestInterface;
     use CodeIgniter\HTTP\ResponseInterface;
@@ -36,7 +37,8 @@
                         'callerName' => $this->request->getVar('callerName'),
                         'callerTitle' => $this->request->getVar('callerTitle'),
                         'contentName' => $this->request->getVar('contentName'),
-                        'contentType' => $this->request->getVar('contentType')
+                        'contentType' => $this->request->getVar('contentType'),
+                        'existingContentId' => $this->request->getVar('existingContentId')
                     ];
                 } else {
                     // For regular POST, use getPost()
@@ -49,38 +51,64 @@
                 log_message('debug', 'Form data received: ' . json_encode($formData));
                 log_message('debug', 'Files received: ' . json_encode(array_keys($files)));
 
-                // Validate required fields
-                $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
-                $missingFields = [];
-
-                foreach ($requiredFields as $field) {
-                    if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
-                        $missingFields[] = $field;
-                    }
-                }
-
-                if (!empty($missingFields)) {
-                    throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
-                }
-
+                // Check if we're adding variants to existing content
+                $existingContentId = $formData['existingContentId'] ?? null;
                 $contentModel = new ContentModel();
-                $contentData = [
-                    'caller_name' => $formData['callerName'],
-                    'caller_title' => $formData['callerTitle'],
-                    'content_name' => $formData['contentName'],
-                    'content_type' => $formData['contentType']
-                ];
-                
-                $contentId = $contentModel->insert($contentData);
 
-                $contentDir = $this->createContentDirectory($contentId);
+                if ($existingContentId) {
+                    // Using existing content
+                    $contentId = $existingContentId;
+                    $existingContent = $contentModel->find($contentId);
 
-                if (!$contentId) {
-                    throw new Exception('Errore nella creazione del nuovo content');
+                    if (!$existingContent) {
+                        throw new Exception('Contenuto esistente non trovato');
+                    }
+
+                    log_message('debug', 'Aggiunta variante a contenuto esistente ID: ' . $contentId);
+                    $contentDir = FCPATH . 'media' . DIRECTORY_SEPARATOR . $contentId;
+
+                } else {
+                    // Creating new content
+                    // Validate required fields
+                    $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
+                    $missingFields = [];
+
+                    foreach ($requiredFields as $field) {
+                        if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
+                            $missingFields[] = $field;
+                        }
+                    }
+
+                    if (!empty($missingFields)) {
+                        throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
+                    }
+
+                    $contentData = [
+                        'caller_name' => $formData['callerName'],
+                        'caller_title' => $formData['callerTitle'],
+                        'content_name' => $formData['contentName'],
+                        'content_type' => $formData['contentType']
+                    ];
+
+                    log_message('debug', 'Tentativo di inserimento content: ' . json_encode($contentData));
+
+                    $contentId = $contentModel->insert($contentData);
+
+                    if (!$contentId) {
+                        $errors = $contentModel->errors();
+                        log_message('error', 'Errore inserimento content: ' . json_encode($errors));
+                        throw new Exception('Errore nella creazione del nuovo content: ' . json_encode($errors));
+                    }
+
+                    log_message('debug', 'Content creato con ID: ' . $contentId);
+
+                    $contentDir = $this->createContentDirectory($contentId);
                 }
 
-                // Handle common files first
-                $this->handleCommonFiles($files, $contentDir, $contentId);
+                // Handle common files only when creating new content
+                if (!$existingContentId) {
+                    $this->handleCommonFiles($files, $contentDir, $contentId);
+                }
 
                 // Get language variants - use getVar for multipart requests
                 if ($isMultipart || !empty($files)) {
@@ -96,6 +124,17 @@
                 }
 
                 foreach ($languageVariants as $index => $variant) {
+                    // Check if this language variant already exists
+                    $contentMetadataModel = new ContentMetadataModel();
+                    $existingVariant = $contentMetadataModel->where('content_id', $contentId)
+                        ->where('language', $variant['language'])
+                        ->first();
+
+                    if ($existingVariant) {
+                        log_message('warning', 'Variante linguistica già esistente per lingua: ' . $variant['language']);
+                        continue; // Skip this variant
+                    }
+
                     $metadataData = [
                         'content_id' => $contentId,
                         'language' => $variant['language'],
@@ -104,46 +143,57 @@
                         'description' => $variant['description'] ?? '',
                         'html_content' => $variant['htmlContent'] ?? null  // Salva sempre l'HTML content se presente
                     ];
-                    
-                    $contentMetadataModel = new ContentMetadataModel();
+
                     $metadataId = $contentMetadataModel->insert($metadataData);
-                    
+
                     if (!$metadataId) {
                         throw new Exception('Errore nel salvataggio dei metadati della variante linguistica');
                     }
-                    
+
                     $languageDir = $this->createLanguageDirectory($contentDir, $variant['language']);
-                    
+
                     $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId, $languageDir, $formData['contentType'], $index, $metadataId);
-                    
+
                     if (!$uploadedFiles['success']) {
                         throw new Exception($uploadedFiles['message']);
                     }
                 }
 
-                // Handle related articles - try both getPost and getVar
-                $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
-                $this->handleRelatedArticles($relatedArticles, $contentId);
+                // Handle related articles and sponsors only when creating new content
+                if (!$existingContentId) {
+                    // Handle related articles - try both getPost and getVar
+                    $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
+                    $this->handleRelatedArticles($relatedArticles, $contentId);
 
-                // Handle sponsors - try both getPost and getVar
-                $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
-                $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
-                
-                // Genera URL breve per il contenuto
+                    // Handle sponsors - try both getPost and getVar
+                    $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
+                    $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
+                }
+
+                // Get or create short URL
                 $shortUrlModel = new ShortUrlModel();
-                $shortCode = $shortUrlModel->createShortUrl($contentId);
-                
-                if (!$shortCode) {
-                    throw new Exception('Errore nella creazione dello short URL');
+                $shortCodeData = $shortUrlModel->where('content_id', $contentId)->first();
+
+                if ($shortCodeData) {
+                    $shortCode = $shortCodeData['short_code'];
+                } else {
+                    $shortCode = $shortUrlModel->createShortUrl($contentId);
+
+                    if (!$shortCode) {
+                        throw new Exception('Errore nella creazione dello short URL');
+                    }
                 }
 
                 $db->transCommit();
-                
+
+                $message = $existingContentId ? 'Variante linguistica aggiunta con successo' : 'Contenuto creato con successo';
+
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => 'Contenuto creato con successo',
+                    'message' => $message,
                     'contentId' => $contentId,
-                    'shortCode' => $shortCode
+                    'shortCode' => $shortCode,
+                    'isAddingVariant' => (bool)$existingContentId
                 ]);
                 
             } catch (Exception $e) {
@@ -162,7 +212,7 @@
                 ])->setStatusCode(500);
             }
         }
-        
+
         private function handleFileUploads($files, $variant, $contentId, $languageDir, $contentType, $variantIndex, $metadataId)
         {
             $uploadedFiles = [];
