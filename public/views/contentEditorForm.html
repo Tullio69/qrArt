@@ -89,7 +89,31 @@
 	</div>
 
 	<form ng-submit="vm.submitForm()" class="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
-		<h1 class="text-2xl font-bold mb-6 text-gray-800">Crea Nuovo Contenuto</h1>
+		<h1 class="text-2xl font-bold mb-6 text-gray-800">
+			<span ng-if="!vm.isAddingVariant">Crea Nuovo Contenuto</span>
+			<span ng-if="vm.isAddingVariant">Aggiungi Variante Linguistica</span>
+		</h1>
+
+		<!-- Info Banner for Adding Variant -->
+		<div ng-if="vm.isAddingVariant" class="mb-6 bg-purple-50 border-l-4 border-purple-500 text-purple-700 p-4 rounded">
+			<div class="flex items-center">
+				<i class="fas fa-language text-2xl mr-3"></i>
+				<div>
+					<p class="font-semibold">Stai aggiungendo una variante linguistica a un contenuto esistente</p>
+					<p class="text-sm mt-1">
+						<strong>Contenuto:</strong> {{vm.existingContentInfo.name}}
+						<span class="text-xs bg-purple-100 px-2 py-0.5 rounded ml-2">{{vm.existingContentInfo.shortCode}}</span>
+					</p>
+					<p class="text-sm mt-1" ng-if="vm.existingContentInfo.existingLanguages.length > 0">
+						<strong>Lingue già presenti:</strong>
+						<span class="inline-flex gap-1 ml-1">
+							<span ng-repeat="lang in vm.existingContentInfo.existingLanguages"
+								  class="text-xs bg-white px-2 py-0.5 rounded border border-purple-200">{{lang}}</span>
+						</span>
+					</p>
+				</div>
+			</div>
+		</div>
 
 		<!-- Tab Navigation -->
 		<div class="border-b border-gray-200 mb-6">

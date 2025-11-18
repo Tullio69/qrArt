@@ -37,7 +37,8 @@
                         'callerName' => $this->request->getVar('callerName'),
                         'callerTitle' => $this->request->getVar('callerTitle'),
                         'contentName' => $this->request->getVar('contentName'),
-                        'contentType' => $this->request->getVar('contentType')
+                        'contentType' => $this->request->getVar('contentType'),
+                        'existingContentId' => $this->request->getVar('existingContentId')
                     ];
                 } else {
                     // For regular POST, use getPost()
@@ -50,44 +51,64 @@
                 log_message('debug', 'Form data received: ' . json_encode($formData));
                 log_message('debug', 'Files received: ' . json_encode(array_keys($files)));
 
-                // Validate required fields
-                $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
-                $missingFields = [];
-
-                foreach ($requiredFields as $field) {
-                    if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
-                        $missingFields[] = $field;
-                    }
-                }
-
-                if (!empty($missingFields)) {
-                    throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
-                }
-
+                // Check if we're adding variants to existing content
+                $existingContentId = $formData['existingContentId'] ?? null;
                 $contentModel = new ContentModel();
-                $contentData = [
-                    'caller_name' => $formData['callerName'],
-                    'caller_title' => $formData['callerTitle'],
-                    'content_name' => $formData['contentName'],
-                    'content_type' => $formData['contentType']
-                ];
 
-                log_message('debug', 'Tentativo di inserimento content: ' . json_encode($contentData));
+                if ($existingContentId) {
+                    // Using existing content
+                    $contentId = $existingContentId;
+                    $existingContent = $contentModel->find($contentId);
 
-                $contentId = $contentModel->insert($contentData);
+                    if (!$existingContent) {
+                        throw new Exception('Contenuto esistente non trovato');
+                    }
 
-                if (!$contentId) {
-                    $errors = $contentModel->errors();
-                    log_message('error', 'Errore inserimento content: ' . json_encode($errors));
-                    throw new Exception('Errore nella creazione del nuovo content: ' . json_encode($errors));
+                    log_message('debug', 'Aggiunta variante a contenuto esistente ID: ' . $contentId);
+                    $contentDir = FCPATH . 'media' . DIRECTORY_SEPARATOR . $contentId;
+
+                } else {
+                    // Creating new content
+                    // Validate required fields
+                    $requiredFields = ['callerName', 'callerTitle', 'contentName', 'contentType'];
+                    $missingFields = [];
+
+                    foreach ($requiredFields as $field) {
+                        if (!isset($formData[$field]) || $formData[$field] === null || $formData[$field] === '') {
+                            $missingFields[] = $field;
+                        }
+                    }
+
+                    if (!empty($missingFields)) {
+                        throw new Exception('Campi obbligatori mancanti: ' . implode(', ', $missingFields));
+                    }
+
+                    $contentData = [
+                        'caller_name' => $formData['callerName'],
+                        'caller_title' => $formData['callerTitle'],
+                        'content_name' => $formData['contentName'],
+                        'content_type' => $formData['contentType']
+                    ];
+
+                    log_message('debug', 'Tentativo di inserimento content: ' . json_encode($contentData));
+
+                    $contentId = $contentModel->insert($contentData);
+
+                    if (!$contentId) {
+                        $errors = $contentModel->errors();
+                        log_message('error', 'Errore inserimento content: ' . json_encode($errors));
+                        throw new Exception('Errore nella creazione del nuovo content: ' . json_encode($errors));
+                    }
+
+                    log_message('debug', 'Content creato con ID: ' . $contentId);
+
+                    $contentDir = $this->createContentDirectory($contentId);
                 }
 
-                log_message('debug', 'Content creato con ID: ' . $contentId);
-
-                $contentDir = $this->createContentDirectory($contentId);
-
-                // Handle common files first
-                $this->handleCommonFiles($files, $contentDir, $contentId);
+                // Handle common files only when creating new content
+                if (!$existingContentId) {
+                    $this->handleCommonFiles($files, $contentDir, $contentId);
+                }
 
                 // Get language variants - use getVar for multipart requests
                 if ($isMultipart || !empty($files)) {
@@ -103,6 +124,17 @@
                 }
 
                 foreach ($languageVariants as $index => $variant) {
+                    // Check if this language variant already exists
+                    $contentMetadataModel = new ContentMetadataModel();
+                    $existingVariant = $contentMetadataModel->where('content_id', $contentId)
+                        ->where('language', $variant['language'])
+                        ->first();
+
+                    if ($existingVariant) {
+                        log_message('warning', 'Variante linguistica già esistente per lingua: ' . $variant['language']);
+                        continue; // Skip this variant
+                    }
+
                     $metadataData = [
                         'content_id' => $contentId,
                         'language' => $variant['language'],
@@ -111,46 +143,57 @@
                         'description' => $variant['description'] ?? '',
                         'html_content' => $variant['htmlContent'] ?? null  // Salva sempre l'HTML content se presente
                     ];
-                    
-                    $contentMetadataModel = new ContentMetadataModel();
+
                     $metadataId = $contentMetadataModel->insert($metadataData);
-                    
+
                     if (!$metadataId) {
                         throw new Exception('Errore nel salvataggio dei metadati della variante linguistica');
                     }
-                    
+
                     $languageDir = $this->createLanguageDirectory($contentDir, $variant['language']);
-                    
+
                     $uploadedFiles = $this->handleFileUploads($files, $variant, $contentId, $languageDir, $formData['contentType'], $index, $metadataId);
-                    
+
                     if (!$uploadedFiles['success']) {
                         throw new Exception($uploadedFiles['message']);
                     }
                 }
 
-                // Handle related articles - try both getPost and getVar
-                $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
-                $this->handleRelatedArticles($relatedArticles, $contentId);
+                // Handle related articles and sponsors only when creating new content
+                if (!$existingContentId) {
+                    // Handle related articles - try both getPost and getVar
+                    $relatedArticles = $formData['relatedArticles'] ?? $this->request->getVar('relatedArticles') ?? [];
+                    $this->handleRelatedArticles($relatedArticles, $contentId);
 
-                // Handle sponsors - try both getPost and getVar
-                $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
-                $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
-                
-                // Genera URL breve per il contenuto
+                    // Handle sponsors - try both getPost and getVar
+                    $sponsors = $formData['sponsors'] ?? $this->request->getVar('sponsors') ?? [];
+                    $this->handleSponsors($sponsors, $files['sponsorImages'] ?? [], $contentId, $contentDir);
+                }
+
+                // Get or create short URL
                 $shortUrlModel = new ShortUrlModel();
-                $shortCode = $shortUrlModel->createShortUrl($contentId);
-                
-                if (!$shortCode) {
-                    throw new Exception('Errore nella creazione dello short URL');
+                $shortCodeData = $shortUrlModel->where('content_id', $contentId)->first();
+
+                if ($shortCodeData) {
+                    $shortCode = $shortCodeData['short_code'];
+                } else {
+                    $shortCode = $shortUrlModel->createShortUrl($contentId);
+
+                    if (!$shortCode) {
+                        throw new Exception('Errore nella creazione dello short URL');
+                    }
                 }
 
                 $db->transCommit();
-                
+
+                $message = $existingContentId ? 'Variante linguistica aggiunta con successo' : 'Contenuto creato con successo';
+
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => 'Contenuto creato con successo',
+                    'message' => $message,
                     'contentId' => $contentId,
-                    'shortCode' => $shortCode
+                    'shortCode' => $shortCode,
+                    'isAddingVariant' => (bool)$existingContentId
                 ]);
                 
             } catch (Exception $e) {
@@ -166,183 +209,6 @@
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Si è verificato un errore durante l\'elaborazione: ' . $e->getMessage()
-                ])->setStatusCode(500);
-            }
-        }
-
-        public function addLanguageVariant()
-        {
-            $db = Database::connect();
-            $db->transStart();
-            $languageDir = null;
-
-            try {
-                // Get form data
-                $contentId = $this->request->getPost('contentId') ?? $this->request->getVar('contentId');
-                $language = $this->request->getPost('language') ?? $this->request->getVar('language');
-                $contentName = $this->request->getPost('contentName') ?? $this->request->getVar('contentName');
-                $description = $this->request->getPost('description') ?? $this->request->getVar('description') ?? '';
-                $textOnly = $this->request->getPost('textOnly') ?? $this->request->getVar('textOnly') ?? false;
-                $htmlContent = $this->request->getPost('htmlContent') ?? $this->request->getVar('htmlContent') ?? null;
-
-                log_message('debug', 'addLanguageVariant - Received data: ' . json_encode([
-                    'contentId' => $contentId,
-                    'language' => $language,
-                    'contentName' => $contentName,
-                    'textOnly' => $textOnly
-                ]));
-
-                // Validate required fields
-                if (empty($contentId) || empty($language) || empty($contentName)) {
-                    throw new Exception('Campi obbligatori mancanti: contentId, language, contentName');
-                }
-
-                // Check if content exists
-                $contentModel = new ContentModel();
-                $content = $contentModel->find($contentId);
-                if (!$content) {
-                    throw new Exception('Contenuto non trovato');
-                }
-
-                // Check if language variant already exists
-                $contentMetadataModel = new ContentMetadataModel();
-                $existingMetadata = $contentMetadataModel->where('content_id', $contentId)
-                    ->where('language', $language)
-                    ->first();
-
-                if ($existingMetadata) {
-                    throw new Exception('Una variante linguistica per questa lingua esiste già');
-                }
-
-                // Insert metadata
-                $metadataData = [
-                    'content_id' => $contentId,
-                    'language' => $language,
-                    'content_name' => $contentName,
-                    'text_only' => $textOnly ? 1 : 0,
-                    'description' => $description,
-                    'html_content' => $htmlContent
-                ];
-
-                $metadataId = $contentMetadataModel->insert($metadataData);
-
-                if (!$metadataId) {
-                    $errors = $contentMetadataModel->errors();
-                    log_message('error', 'Errore inserimento metadata: ' . json_encode($errors));
-                    throw new Exception('Errore nel salvataggio dei metadati: ' . json_encode($errors));
-                }
-
-                log_message('debug', 'Metadata creato con ID: ' . $metadataId);
-
-                // Handle file upload if not text-only
-                $files = $this->request->getFiles();
-                if (!$textOnly && !empty($files)) {
-                    // Get content directory
-                    $contentDir = FCPATH . 'media' . DIRECTORY_SEPARATOR . $contentId;
-
-                    // Create language directory
-                    $languageDir = $this->createLanguageDirectory($contentDir, $language);
-
-                    log_message('debug', 'Language directory: ' . $languageDir);
-                    log_message('debug', 'Files structure: ' . json_encode(array_keys($files)));
-
-                    // Find the uploaded file (could be 'file', 'audioFile', or 'videoFile')
-                    $uploadedFile = null;
-                    $fileType = null;
-
-                    if (isset($files['file']) && $files['file'] instanceof UploadedFile) {
-                        $uploadedFile = $files['file'];
-                        // Determine file type based on MIME type
-                        $mimeType = $uploadedFile->getClientMimeType();
-                        $fileType = strpos($mimeType, 'audio') !== false ? 'audio' :
-                                   (strpos($mimeType, 'video') !== false ? 'video' : null);
-                    } elseif (isset($files['audioFile']) && $files['audioFile'] instanceof UploadedFile) {
-                        $uploadedFile = $files['audioFile'];
-                        $fileType = 'audio';
-                    } elseif (isset($files['videoFile']) && $files['videoFile'] instanceof UploadedFile) {
-                        $uploadedFile = $files['videoFile'];
-                        $fileType = 'video';
-                    }
-
-                    if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-                        $extension = $uploadedFile->getExtension();
-                        $newFileName = $contentId . '_' . $language . '_' . $fileType . '.' . $extension;
-
-                        log_message('debug', 'Moving file: ' . $uploadedFile->getName() . ' to ' . $languageDir . '/' . $newFileName);
-
-                        $uploadedFile->move($languageDir, $newFileName);
-
-                        // Create relative path for database
-                        $relativePath = $contentId . '/' . $language . '/' . $newFileName;
-
-                        // Insert into content_files
-                        $contentFilesModel = new ContentFilesModel();
-                        $fileData = [
-                            'content_id' => $contentId,
-                            'metadata_id' => $metadataId,
-                            'file_type' => $fileType,
-                            'file_url' => $relativePath
-                        ];
-
-                        $fileId = $contentFilesModel->insert($fileData);
-
-                        if (!$fileId) {
-                            $errors = $contentFilesModel->errors();
-                            log_message('error', 'Errore inserimento file: ' . json_encode($errors));
-                            throw new Exception('Errore nel salvataggio del file: ' . json_encode($errors));
-                        }
-
-                        log_message('debug', 'File salvato con ID: ' . $fileId);
-                    } elseif (!$uploadedFile) {
-                        throw new Exception('Nessun file caricato. Per contenuti non testuali è richiesto un file audio o video.');
-                    }
-                } elseif ($textOnly && !empty($htmlContent)) {
-                    // Save HTML content as file
-                    $contentDir = FCPATH . 'media' . DIRECTORY_SEPARATOR . $contentId;
-                    $languageDir = $this->createLanguageDirectory($contentDir, $language);
-
-                    $htmlFileName = $contentId . '_' . $language . '_content.html';
-                    $htmlFilePath = $languageDir . '/' . $htmlFileName;
-
-                    if (file_put_contents($htmlFilePath, $htmlContent) !== false) {
-                        $relativePath = $contentId . '/' . $language . '/' . $htmlFileName;
-
-                        // Insert into content_files
-                        $contentFilesModel = new ContentFilesModel();
-                        $fileData = [
-                            'content_id' => $contentId,
-                            'metadata_id' => $metadataId,
-                            'file_type' => 'html',
-                            'file_url' => $relativePath
-                        ];
-
-                        $contentFilesModel->insert($fileData);
-                    } else {
-                        throw new Exception('Impossibile salvare il contenuto HTML');
-                    }
-                }
-
-                $db->transCommit();
-
-                return $this->response->setJSON([
-                    'success' => true,
-                    'message' => 'Variante linguistica aggiunta con successo',
-                    'metadataId' => $metadataId
-                ]);
-
-            } catch (Exception $e) {
-                // Cleanup on error
-                if ($languageDir !== null && is_dir($languageDir)) {
-                    $this->removeDirectory($languageDir);
-                }
-
-                $db->transRollback();
-
-                log_message('error', 'Errore in addLanguageVariant: ' . $e->getMessage());
-
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Si è verificato un errore: ' . $e->getMessage()
                 ])->setStatusCode(500);
             }
         }
