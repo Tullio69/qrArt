@@ -80,6 +80,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
             var callerBackground = $scope.getFileByType('callerBackground');
 
             $scope.selContent = {
+                id: $scope.content.id,
                 caller_name: $scope.content.caller_name,
                 caller_subtitle: $scope.content.caller_title,
                 caller_avatar: callerAvatar ? callerAvatar.file_url : null,
