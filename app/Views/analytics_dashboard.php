@@ -552,13 +552,8 @@
 
         // Initialize
         $(document).ready(function() {
-            // Set default date range (last 7 days)
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 7);
-
-            $('#endDate').val(endDate.toISOString().split('T')[0]);
-            $('#startDate').val(startDate.toISOString().split('T')[0]);
+            // Don't set default date filters - show all data
+            // Users can filter manually if needed
 
             loadDashboard();
 
