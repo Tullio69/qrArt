@@ -33,6 +33,59 @@ class AnalyticsController extends BaseController
     }
 
     /**
+     * Health check per verificare se le tabelle analytics esistono
+     * GET /api/analytics/health
+     */
+    public function health(): ResponseInterface
+    {
+        try {
+            $db = \Config\Database::connect();
+
+            // Verifica connessione database
+            if (!$db->connID) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Database not connected',
+                    'message' => 'Il database non è connesso. Verifica la configurazione in app/Config/Database.php'
+                ]);
+            }
+
+            // Verifica esistenza tabelle
+            $tables = ['analytics_events', 'content_metrics', 'user_sessions'];
+            $missingTables = [];
+
+            foreach ($tables as $table) {
+                if (!$db->tableExists($table)) {
+                    $missingTables[] = $table;
+                }
+            }
+
+            if (!empty($missingTables)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Analytics tables not found',
+                    'missing_tables' => $missingTables,
+                    'message' => 'Esegui le migrations con: php spark migrate'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Analytics system is ready',
+                'database' => $db->database,
+                'tables' => $tables
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'error' => 'Health check failed',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Traccia un evento analytics dal frontend
      * POST /api/analytics/track
      */

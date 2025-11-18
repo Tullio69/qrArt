@@ -247,6 +247,26 @@
             $('#loadingIndicator').show();
             $('#dashboardContent').hide();
 
+            // First check if analytics system is ready
+            fetch('/api/analytics/health')
+                .then(r => r.json())
+                .then(health => {
+                    if (!health.success) {
+                        $('#loadingIndicator').hide();
+                        showSetupMessage(health);
+                        return;
+                    }
+
+                    // System is ready, load data
+                    loadAnalyticsData();
+                })
+                .catch(error => {
+                    $('#loadingIndicator').hide();
+                    showErrorMessage('Impossibile verificare lo stato del sistema analytics', error);
+                });
+        }
+
+        function loadAnalyticsData() {
             // Build query params
             let params = new URLSearchParams(currentFilters);
 
@@ -256,6 +276,11 @@
                 fetch('/api/analytics/metrics').then(r => r.json())
             ])
             .then(([overview, stats, metrics]) => {
+                if (!overview.success || !stats.success || !metrics.success) {
+                    showErrorMessage('Errore nel caricamento dei dati');
+                    return;
+                }
+
                 renderOverview(overview.data);
                 renderStats(stats.data);
                 renderMetrics(metrics.data);
@@ -265,9 +290,51 @@
                 $('#lastUpdate').text(new Date().toLocaleString('it-IT'));
             })
             .catch(error => {
+                $('#loadingIndicator').hide();
                 console.error('Error loading dashboard:', error);
-                alert('Errore nel caricamento dei dati');
+                showErrorMessage('Errore nel caricamento dei dati', error);
             });
+        }
+
+        function showSetupMessage(health) {
+            const message = `
+                <div class="container mt-5">
+                    <div class="alert alert-warning" role="alert">
+                        <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Sistema Analytics Non Configurato</h4>
+                        <p><strong>Problema:</strong> ${health.message || health.error}</p>
+                        <hr>
+                        <h5>Istruzioni per la configurazione:</h5>
+                        <ol>
+                            <li>Verifica che il database MySQL sia in esecuzione</li>
+                            <li>Controlla le credenziali del database in <code>app/Config/Database.php</code></li>
+                            <li>Esegui le migrations per creare le tabelle analytics:
+                                <pre class="mt-2"><code>php spark migrate</code></pre>
+                            </li>
+                        </ol>
+                        ${health.missing_tables ? `<p><strong>Tabelle mancanti:</strong> ${health.missing_tables.join(', ')}</p>` : ''}
+                        <button class="btn btn-primary mt-3" onclick="loadDashboard()">
+                            <i class="fas fa-sync"></i> Riprova
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#dashboardContent').html(message).show();
+        }
+
+        function showErrorMessage(message, error) {
+            const errorHtml = `
+                <div class="container mt-5">
+                    <div class="alert alert-danger" role="alert">
+                        <h4 class="alert-heading"><i class="fas fa-times-circle"></i> Errore</h4>
+                        <p>${message}</p>
+                        ${error ? `<pre class="mt-2">${error}</pre>` : ''}
+                        <button class="btn btn-danger mt-3" onclick="loadDashboard()">
+                            <i class="fas fa-sync"></i> Riprova
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#dashboardContent').html(errorHtml).show();
         }
 
         function renderOverview(data) {

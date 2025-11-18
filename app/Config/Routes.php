@@ -33,6 +33,7 @@ use CodeIgniter\Router\RouteCollection;
     $routes->get('analytics/overview', 'AnalyticsController::overview');
 
     // Analytics API - New endpoints
+    $routes->get('api/analytics/health', 'AnalyticsController::health');
     $routes->post('api/analytics/track', 'AnalyticsController::trackEvent');
     $routes->get('api/analytics/stats/overview', 'AnalyticsController::getStatsOverview');
     $routes->get('api/analytics/stats', 'AnalyticsController::getStats');
