@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="QrArt" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="QrArt-Dev" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
       <paths name="Laragon">
@@ -17,10 +17,17 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="QrArt">
+      <paths name="QrArt-Dev">
         <serverdata>
           <mappings>
             <mapping deploy="/qrart" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="QrArt-Prod">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/qrArt" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
