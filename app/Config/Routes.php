@@ -19,6 +19,7 @@ use CodeIgniter\Router\RouteCollection;
 
     // Content API - Create/Update/Delete
     $routes->post('api/qrart/process', 'QrArtController::processQrArtContent');
+    $routes->post('api/qrart/addLanguageVariant', 'QrArtController::addLanguageVariant');
     $routes->post('api/content/update/(:any)', 'ContentController::updateContent/$1');
     $routes->delete('api/content/delete/(:num)', 'ContentController::deleteContent/$1');
 
