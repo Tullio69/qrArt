@@ -1,23 +1,44 @@
-<div class="modal-content bg-white rounded-lg shadow-xl max-w-4xl mx-auto" style="max-height: 90vh; overflow-y: auto;">
-	<div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
+<div class="modal-content bg-white rounded-lg shadow-xl max-w-6xl mx-auto" style="max-height: 90vh; overflow-y: auto;">
+	<!-- Header fisso -->
+	<div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10 shadow-sm">
 		<div>
 			<h3 class="text-2xl font-bold text-gray-900">Modifica Contenuto</h3>
 			<p class="text-sm text-gray-600 mt-1">Aggiorna le informazioni del contenuto esistente</p>
 		</div>
-		<button type="button" class="text-gray-400 hover:text-gray-600 transition-colors" ng-click="cancel()">
+		<button type="button"
+				class="text-gray-400 hover:text-gray-600 transition-colors"
+				ng-click="cancel()"
+				ng-disabled="saving">
 			<i class="fas fa-times text-2xl"></i>
 		</button>
 	</div>
-
+	
+	<!-- Loading Overlay -->
+	<div ng-if="saving" class="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+		<div class="text-center">
+			<div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+			<p class="text-lg font-semibold text-gray-900">Salvataggio in corso...</p>
+			<p class="text-sm text-gray-600">Attendere prego</p>
+		</div>
+	</div>
+	
 	<div class="p-6">
-		<!-- Messaggio di errore -->
-		<div ng-if="error" class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+		<!-- Messaggio di successo -->
+		<div ng-if="successMessage" class="mb-4 bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg animate-fade-in">
 			<div class="flex items-center">
-				<i class="fas fa-exclamation-circle mr-2"></i>
-				<p>{{error}}</p>
+				<i class="fas fa-check-circle mr-2 text-lg"></i>
+				<p class="font-medium">{{successMessage}}</p>
 			</div>
 		</div>
-
+		
+		<!-- Messaggio di errore -->
+		<div ng-if="error" class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg animate-fade-in">
+			<div class="flex items-center">
+				<i class="fas fa-exclamation-circle mr-2 text-lg"></i>
+				<p class="font-medium">{{error}}</p>
+			</div>
+		</div>
+		
 		<form name="editForm" ng-submit="save()" class="space-y-6">
 			<!-- Informazioni di base -->
 			<div class="bg-gray-50 rounded-lg p-4">
@@ -33,6 +54,7 @@
 						<input type="text"
 							   ng-model="content.caller_name"
 							   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+							   ng-disabled="saving"
 							   required>
 					</div>
 					<div class="form-group">
@@ -42,10 +64,11 @@
 						<input type="text"
 							   ng-model="content.caller_title"
 							   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+							   ng-disabled="saving"
 							   required>
 					</div>
 				</div>
-
+				
 				<div class="mt-4">
 					<label class="block text-sm font-medium text-gray-700 mb-2">Tipo di Contenuto</label>
 					<div class="flex items-center gap-2">
@@ -68,7 +91,7 @@
 					</div>
 				</div>
 			</div>
-
+			
 			<!-- File comuni -->
 			<div class="bg-gray-50 rounded-lg p-4">
 				<h4 class="font-semibold text-gray-900 mb-4 flex items-center">
@@ -91,6 +114,7 @@
 							<input type="file"
 								   accept="image/*"
 								   onchange="angular.element(this).scope().handleAvatarChange(this.files[0])"
+								   ng-disabled="saving"
 								   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
 							<p class="text-xs text-gray-500 mt-1">Carica un nuovo file per sostituire quello esistente</p>
 						</div>
@@ -110,13 +134,14 @@
 							<input type="file"
 								   accept="image/*"
 								   onchange="angular.element(this).scope().handleBackgroundChange(this.files[0])"
+								   ng-disabled="saving"
 								   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
 							<p class="text-xs text-gray-500 mt-1">Carica un nuovo file per sostituire quello esistente</p>
 						</div>
 					</div>
 				</div>
 			</div>
-
+			
 			<!-- Varianti linguistiche -->
 			<div class="space-y-3">
 				<div class="flex justify-between items-center">
@@ -126,14 +151,15 @@
 					</h4>
 					<span class="text-sm text-gray-600">{{content.metadata.length}} variante/i</span>
 				</div>
-
+				
 				<div ng-repeat="variant in content.metadata" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
 					<!-- Header variante con toggle -->
 					<div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 cursor-pointer hover:from-blue-100 hover:to-purple-100 transition-colors"
 						 ng-click="variant.minimized = !variant.minimized">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
-								<button type="button" class="text-gray-600 hover:text-gray-900 transition-transform"
+								<button type="button"
+										class="text-gray-600 hover:text-gray-900 transition-transform"
 										ng-class="{'rotate-180': !variant.minimized}">
 									<i class="fas fa-chevron-down"></i>
 								</button>
@@ -152,11 +178,9 @@
 							</div>
 						</div>
 					</div>
-
+					
 					<!-- Contenuto variante (collapsible) -->
-					<div ng-if="!variant.minimized" class="p-4 space-y-4 bg-gray-50"
-						 style="animation: slideDown 0.3s ease-out;">
-
+					<div ng-if="!variant.minimized" class="p-4 space-y-4 bg-gray-50">
 						<div class="grid grid-cols-1 gap-4">
 							<div class="form-group">
 								<label class="block text-sm font-medium text-gray-700 mb-2">
@@ -165,17 +189,19 @@
 								<input type="text"
 									   ng-model="variant.content_name"
 									   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+									   ng-disabled="saving"
 									   required>
 							</div>
-
+							
 							<div class="form-group" ng-if="variant.description !== undefined">
 								<label class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
 								<textarea ng-model="variant.description"
 										  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+										  ng-disabled="saving"
 										  rows="2"></textarea>
 							</div>
 						</div>
-
+						
 						<!-- File media (se non è solo testo) -->
 						<div ng-if="!variant.text_only" class="form-group">
 							<label class="block text-sm font-medium text-gray-700 mb-2">
@@ -199,12 +225,13 @@
 								<input type="file"
 									   accept="{{content.content_type.includes('audio') ? 'audio/*' : 'video/*'}}"
 									   onchange="angular.element(this).scope().handleVariantFileChange(this.files[0], {{$index}})"
+									   ng-disabled="saving"
 									   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
 								<p class="text-xs text-gray-500">Carica un nuovo file per sostituire quello esistente</p>
 							</div>
 						</div>
-
-						<!-- Contenuto HTML (se è solo testo) -->
+						
+						<!-- Contenuto HTML con TinyMCE -->
 						<div ng-if="variant.text_only" class="form-group">
 							<div class="flex justify-between items-center mb-2">
 								<label class="block text-sm font-medium text-gray-700">
@@ -214,22 +241,23 @@
 										ng-click="variant.htmlMinimized = !variant.htmlMinimized"
 										class="text-xs text-blue-600 hover:text-blue-800">
 									<i class="fas" ng-class="variant.htmlMinimized ? 'fa-expand' : 'fa-compress'"></i>
-									{{variant.htmlMinimized ? 'Espandi' : 'Comprimi'}}
+									{{variant.htmlMinimized ? 'Espandi Editor' : 'Comprimi Editor'}}
 								</button>
 							</div>
+							
+							
 							<div ng-if="!variant.htmlMinimized">
-								<textarea ng-model="variant.html_content"
-										  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-										  rows="8"
-										  placeholder="Inserisci il contenuto HTML..."></textarea>
-								<p class="text-xs text-gray-500 mt-1">
-									<i class="fas fa-info-circle"></i>
-									Puoi utilizzare tag HTML per formattare il contenuto
-								</p>
+								<wysiwyg-editor content="variant.html_content" editor-id="htmlcontent-{{$index}}" editor-options="vm.editorOptions"></wysiwyg-editor>
 							</div>
-							<div ng-if="variant.htmlMinimized" class="text-center py-4 bg-gray-100 rounded border-2 border-dashed border-gray-300">
-								<i class="fas fa-code text-gray-400 text-2xl mb-2"></i>
+							
+							<div ng-if="variant.htmlMinimized" class="text-center py-8 bg-gray-100 rounded border-2 border-dashed border-gray-300">
+								<i class="fas fa-code text-gray-400 text-3xl mb-2"></i>
 								<p class="text-sm text-gray-500">Editor HTML minimizzato</p>
+								<button type="button"
+										ng-click="variant.htmlMinimized = false"
+										class="mt-2 text-xs text-blue-600 hover:text-blue-800">
+									Clicca per espandere
+								</button>
 							</div>
 						</div>
 					</div>
@@ -237,9 +265,9 @@
 			</div>
 		</form>
 	</div>
-
+	
 	<!-- Footer con pulsanti -->
-	<div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center">
+	<div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center shadow-lg">
 		<div class="text-sm text-gray-600">
 			<i class="fas fa-info-circle mr-1"></i>
 			I campi contrassegnati con <span class="text-red-500">*</span> sono obbligatori
@@ -247,10 +275,11 @@
 		<div class="flex gap-3">
 			<button type="button"
 					class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-					ng-click="cancel()">
+					ng-click="cancel()"
+					ng-disabled="saving">
 				<i class="fas fa-times mr-2"></i> Annulla
 			</button>
-			<button type="submit"
+			<button type="button"
 					class="px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
 					ng-class="saving || editForm.$invalid ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'"
 					ng-click="save()"
@@ -263,22 +292,47 @@
 </div>
 
 <style>
-@keyframes slideDown {
-	from {
-		opacity: 0;
-		max-height: 0;
+	@keyframes slideDown {
+		from {
+			opacity: 0;
+			max-height: 0;
+		}
+		to {
+			opacity: 1;
+			max-height: 2000px;
+		}
 	}
-	to {
-		opacity: 1;
-		max-height: 2000px;
+	
+	.rotate-180 {
+		transform: rotate(180deg);
 	}
-}
-
-.rotate-180 {
-	transform: rotate(180deg);
-}
-
-.transition-transform {
-	transition: transform 0.3s ease;
-}
+	
+	.transition-transform {
+		transition: transform 0.3s ease;
+	}
+	
+	.animate-fade-in {
+		animation: fadeIn 0.5s ease-in;
+	}
+	
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	
+	/* TinyMCE wrapper */
+	.tinymce-wrapper {
+		min-height: 400px;
+	}
+	
+	.tinymce-editor {
+		width: 100%;
+		min-height: 400px;
+	}
 </style>
