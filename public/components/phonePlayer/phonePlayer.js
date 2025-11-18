@@ -209,16 +209,24 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
 
     // Funzione per caricare articoli correlati e sponsor
     vm.loadRelatedContent = function() {
+        console.log('loadRelatedContent chiamata');
+        console.log('vm.content:', vm.content);
+
         if (!vm.content || !vm.content.id) {
+            console.warn('Content o content.id non disponibile:', vm.content);
             return;
         }
 
+        console.log('Chiamata API per content ID:', vm.content.id);
         $http.get('api/content/related/' + vm.content.id)
             .then(function(response) {
+                console.log('Risposta API ricevuta:', response.data);
                 if (response.data.status === 200) {
                     $timeout(function() {
                         vm.relatedArticles = response.data.relatedArticles || [];
                         vm.sponsorData = response.data.sponsors || [];
+                        console.log('Articoli correlati caricati:', vm.relatedArticles.length);
+                        console.log('Sponsor caricati:', vm.sponsorData.length);
                     });
                 }
             })

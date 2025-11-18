@@ -1130,6 +1130,24 @@ function FormController($http, $scope) {
             }
         }
 
+        // Append related articles
+        vm.formData.relatedArticles.forEach((article, index) => {
+            formData.append(`relatedArticles[${index}][title]`, article.title);
+            formData.append(`relatedArticles[${index}][link]`, article.link);
+        });
+
+        // Append sponsors
+        vm.formData.sponsors.forEach((sponsor, index) => {
+            formData.append(`sponsors[${index}][name]`, sponsor.name);
+            formData.append(`sponsors[${index}][link]`, sponsor.link);
+
+            // Append sponsor image
+            var sponsorImageInput = document.getElementById(`sponsorImage-${index}`);
+            if (sponsorImageInput && sponsorImageInput.files[0]) {
+                formData.append(`sponsorImages[${sponsor.name}]`, sponsorImageInput.files[0]);
+            }
+        });
+
         // Log formData contents for debugging
         for (var pair of formData.entries()) {
             console.log(pair[0] + ': ' + pair[1]);
