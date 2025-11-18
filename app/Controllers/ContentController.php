@@ -631,6 +631,34 @@
         }
 
         /**
+         * Recupera articoli correlati e sponsor per un contenuto
+         */
+        public function getRelatedContent($contentId): ResponseInterface
+        {
+            try {
+                $relatedArticlesModel = new \App\Models\RelatedArticlesModel();
+                $sponsorsModel = new \App\Models\SponsorsModel();
+
+                $relatedArticles = $relatedArticlesModel->where('content_id', $contentId)->findAll();
+                $sponsors = $sponsorsModel->where('content_id', $contentId)->findAll();
+
+                return $this->response->setJSON([
+                    'status' => 200,
+                    'relatedArticles' => $relatedArticles,
+                    'sponsors' => $sponsors
+                ]);
+            } catch (\Exception $e) {
+                log_message('error', 'Errore in getRelatedContent: ' . $e->getMessage());
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'status' => 500,
+                    'error' => 'Si è verificato un errore durante il recupero dei contenuti correlati',
+                    'details' => $e->getMessage()
+                ]);
+            }
+        }
+
+        /**
          * Elimina i metadati di una specifica lingua
          */
         public function deleteMetadata($metadataId): ResponseInterface

@@ -95,7 +95,7 @@
 				   ng-repeat="sponsor in vm.sponsorData"
 				   aria-label="Visita sponsor: {{ sponsor.name }}">
 					<div class="sponsor-image-wrapper">
-						<img alt="{{ sponsor.name }}" ng-src="{{ sponsor.imageUrl }}" loading="lazy">
+						<img alt="{{ sponsor.name }}" ng-src="media/{{ sponsor.image_url }}" loading="lazy">
 					</div>
 					<p class="sponsor-name">{{ sponsor.name }}</p>
 				</a>

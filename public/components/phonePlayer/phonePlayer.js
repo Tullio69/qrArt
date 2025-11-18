@@ -203,6 +203,30 @@ function PhonePlayerController(FullscreenService,$scope,$interval,$http ,$timeou
         // Assicurati di fermare anche la suoneria qui.
         ringTone.pause();
         ringTone.currentTime = 0;
+        // Carica articoli correlati e sponsor quando la chiamata termina
+        vm.loadRelatedContent();
+    };
+
+    // Funzione per caricare articoli correlati e sponsor
+    vm.loadRelatedContent = function() {
+        if (!vm.content || !vm.content.id) {
+            return;
+        }
+
+        $http.get('api/content/related/' + vm.content.id)
+            .then(function(response) {
+                if (response.data.status === 200) {
+                    $timeout(function() {
+                        vm.relatedArticles = response.data.relatedArticles || [];
+                        vm.sponsorData = response.data.sponsors || [];
+                    });
+                }
+            })
+            .catch(function(error) {
+                console.error('Errore nel caricamento dei contenuti correlati:', error);
+                vm.relatedArticles = [];
+                vm.sponsorData = [];
+            });
     };
 
     // Funzione per avviare il timer
