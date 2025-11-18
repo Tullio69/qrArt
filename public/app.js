@@ -43,7 +43,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
     }])
     // Controller esemplificativo
-    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
+    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', 'AnalyticsService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService, AnalyticsService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
         $scope.contentid=contentId;
@@ -73,8 +73,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
         $scope.selectLanguage = function(metadata, filterTextOnly) {
 
-            // Qui dobbiamo aggiungere la logica per il caricamento del contenuto corrispondente al linguaggio selezionato
-            // con la variante textOnly corrispondente al valore di filterTextOnly
+            // Track content view with language
+            AnalyticsService.trackContentView(
+                $scope.content.id,
+                $scope.content.content_type,
+                metadata.language
+            ).catch(function(error) {
+                console.error('Error tracking content view:', error);
+            });
 
             var callerAvatar = $scope.getFileByType('callerAvatar');
             var callerBackground = $scope.getFileByType('callerBackground');
