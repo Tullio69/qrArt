@@ -41,12 +41,14 @@ class AnalyticsController extends BaseController
         try {
             $db = \Config\Database::connect();
 
-            // Verifica connessione database
-            if (!$db->connID) {
+            // Verifica connessione database con una query di test
+            try {
+                $db->query("SELECT 1");
+            } catch (\Exception $e) {
                 return $this->response->setJSON([
                     'success' => false,
                     'error' => 'Database not connected',
-                    'message' => 'Il database non è connesso. Verifica la configurazione in app/Config/Database.php'
+                    'message' => 'Il database non è connesso. Errore: ' . $e->getMessage()
                 ]);
             }
 
