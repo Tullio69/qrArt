@@ -44,11 +44,11 @@ class CreateQrScansTable extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('qr_code_id');
         $this->forge->addKey('created_at');
-        $this->forge->createTable('qr_scans');
+        $this->forge->createTable('qr_scans',true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('qr_scans');
+        $this->forge->dropTable('qr_scans',true);
     }
 }

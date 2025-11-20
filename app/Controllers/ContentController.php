@@ -298,6 +298,9 @@
                 
                 $db->transCommit();
                 
+                // Recupera i dati aggiornati
+                $updatedContent = $this->getContentData($shortCode);
+                
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Contenuto aggiornato con successo',
