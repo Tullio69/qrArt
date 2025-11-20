@@ -40,31 +40,64 @@
 
 <!-- Stato Ended (Chiamata terminata) -->
 <div class="ended-container" ng-if="vm.callState === 'ended'">
-	<div class="dynamic-content">
-		<h2>{{ vm.translations[vm.content.content_language].dynamicContent }}</h2>
-		
-		<!-- Pulsante per riascoltare l'audio della chiamata -->
-		<button class="replay-button" ng-click="vm.answerCall()">
+	<div class="ended-content-wrapper">
+		<!-- Messaggio di chiusura -->
+		<div class="ended-message">
+			<h2>{{ vm.translations[vm.content.content_language].dynamicContent }}</h2>
+		</div>
+
+		<!-- Pulsante principale per riascoltare l'audio della chiamata -->
+		<button class="replay-button" ng-click="vm.answerCall()" aria-label="Riascolta la chiamata">
+			<svg class="replay-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+				<path d="M21 3v5h-5"/>
+				<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+			</svg>
 			{{ vm.translations[vm.content.content_language].replayButton }}
 		</button>
-		
-		<!-- Link ad articoli correlati -->
-		<div class="related-articles">
-			<h3>{{ vm.translations[vm.content.content_language].relatedArticles }}</h3>
-			<ul>
-				<li ng-repeat="article in vm.relatedArticles">
-					<a href="{{ article.link }}" target="_blank">{{ article.title }}</a>
-				</li>
-			</ul>
+
+		<!-- Sezione articoli correlati - mostrata solo se presenti -->
+		<div class="related-articles-section" ng-if="vm.relatedArticles && vm.relatedArticles.length > 0">
+			<h3 class="section-title">{{ vm.translations[vm.content.content_language].relatedArticles }}</h3>
+			<div class="articles-grid">
+				<a href="{{ article.link }}"
+				   target="_blank"
+				   rel="noopener noreferrer"
+				   class="article-card"
+				   ng-repeat="article in vm.relatedArticles"
+				   aria-label="Leggi articolo: {{ article.title }}">
+					<div class="article-content">
+						<svg class="article-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+							<polyline points="14 2 14 8 20 8"/>
+							<line x1="16" y1="13" x2="8" y2="13"/>
+							<line x1="16" y1="17" x2="8" y2="17"/>
+							<polyline points="10 9 9 9 8 9"/>
+						</svg>
+						<span class="article-title">{{ article.title }}</span>
+						<svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<line x1="5" y1="12" x2="19" y2="12"/>
+							<polyline points="12 5 19 12 12 19"/>
+						</svg>
+					</div>
+				</a>
+			</div>
 		</div>
-		
-		<!-- Riquadri per sponsor o pubblicità -->
-		<div class="sponsors">
-			<h3>{{ vm.translations[vm.content.content_language].sponsor }}</h3>
-			<div class="sponsor-item" ng-repeat="sponsor in vm.sponsorData">
-				<a href="{{ sponsor.link }}" target="_blank">
-					<img alt="{{ sponsor.name }}" ng-src="{{ sponsor.imageUrl }}">
-					<p>{{ sponsor.name }}</p>
+
+		<!-- Sezione sponsor - mostrata solo se presenti -->
+		<div class="sponsors-section" ng-if="vm.sponsorData && vm.sponsorData.length > 0">
+			<h3 class="section-title">{{ vm.translations[vm.content.content_language].sponsor }}</h3>
+			<div class="sponsors-grid">
+				<a href="{{ sponsor.link }}"
+				   target="_blank"
+				   rel="noopener noreferrer"
+				   class="sponsor-card"
+				   ng-repeat="sponsor in vm.sponsorData"
+				   aria-label="Visita sponsor: {{ sponsor.name }}">
+					<div class="sponsor-image-wrapper">
+						<img alt="{{ sponsor.name }}" ng-src="media/{{ sponsor.image_url }}" loading="lazy">
+					</div>
+					<p class="sponsor-name">{{ sponsor.name }}</p>
 				</a>
 			</div>
 		</div>

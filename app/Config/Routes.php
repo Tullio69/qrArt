@@ -14,6 +14,7 @@ use CodeIgniter\Router\RouteCollection;
 
     // Content API - Read
     $routes->get('api/content/details/(:num)', 'ContentController::getDetails/$1');
+    $routes->get('api/content/related/(:num)', 'ContentController::getRelatedContent/$1');
     $routes->get('api/content/getlist', 'ContentController::list');
     $routes->get(from: 'api/content/(:any)', to: 'ContentController::getContentData/$1');
 
