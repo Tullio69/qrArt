@@ -49,4 +49,7 @@ vendor/
 *.tmp
 *.bak
 *.cache
-/public/media/*
+/public/media/.gitkeep
+/public/media/
+# Sensitive configuration
+app/Config/Database.php

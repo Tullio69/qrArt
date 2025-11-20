@@ -41,7 +41,7 @@
                 ]
             ]);
             $this->forge->addKey('id', true);
-            $this->forge->createTable('languages');
+            $this->forge->createTable('languages',true);
             
             // Creazione della tabella callers (chiamanti)
             $this->forge->addField([
@@ -76,7 +76,7 @@
                 ]
             ]);
             $this->forge->addKey('id', true);
-            $this->forge->createTable('callers');
+            $this->forge->createTable('callers',true);
             
             // Creazione della tabella content
             $this->forge->addField([
@@ -118,7 +118,7 @@
             ]);
             $this->forge->addKey('id', true);
             $this->forge->addForeignKey('caller_id', 'callers', 'id', 'CASCADE', 'SET NULL');  // Foreign key collegata alla tabella dei chiamanti
-            $this->forge->createTable('content');
+            $this->forge->createTable('content',true);
             
             // Creazione della tabella content_files
             $this->forge->addField([
@@ -158,7 +158,7 @@
             ]);
             $this->forge->addKey('id', true);
             $this->forge->addForeignKey('content_id', 'content', 'id', 'CASCADE', 'CASCADE');  // Foreign key collegata alla tabella content
-            $this->forge->createTable('content_files');
+            $this->forge->createTable('content_files',true);
         }
         
         public function down()
