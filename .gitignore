@@ -49,4 +49,4 @@ vendor/
 *.tmp
 *.bak
 *.cache
-/public/media/.gitkeep
+/public/media/*
