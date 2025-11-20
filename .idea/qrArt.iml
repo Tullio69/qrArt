@@ -10,6 +10,10 @@
       <sourceFolder url="file://$MODULE_DIR$/system/ThirdParty" isTestSource="false" packagePrefix="Laminas" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/public/media/3" />
+      <excludeFolder url="file://$MODULE_DIR$/public/media/4" />
+      <excludeFolder url="file://$MODULE_DIR$/public/media/5" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
