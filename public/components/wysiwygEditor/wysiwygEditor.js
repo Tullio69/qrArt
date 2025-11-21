@@ -22,6 +22,17 @@ function WysiwygEditorController($element, $scope, $timeout, $sce, $sanitize) {
         }
     };
 
+    // Funzione per estrarre la stringa HTML da un oggetto trusted o da una stringa
+    function getHtmlString(content) {
+        if (!content) return '';
+        // Se è un oggetto trusted di Angular, estrai la stringa
+        if (typeof content === 'object' && content.$$unwrapTrustedValue) {
+            return content.$$unwrapTrustedValue();
+        }
+        // Se è già una stringa, restituiscila
+        return content.toString();
+    }
+
     function initTinyMCE() {
         $timeout(function() {
             tinymce.init({
@@ -42,31 +53,26 @@ function WysiwygEditorController($element, $scope, $timeout, $sce, $sanitize) {
                 setup: function(ed) {
                     editor = ed;
                     editor.on('init', function() {
-                        editor.setContent($ctrl.content || '');
+                        var htmlContent = getHtmlString($ctrl.content);
+                        editor.setContent(htmlContent);
                     });
-                    editor.on('change', function() {
+                    editor.on('change keyup', function() {
                         $scope.$apply(function() {
-                            var sanitizedContent = sanitizeContent(editor.getContent());
-                            $ctrl.content = sanitizedContent;
-                         /*   $ctrl.onChange({content: sanitizedContent});*/
+                            // Salva il contenuto come stringa HTML, non come oggetto trusted
+                            $ctrl.content = editor.getContent();
                         });
                     });
                 }
             });
-        });
-    }
-
-    function sanitizeContent(content) {
-        var sanitized = $sanitize(content);
-        return $sce.trustAsHtml(sanitized);
+        }, 100);
     }
 
     $ctrl.$onChanges = function(changes) {
         if (changes.content && !changes.content.isFirstChange()) {
-            var sanitizedContent = sanitizeContent(changes.content.currentValue);
-            $ctrl.content = sanitizedContent;
+            var htmlContent = getHtmlString(changes.content.currentValue);
+            $ctrl.content = htmlContent;
             if (editor) {
-                editor.setContent(sanitizedContent);
+                editor.setContent(htmlContent);
             }
         }
     };

@@ -43,7 +43,7 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
     }])
     // Controller esemplificativo
-    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', 'AnalyticsService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService, AnalyticsService) {
+    .controller('ContentViewerController', ['$scope', '$routeParams','$sce', '$http','FullscreenService','ContentService', function($scope, $routeParams, $http,$sce,FullscreenService,ContentService) {
         var contentId = $routeParams.id;
         $scope.language_selected=false;
         $scope.contentid=contentId;
@@ -73,19 +73,14 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
 
         $scope.selectLanguage = function(metadata, filterTextOnly) {
 
-            // Track content view with language
-            AnalyticsService.trackContentView(
-                $scope.content.id,
-                $scope.content.content_type,
-                metadata.language
-            ).catch(function(error) {
-                console.error('Error tracking content view:', error);
-            });
+            // Qui dobbiamo aggiungere la logica per il caricamento del contenuto corrispondente al linguaggio selezionato
+            // con la variante textOnly corrispondente al valore di filterTextOnly
 
             var callerAvatar = $scope.getFileByType('callerAvatar');
             var callerBackground = $scope.getFileByType('callerBackground');
 
             $scope.selContent = {
+                id: $scope.content.id,
                 caller_name: $scope.content.caller_name,
                 caller_subtitle: $scope.content.caller_title,
                 caller_avatar: callerAvatar ? callerAvatar.file_url : null,
@@ -197,15 +192,15 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     .controller('TabsController', function($scope) {
 
     })
-    .controller('FormController', ['$http', '$scope', '$location', FormController])
+    .controller('FormController', ['$http', '$scope', FormController])
     .controller('ThemeTestController', function($scope) {
         $scope.title = "Verifica il tuo tema Tailwind";
         $scope.description = "Questo componente utilizza classi Tailwind e Flowbite per testare se il tuo tema è configurato correttamente.";
         $scope.linkText = "Scopri di più";
     })
     .controller('ContentListController', [
-        '$scope', '$http', '$uibModal','$timeout', '$location',
-        function ($scope, $http, $uibModal,$timeout, $location) {
+        '$scope', '$http', '$uibModal','$timeout',
+        function ($scope, $http, $uibModal,$timeout) {
             $scope.contents = [];
             $scope.loading = true;
             $scope.error = null;
@@ -691,27 +686,209 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
                     return;
                 }
 
+                $scope.replacingFile = true;
+                $scope.replaceError = null;
+                $scope.replaceSuccess = false;
+
                 const formData = new FormData();
                 formData.append('file', $scope.newFile);
                 formData.append('file_id', $scope.selectedFileToReplace.id);
 
                 $http.post($scope.base_url + '/api/content/replaceFile', formData, {
-                    headers: { 'Content-Type': undefined } // lascia che il browser imposti multipart/form-data
+                    headers: { 'Content-Type': undefined }
                 }).then(response => {
-                    alert("File sostituito con successo!");
-                    $scope.modalVisible = false;
-                    $scope.newFile = null;
-                    // puoi ricaricare i dati del content se vuoi
+                    $scope.replaceSuccess = true;
+                    $timeout(function() {
+                        $scope.modalVisible = false;
+                        $scope.newFile = null;
+                        $scope.replacingFile = false;
+                        $scope.replaceSuccess = false;
+                        // Ricarica i dettagli del contenuto
+                        var content = $scope.contents.find(c => c.id === $scope.expandedContentId);
+                        if (content) {
+                            $scope.toggleDetails(content);
+                            $timeout(function() {
+                                $scope.toggleDetails(content);
+                            }, 100);
+                        }
+                    }, 1500);
                 }).catch(err => {
-                    alert("Errore durante la sostituzione del file.");
+                    $scope.replaceError = "Errore durante la sostituzione del file: " + (err.data?.message || err.message);
+                    $scope.replacingFile = false;
                     console.error(err);
                 });
             };
 
-            // Add language variant - navigate to editor with contentId
-            $scope.addLanguageVariant = function(content) {
-                $location.path('/editor').search('contentId', content.id);
+            $scope.closeReplaceModal = function() {
+                $scope.modalVisible = false;
+                $scope.newFile = null;
+                $scope.replacingFile = false;
+                $scope.replaceError = null;
+                $scope.replaceSuccess = false;
             };
+
+            $scope.handleFileSelect = function(file) {
+                $scope.$apply(function() {
+                    $scope.newFile = file;
+                });
+            };
+
+            $scope.getAcceptType = function(fileType) {
+                if (!fileType) return '*/*';
+                if (fileType === 'audio' || fileType === 'audio_call') return 'audio/*';
+                if (fileType === 'video' || fileType === 'video_call') return 'video/*';
+                if (fileType === 'callerAvatar' || fileType === 'callerBackground') return 'image/*';
+                return '*/*';
+            };
+
+            $scope.toggleGlobalFilePreview = function(fileId) {
+                var content = $scope.contents.find(c => c.id === $scope.expandedContentId);
+                if (!content || !content.globalFiles) return;
+
+                content.globalFiles.forEach(function(file) {
+                    if (file.id === fileId) {
+                        file.showPreview = !file.showPreview;
+                    }
+                });
+            };
+
+            $scope.toggleLanguageVariantPreview = function(lang, contentId) {
+                var content = $scope.contents.find(c => c.id === contentId);
+                if (!content || !content.perLanguage || !content.perLanguage[lang]) return;
+
+                content.perLanguage[lang].showPreview = !content.perLanguage[lang].showPreview;
+            };
+
+            $scope.toggleHtmlPreview = function(metadataId) {
+                var content = $scope.contents.find(c => c.id === $scope.expandedContentId);
+                if (!content || !content.perLanguage) return;
+
+                Object.keys(content.perLanguage).forEach(function(lang) {
+                    if (content.perLanguage[lang].metadata.id === metadataId) {
+                        content.perLanguage[lang].metadata.showHtml = !content.perLanguage[lang].metadata.showHtml;
+                    }
+                });
+            };
+
+            $scope.replaceLanguageVariantFile = function(data, lang) {
+                if (!data.files) {
+                    alert("Nessun file trovato per questa variante linguistica.");
+                    return;
+                }
+
+                // Trova il primo file (audio o video)
+                var file = data.files.audio || data.files.video;
+                if (!file) {
+                    alert("Nessun file media trovato per questa variante linguistica.");
+                    return;
+                }
+
+                // Imposta il file_type in base al tipo di file
+                file.file_type = data.files.audio ? 'audio' : 'video';
+                $scope.replaceFile(file);
+            };
+
+            $scope.getLanguageName = function(languageCode) {
+                const languageMap = {
+                    'it': 'Italiano',
+                    'en': 'Inglese',
+                    'es': 'Spagnolo',
+                    'fr': 'Francese',
+                    'de': 'Tedesco',
+                    'sv': 'Svedese'
+                };
+                return languageMap[languageCode] || languageCode.toUpperCase();
+            };
+
+            $scope.copyToClipboard = function(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        $scope.successMessage = 'Short code copiato negli appunti!';
+                        $timeout(function() {
+                            $scope.successMessage = null;
+                        }, 3000);
+                    }).catch(function(err) {
+                        console.error('Errore nella copia:', err);
+                    });
+                } else {
+                    // Fallback per browser più vecchi
+                    var textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.top = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        $scope.successMessage = 'Short code copiato negli appunti!';
+                        $timeout(function() {
+                            $scope.successMessage = null;
+                        }, 3000);
+                    } catch (err) {
+                        console.error('Errore nella copia:', err);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            };
+
+            // Filtri per la ricerca
+            $scope.filterContents = function(content) {
+                if (!$scope.searchQuery) return true;
+                var query = $scope.searchQuery.toLowerCase();
+                return (content.caller_name && content.caller_name.toLowerCase().includes(query)) ||
+                       (content.caller_title && content.caller_title.toLowerCase().includes(query)) ||
+                       (content.short_code && content.short_code.toLowerCase().includes(query));
+            };
+
+            $scope.filterByLanguage = function(content) {
+                if (!$scope.filterLanguage) return true;
+                return content.languages && content.languages.includes($scope.filterLanguage);
+            };
+
+            $scope.resetFilters = function() {
+                $scope.searchQuery = '';
+                $scope.filterType = '';
+                $scope.filterLanguage = '';
+            };
+
+            // Paginazione
+            $scope.currentPage = 1;
+            $scope.pageSize = 10;
+
+            $scope.totalPages = function() {
+                return Math.ceil($scope.contents.length / $scope.pageSize);
+            };
+
+            $scope.nextPage = function() {
+                if ($scope.currentPage < $scope.totalPages()) {
+                    $scope.currentPage++;
+                }
+            };
+
+            $scope.previousPage = function() {
+                if ($scope.currentPage > 1) {
+                    $scope.currentPage--;
+                }
+            };
+
+            $scope.goToPage = function(page) {
+                $scope.currentPage = page;
+            };
+
+            $scope.getPageNumbers = function() {
+                var total = $scope.totalPages();
+                var current = $scope.currentPage;
+                var pages = [];
+                var start = Math.max(1, current - 2);
+                var end = Math.min(total, current + 2);
+
+                for (var i = start; i <= end; i++) {
+                    pages.push(i);
+                }
+                return pages;
+            };
+
+            $scope.Math = Math;
 
         }
     ])
@@ -723,6 +900,40 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
         function($scope, $uibModalInstance, $http, content) {
             $scope.content = angular.copy(content);
             $scope.saving = false;
+
+            // Funzione per gestire il cambio dell'avatar
+            $scope.handleAvatarChange = function(file) {
+                $scope.$apply(function() {
+                    $scope.content.new_avatar = file;
+                });
+            };
+
+            // Funzione per gestire il cambio del background
+            $scope.handleBackgroundChange = function(file) {
+                $scope.$apply(function() {
+                    $scope.content.new_background = file;
+                });
+            };
+
+            // Funzione per gestire il cambio del file di una variante
+            $scope.handleVariantFileChange = function(file, index) {
+                $scope.$apply(function() {
+                    $scope.content.metadata[index].new_file = file;
+                });
+            };
+
+            // Funzione per ottenere il nome della lingua
+            $scope.getLanguageName = function(languageCode) {
+                const languageMap = {
+                    'it': 'Italiano',
+                    'en': 'Inglese',
+                    'es': 'Spagnolo',
+                    'fr': 'Francese',
+                    'de': 'Tedesco',
+                    'sv': 'Svedese'
+                };
+                return languageMap[languageCode] || languageCode.toUpperCase();
+            };
 
             $scope.save = function() {
                 $scope.saving = true;
@@ -1002,14 +1213,12 @@ var app = angular.module('phoneApp', ['ngRoute','ngSanitize','ui.bootstrap'])
     }])
 
 
-function FormController($http, $scope, $location) {
+function FormController($http, $scope) {
     var vm = this;
 
     // Tab management
     vm.activeTab = 'base';
     vm.isSubmitting = false;
-    vm.isAddingVariant = false; // Flag per indicare se stiamo aggiungendo una variante
-    vm.existingContentId = null;
 
     vm.setActiveTab = function(tab) {
         vm.activeTab = tab;
@@ -1029,41 +1238,6 @@ function FormController($http, $scope, $location) {
         relatedArticles: [],
         sponsors: []
     };
-
-    // Check if we're adding a language variant to existing content
-    var contentId = $location.search().contentId;
-    if (contentId) {
-        vm.isAddingVariant = true;
-        vm.existingContentId = contentId;
-
-        // Load existing content data
-        $http.get(window.BASE_URL + '/api/content/details/' + contentId)
-            .then(function(response) {
-                var content = response.data.content;
-
-                // Pre-fill form with existing content data
-                vm.formData.callerName = content.caller_name;
-                vm.formData.callerTitle = content.caller_title;
-                vm.formData.contentName = content.content_name;
-                vm.formData.contentType = content.content_type;
-
-                // Add info banner
-                vm.existingContentInfo = {
-                    name: content.caller_name,
-                    shortCode: content.short_code,
-                    existingLanguages: response.data.metadata.map(function(m) { return m.language; })
-                };
-
-                // Navigate to variants tab
-                vm.setActiveTab('variants');
-
-                console.log('✅ Contenuto caricato per aggiunta variante:', content);
-            })
-            .catch(function(error) {
-                console.error('❌ Errore caricamento contenuto:', error);
-                alert('Errore nel caricamento dei dati del contenuto');
-            });
-    }
 
     vm.addLanguageVariant = function() {
         vm.formData.languageVariants.push({
@@ -1140,11 +1314,6 @@ function FormController($http, $scope, $location) {
         formData.append('contentName', vm.formData.contentName);
         formData.append('contentType', vm.formData.contentType);
 
-        // If we're adding a variant to existing content, include the existingContentId
-        if (vm.existingContentId) {
-            formData.append('existingContentId', vm.existingContentId);
-        }
-
         // Append language variants
         vm.formData.languageVariants.forEach((variant, index) => {
             formData.append(`languageVariants[${index}][contentName]`, variant.contentName);
@@ -1182,6 +1351,24 @@ function FormController($http, $scope, $location) {
             }
         }
 
+        // Append related articles
+        vm.formData.relatedArticles.forEach((article, index) => {
+            formData.append(`relatedArticles[${index}][title]`, article.title);
+            formData.append(`relatedArticles[${index}][link]`, article.link);
+        });
+
+        // Append sponsors
+        vm.formData.sponsors.forEach((sponsor, index) => {
+            formData.append(`sponsors[${index}][name]`, sponsor.name);
+            formData.append(`sponsors[${index}][link]`, sponsor.link);
+
+            // Append sponsor image
+            var sponsorImageInput = document.getElementById(`sponsorImage-${index}`);
+            if (sponsorImageInput && sponsorImageInput.files[0]) {
+                formData.append(`sponsorImages[${sponsor.name}]`, sponsorImageInput.files[0]);
+            }
+        });
+
         // Log formData contents for debugging
         for (var pair of formData.entries()) {
             console.log(pair[0] + ': ' + pair[1]);
@@ -1197,31 +1384,23 @@ function FormController($http, $scope, $location) {
             vm.isSubmitting = false;
             if (response.data.success) {
                 console.log('Dati salvati con successo:', response.data);
+                alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
 
-                if (response.data.isAddingVariant) {
-                    alert('✅ Variante linguistica aggiunta con successo!\n\nLa nuova variante è stata aggiunta al contenuto esistente.');
-
-                    // Redirect back to content manager
-                    window.location.href = '#!/content-manager';
-                } else {
-                    alert('✅ Contenuto creato con successo!\n\nIl contenuto è stato salvato correttamente.');
-
-                    // Reset form and return to first tab
-                    vm.formData = {
-                        callerName: '',
-                        callerTitle: '',
-                        contentName: '',
-                        contentType: '',
-                        contentDescription: '',
-                        callerBackground: null,
-                        callerAvatar: null,
-                        languageVariants: [],
-                        relatedArticles: [],
-                        sponsors: []
-                    };
-                    vm.addLanguageVariant();
-                    vm.setActiveTab('base');
-                }
+                // Reset form and return to first tab
+                vm.formData = {
+                    callerName: '',
+                    callerTitle: '',
+                    contentName: '',
+                    contentType: '',
+                    contentDescription: '',
+                    callerBackground: null,
+                    callerAvatar: null,
+                    languageVariants: [],
+                    relatedArticles: [],
+                    sponsors: []
+                };
+                vm.addLanguageVariant();
+                vm.setActiveTab('base');
             } else {
                 console.error('Errore nel salvataggio dei dati:', response.data.message);
                 alert('❌ Errore nel salvataggio\n\n' + response.data.message);
