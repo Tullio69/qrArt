@@ -2,8 +2,7 @@
 <html ng-app="phoneApp">
 <head>
 	<base href="/">
-	<title>Phone App</title>
-	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 	<meta http-equiv="Pragma" content="no-cache" />
 	<meta http-equiv="Expires" content="0" />
 	
@@ -34,6 +33,13 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
 	
 	<link rel="stylesheet" href="assets/css/style.css">
+	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="shortcut icon" href="/favicon.ico" />
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+	<meta name="apple-mobile-web-app-title" content="QrArt" />
+	<link rel="manifest" href="/site.webmanifest" />
+	<title>QrArt - Contenuti multimediali multilingua tramite QR code</title>
 </head>
 <body>
 
