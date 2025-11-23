@@ -20,13 +20,17 @@
 
             $currentPath = trim($request->getUri()->getPath(), '/'); // rimuove eventuali slash
 
-            // Escludi le route API dal controllo mobile
-            if (strpos($currentPath, 'api/') === 0) {
-                return;
+            // Escludi le route pubbliche dal controllo mobile
+            $publicPaths = ['api/', 'media/', 'content/', 'test-file'];
+            foreach ($publicPaths as $path) {
+                if (strpos($currentPath, $path) === 0) {
+                    return;
+                }
             }
 
             // Se NON è mobile e NON è in home, allora reindirizza
             if (!$isMobile && $currentPath !== '') {
+                log_message('info', 'MobileOnly REDIRECT - Path: ' . $currentPath . ' - User Agent: ' . substr($userAgent, 0, 100));
                 return redirect()->to('/');
             }
 
