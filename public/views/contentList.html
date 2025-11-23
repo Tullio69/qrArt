@@ -244,7 +244,7 @@
 					</div>
 					
 					<!-- Varianti per Lingua -->
-      					<div ng-if="content.perLanguage && (content.perLanguage | json) !== '{}'">
+					<div>
 						<h4 class="font-semibold text-gray-900 mb-2 flex items-center">
 							<i class="fas fa-language mr-2 text-purple-600"></i>
 							Varianti Linguistiche
@@ -252,118 +252,121 @@
             ({{getObjectKeysLength(content.perLanguage)}})
         </span>
 						</h4>
-						
 						<div class="space-y-3">
-							<!-- Itera sulle lingue usando (key, value) -->
-							<div ng-repeat="(language, variantData) in content.perLanguage"
-								 class="bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
-								
-								<!-- Header variante -->
-								<div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-t-lg">
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3 flex-1">
-											<!-- Tag lingua -->
-											<span class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-bold uppercase shadow-sm">
-                            {{language}}
+							<div ng-repeat="(lang, data) in content.perLanguage"
+								 class="bg-white rounded-lg p-3">
+								<div class="flex items-center justify-between mb-2">
+									<h5 class="font-medium text-gray-900 flex items-center gap-2">
+										<!-- Tag lingua -->
+										<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold uppercase">
+											{{lang}}
                         </span>
-											<span class="font-semibold text-gray-900">{{getLanguageName(language)}}</span>
-											
-											<!-- Badge Tipo File Multimedia (OBBLIGATORIO) -->
-											<span class="px-3 py-1 rounded-full text-xs font-semibold shadow-sm"
+										<span>{{getLanguageName(lang)}}</span>
+										<!-- Badge tipo contenuto -->
+										<span class="px-2 py-1 rounded text-xs"
 												  ng-class="{
-                                'bg-blue-100 text-blue-800 border border-blue-300': variantData.files.audio,
-                                'bg-green-100 text-green-800 border border-green-300': variantData.files.video
-                              }">
-                            <i class="fas mr-1" ng-class="{
-                                'fa-file-audio': variantData.files.audio,
-                                'fa-file-video': variantData.files.video
+												'bg-yellow-100 text-yellow-800': data.metadata.text_only,
+												'bg-blue-100 text-blue-800': !data.metadata.text_only && data.files.audio,
+												'bg-green-100 text-green-800': !data.metadata.text_only && data.files.video
+											  }">
+											<i class="fas" ng-class="{
+												'fa-code': data.metadata.text_only,
+												'fa-file-audio': !data.metadata.text_only && data.files.audio,
+												'fa-file-video': !data.metadata.text_only && data.files.video
                             }"></i>
-                            <span ng-if="variantData.files.audio">Audio</span>
-                            <span ng-if="variantData.files.video">Video</span>
-                        </span>
-											
-											<!-- Badge HTML (OPZIONALE) -->
-											<span ng-if="variantData.files.html || variantData.metadata.html_content"
-												  class="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-full text-xs font-semibold shadow-sm">
-                            <i class="fas fa-code mr-1"></i>
-                            HTML
-                        </span>
-										</div>
-										
-										<!-- Azioni rapide -->
-										<div class="flex gap-2">
-											<button ng-click="toggleLanguageVariantDetails(language, content.id)"
-													class="p-2 text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg transition-all"
-													title="{{variantData.showDetails ? 'Nascondi dettagli' : 'Mostra dettagli'}}">
-												<i class="fas transition-transform duration-200"
-												   ng-class="{'fa-chevron-up': variantData.showDetails, 'fa-chevron-down': !variantData.showDetails}"></i>
+											{{data.metadata.text_only ? 'HTML' : (data.files.audio ? 'Audio' : 'Video')}}
+										</span>
+									</h5>
+									<div class="flex gap-2">
+										<!-- Pulsanti per Media: Anteprima + Sostituisci -->
+										<button ng-if="!data.metadata.text_only"
+												ng-click="toggleLanguageVariantPreview(lang, content.id)"
+												class="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded transition-colors">
+											<i class="fas" ng-class="data.showPreview ? 'fa-eye-slash' : 'fa-eye'"></i>
+											{{data.showPreview ? 'Nascondi' : 'Anteprima'}}
+										</button>
+										<button ng-if="!data.metadata.text_only"
+												ng-click="replaceLanguageVariantFile(data, lang)"
+												class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
+											<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
+										</button>
+										<!-- Pulsanti per HTML: Anteprima + Modifica -->
+										<button ng-if="data.metadata.text_only && data.metadata.html_content"
+												ng-click="toggleHtmlPreview(data.metadata.id)"
+												class="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-50 rounded transition-colors">
+											<i class="fas" ng-class="data.metadata.showHtml ? 'fa-eye-slash' : 'fa-eye'"></i>
+											{{data.metadata.showHtml ? 'Nascondi' : 'Anteprima'}} HTML
 											</button>
-										</div>
+										<button ng-if="data.metadata.text_only"
+												ng-click="openEditModal(content)"
+												class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
+											<i class="fas fa-edit mr-1"></i> Modifica HTML
+										</button>
+										<!-- Pulsante Elimina Variante -->
+										<button ng-click="deleteMetadata(data.metadata.id)"
+												class="text-xs px-3 py-1.5 text-red-600 hover:bg-red-50 rounded transition-colors">
+											<i class="fas fa-trash-alt mr-1"></i> Elimina Variante
+										</button>
 									</div>
 								</div>
 								
-								<!-- Dettagli variante (collapsible) -->
-								<div ng-if="variantData.showDetails" class="p-4 space-y-4 border-t border-gray-200">
-									
-									<!-- Info Metadata -->
-									<div class="bg-gray-50 rounded-lg p-3 space-y-2">
-										<h6 class="font-semibold text-gray-900 text-sm mb-2">
-											<i class="fas fa-info-circle mr-1 text-blue-600"></i>
-											Informazioni
-										</h6>
-										<p class="text-sm">
-											<strong class="text-gray-700">Nome:</strong>
-											<span class="text-gray-900">{{variantData.metadata.content_name}}</span>
-										</p>
-										<p class="text-sm" ng-if="variantData.metadata.description">
-											<strong class="text-gray-700">Descrizione:</strong>
-											<span class="text-gray-900">{{variantData.metadata.description}}</span>
-										</p>
-										<p class="text-sm">
-											<strong class="text-gray-700">Tipo:</strong>
-											<span class="text-gray-900" ng-if="variantData.metadata.text_only == '1'">Solo testo (non udenti)</span>
-											<span class="text-gray-900" ng-if="variantData.metadata.text_only != '1'">Multimediale</span>
-										</p>
-									</div>
-									
-									<!-- File Multimediale (OBBLIGATORIO) -->
-									<div class="border border-gray-200 rounded-lg overflow-hidden">
-										<div class="bg-gray-50 px-4 py-2 border-b flex items-center justify-between">
-											<div class="flex items-center gap-2">
-												<i class="fas text-lg" ng-class="{
-                                'fa-file-audio text-blue-600': variantData.files.audio,
-                                'fa-file-video text-green-600': variantData.files.video
+								<!-- Metadata info -->
+								<div class="mb-2 text-sm">
+									<p class="text-gray-700"><strong>Nome:</strong> {{data.metadata.content_name}}</p>
+									<p class="text-gray-700" ng-if="data.metadata.description">
+										<strong>Descrizione:</strong> {{data.metadata.description}}
+									</p>
+									<!-- Link anteprima per varianti con media -->
+									<p class="text-gray-700" ng-if="!data.metadata.text_only">
+										<strong>Link Anteprima:</strong>
+										<a ng-href="/content/{{content.short_code}}?lang={{lang}}"
+										   target="_blank"
+										   class="text-blue-600 hover:text-blue-800 underline ml-1">
+											<i class="fas fa-external-link-alt mr-1"></i>
+											Apri anteprima ({{lang}})
+										</a>
+									</p>
+								</div>
+
+								<!-- File associati (con media) - Preview -->
+								<div ng-if="!data.metadata.text_only && data.showPreview" class="mt-3">
+									<div ng-repeat="(type, file) in data.files" class="border border-gray-200 rounded-lg overflow-hidden">
+										<div class="bg-gray-50 px-3 py-2">
+											<div class="flex items-center justify-between mb-2">
+												<div class="flex items-center gap-2">
+													<i class="fas" ng-class="{
+														'fa-file-audio text-blue-600': type === 'audio',
+														'fa-file-video text-green-600': type === 'video'
                             }"></i>
-												<span class="font-semibold text-gray-900 text-sm">
-                                File Multimediale
-                                <span ng-if="variantData.files.audio">(Audio)</span>
-                                <span ng-if="variantData.files.video">(Video)</span>
+													<div>
+														<span class="text-sm font-semibold text-gray-700">
+															Anteprima {{type === 'audio' ? 'Audio' : 'Video'}}
                             </span>
-											</div>
-											<div class="flex gap-2">
-												<button ng-click="toggleMediaPreview(language, content.id)"
-														class="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors">
-													<i class="fas" ng-class="variantData.showMediaPreview ? 'fa-eye-slash' : 'fa-eye'"></i>
-													{{variantData.showMediaPreview ? 'Nascondi' : 'Anteprima'}}
+														<p class="text-xs text-gray-700"><strong>Nome contenuto:</strong> {{data.metadata.content_name}}</p>
+														<p class="text-xs text-gray-500 font-mono">File: {{file.file_url}}</p>
+													</div>
+												</div>
+												<button ng-click="toggleLanguageVariantPreview(lang, content.id)"
+														class="text-xs text-gray-600 hover:text-gray-800">
+													<i class="fas fa-times"></i> Chiudi
 												</button>
-												<button ng-click="replaceMediaFile(variantData, language)"
-														class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors">
-													<i class="fas fa-exchange-alt mr-1"></i> Sostituisci
+											</div>
+											<!-- Link anteprima -->
+											<div class="flex gap-2">
+												<a ng-href="/content/{{content.short_code}}?lang={{lang}}"
+												   target="_blank"
+												   class="text-xs px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors inline-flex items-center">
+													<i class="fas fa-external-link-alt mr-1"></i>
+													Apri anteprima completa
+												</a>
+												<button ng-click="replaceLanguageVariantFile(data, lang)"
+														class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors border border-blue-600">
+													<i class="fas fa-exchange-alt mr-1"></i> Sostituisci file
 												</button>
 											</div>
 										</div>
-										
-										<!-- File URL -->
-										<div class="px-4 py-3 bg-white">
-											<p class="text-xs text-gray-600 mb-1">Percorso file:</p>
-											<code class="text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300 block overflow-x-auto">
-												<span ng-if="variantData.files.audio">{{variantData.files.audio.file_url}}</span>
-												<span ng-if="variantData.files.video">{{variantData.files.video.file_url}}</span>
-											</code>
-											
-											<!-- Preview Media -->
-											<div ng-if="variantData.showMediaPreview" class="mt-3 pt-3 border-t">
-												<audio ng-if="variantData.files.audio"
+										<div class="bg-white p-3">
+											<audio ng-if="type === 'audio'"
 													   controls
 													   class="w-full"
 													   ng-src="{{base_url}}/media/{{variantData.files.audio.file_url}}"></audio>
@@ -385,71 +388,38 @@
 											</a>
 										</div>
 									</div>
-									
-									<!-- File HTML (OPZIONALE) -->
-									<div ng-if="variantData.files.html || variantData.metadata.html_content"
-										 class="border border-gray-200 rounded-lg overflow-hidden">
-										<div class="bg-yellow-50 px-4 py-2 border-b flex items-center justify-between">
-											<div class="flex items-center gap-2">
-												<i class="fas fa-code text-yellow-600 text-lg"></i>
-												<span class="font-semibold text-gray-900 text-sm">
-                                Contenuto HTML
-                                <span class="text-xs text-yellow-700 font-normal">(opzionale)</span>
-                            </span>
+
+								<!-- Anteprima HTML - Preview -->
+								<div ng-if="data.metadata.text_only && data.metadata.showHtml && data.metadata.html_content" class="mt-3">
+									<div class="border border-gray-200 rounded-lg overflow-hidden">
+										<div class="bg-gray-50 px-3 py-2">
+											<div class="flex items-center justify-between mb-2">
+												<div class="flex items-center gap-2">
+													<i class="fas fa-code text-yellow-600"></i>
+													<div>
+														<span class="text-sm font-semibold text-gray-700">Anteprima Contenuto HTML</span>
+														<p class="text-xs text-gray-700"><strong>Nome contenuto:</strong> {{data.metadata.content_name}}</p>
+													</div>
+												</div>
+												<button ng-click="toggleHtmlPreview(data.metadata.id)"
+														class="text-xs text-gray-600 hover:text-gray-800">
+													<i class="fas fa-times"></i> Chiudi
+												</button>
 											</div>
+											<!-- Pulsante modifica -->
 											<div class="flex gap-2">
-												<button ng-click="toggleHtmlPreview(variantData.metadata.id)"
-														class="text-xs px-3 py-1.5 text-gray-600 hover:bg-yellow-100 rounded transition-colors">
-													<i class="fas" ng-class="variantData.metadata.showHtml ? 'fa-eye-slash' : 'fa-eye'"></i>
-													{{variantData.metadata.showHtml ? 'Nascondi' : 'Anteprima'}}
-												</button>
 												<button ng-click="openEditModal(content)"
-														class="text-xs px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors">
-													<i class="fas fa-edit mr-1"></i> Modifica
+														class="text-xs px-3 py-1.5 bg-orange-600 text-white hover:bg-orange-700 rounded transition-colors inline-flex items-center">
+													<i class="fas fa-edit mr-1"></i>
+													Modifica HTML
 												</button>
 											</div>
 										</div>
-										
-										<!-- HTML URL -->
-										<div class="px-4 py-3 bg-white" ng-if="variantData.files.html">
-											<p class="text-xs text-gray-600 mb-1">Percorso file HTML:</p>
-											<code class="text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300 block overflow-x-auto">
-												{{variantData.files.html.file_url}}
-											</code>
-										</div>
-										
-										<!-- Preview HTML -->
-										<div ng-if="variantData.metadata.showHtml && variantData.metadata.html_content"
-											 class="px-4 py-4 bg-white border-t max-h-96 overflow-y-auto">
-											<div ng-bind-html="variantData.metadata.html_content" class="prose prose-sm max-w-none"></div>
+										<div class="bg-white p-4 max-h-96 overflow-y-auto">
+											<div ng-bind-html="data.metadata.html_content" class="prose prose-sm max-w-none"></div>
 										</div>
 									</div>
-									
-									<!-- Azioni variante -->
-									<div class="flex gap-2 pt-3 border-t">
-										<button ng-click="openEditModal(content)"
-												class="flex-1 px-4 py-2 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg transition-colors text-sm font-medium">
-											<i class="fas fa-edit mr-1"></i>
-											Modifica Variante
-										</button>
-										<button ng-click="deleteMetadata(variantData.metadata.id)"
-												class="px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium">
-											<i class="fas fa-trash-alt mr-1"></i>
-											Elimina
-										</button>
-									</div>
 								</div>
-								
-								<!-- Footer compatto quando chiuso -->
-								<div ng-if="!variantData.showDetails" class="px-4 py-2 bg-gray-50 text-xs text-gray-600 rounded-b-lg">
-									<span class="font-medium">{{variantData.metadata.content_name}}</span>
-									<span class="mx-2">•</span>
-									<span ng-if="variantData.files.audio">Audio: {{variantData.files.audio.file_url}}</span>
-									<span ng-if="variantData.files.video">Video: {{variantData.files.video.file_url}}</span>
-									<span ng-if="variantData.files.html" class="ml-2 text-yellow-700">+ HTML</span>
-								</div>
-							</div>
-						</div>
 					</div>
 					
 					<!-- Messaggio se non ci sono varianti -->
