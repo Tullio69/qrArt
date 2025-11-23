@@ -35,6 +35,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'mobileonly'    => \App\Filters\MobileOnly::class,
+        'adminonly'     => \App\Filters\AdminOnly::class,
     ];
 
     /**
@@ -106,5 +107,25 @@ class Filters extends BaseFilters
      */
     public array $filters = [
         'mobileonly' => ['before' => ['*']],
+        'adminonly' => [
+            'before' => [
+                // Inserimento contenuti
+                'api/qrart/*',
+                // Content-manager (tutte le operazioni di gestione contenuti)
+                'api/content/getlist',
+                'api/content/details/*',
+                'api/content/related/*',
+                'api/content/update/*',
+                'api/content/delete/*',
+                'api/content/replaceFile',
+                'api/content/file/*',
+                'api/content/metadata/*',
+                // Analytics
+                'analytics/*',
+                'api/analytics/*',
+                // Dashboard admin
+                'dashboard*',
+            ],
+        ],
     ];
 }
