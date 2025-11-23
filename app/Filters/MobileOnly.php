@@ -11,14 +11,19 @@
         {
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
             $isMobile = preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $userAgent);
-            
+
             $currentPath = trim($request->getUri()->getPath(), '/'); // rimuove eventuali slash
-            
+
+            // Escludi le route API dal controllo mobile
+            if (strpos($currentPath, 'api/') === 0) {
+                return;
+            }
+
             // Se NON è mobile e NON è in home, allora reindirizza
             if (!$isMobile && $currentPath !== '') {
                 return redirect()->to('/');
             }
-            
+
             // Altrimenti lascia proseguire
         }
         
