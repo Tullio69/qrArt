@@ -17,7 +17,8 @@ class AdminOnly implements FilterInterface
 
         if (!$isAllowed) {
             // Redirect alla homepage se non autorizzato
-            return redirect()->to('/')->with('error', 'Accesso non autorizzato');
+            log_message('warning', 'Tentativo di accesso non autorizzato a: ' . $request->getUri()->getPath() . ' - User Agent: ' . $userAgent);
+            return redirect()->to('/');
         }
 
         // Altrimenti lascia proseguire
