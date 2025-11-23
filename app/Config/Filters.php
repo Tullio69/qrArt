@@ -111,15 +111,13 @@ class Filters extends BaseFilters
             'before' => [
                 // Inserimento contenuti
                 'api/qrart/*',
-                // Content-manager (tutte le operazioni di gestione contenuti)
-                'api/content/getlist',
-                'api/content/details/*',
-                'api/content/related/*',
-                'api/content/update/*',
-                'api/content/delete/*',
-                'api/content/replaceFile',
-                'api/content/file/*',
-                'api/content/metadata/*',
+                // Content-manager (solo operazioni di SCRITTURA/MODIFICA)
+                'api/content/getlist',      // Lista contenuti per admin panel
+                'api/content/update/*',      // Update/modifica contenuti
+                'api/content/delete/*',      // Eliminazione contenuti
+                'api/content/replaceFile',   // Sostituzione file
+                'api/content/file/*',        // Gestione file
+                'api/content/metadata/*',    // Gestione metadati
                 // Analytics
                 'analytics/*',
                 'api/analytics/*',
