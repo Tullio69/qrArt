@@ -51,5 +51,4 @@ vendor/
 *.cache
 /public/media/.gitkeep
 /public/media/
-# Sensitive configuration
-app/Config/Database.php
+
