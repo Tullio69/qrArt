@@ -56,14 +56,18 @@ use CodeIgniter\Router\RouteCollection;
 // Funzione per verificare l'user agent (considera di spostarla in un helper o in un middleware)
     function isAllowedUserAgent()
     {
-        $agent = service('request')->getUserAgent();
-        $userAgentString = $agent->getAgentString();
-        
-        #log_message('debug', 'User Agent String: ' . $userAgentString);
-        
-        $isAllowed = (strpos($userAgentString, 'force-ws05') !== false);
-        
-        #log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
-        
-        return true;#$isAllowed;
+        try {
+            $request = service('request');
+            $userAgentString = $request->getServer('HTTP_USER_AGENT') ?? '';
+
+            #log_message('debug', 'User Agent String: ' . $userAgentString);
+
+            $isAllowed = (strpos($userAgentString, 'force-ws05') !== false);
+
+            #log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
+
+            return true;#$isAllowed;
+        } catch (\Exception $e) {
+            return true;
+        }
     }
