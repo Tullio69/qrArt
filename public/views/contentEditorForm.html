@@ -88,26 +88,6 @@
 		</div>
 	</div>
 
-	<!-- Breadcrumb Navigation -->
-	<nav class="mb-6 flex items-center text-sm text-gray-600">
-		<a href="/" class="hover:text-primary-600 flex items-center">
-			<i data-lucide="home" class="h-4 w-4 mr-1"></i>
-			Home
-		</a>
-		<i data-lucide="chevron-right" class="h-4 w-4 mx-2"></i>
-		<span class="text-gray-900 font-semibold">Crea Contenuto</span>
-		<div class="ml-auto flex gap-2">
-			<a href="/" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-				<i data-lucide="arrow-left" class="inline h-4 w-4 mr-1"></i>
-				Torna alla Home
-			</a>
-			<a href="/content-manager" class="px-4 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-				<i data-lucide="list" class="inline h-4 w-4 mr-1"></i>
-				Gestisci Contenuti
-			</a>
-		</div>
-	</nav>
-
 	<form ng-submit="vm.submitForm()" class="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
 		<h1 class="text-2xl font-bold mb-6 text-gray-800">
 			<span ng-if="!vm.isAddingVariant">Crea Nuovo Contenuto</span>
@@ -378,7 +358,7 @@
 						</div>
 						<div>
 							<label for="sponsorImage-{{$index}}" class="block mb-2 text-sm font-medium text-gray-900">Immagine Sponsor</label>
-							<input type="file" id="sponsorImage-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-disabled="vm.isSubmitting">
+							<input type="file" id="sponsorImage-{{$index}}" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" accept="image/*" ng-model="sponsor.image" ng-disabled="vm.isSubmitting" required>
 						</div>
 					</div>
 				</div>

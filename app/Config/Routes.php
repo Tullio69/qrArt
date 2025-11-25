@@ -14,14 +14,12 @@ use CodeIgniter\Router\RouteCollection;
 
     // Content API - Read
     $routes->get('api/content/details/(:num)', 'ContentController::getDetails/$1');
-    $routes->get('api/content/related/(:num)', 'ContentController::getRelatedContent/$1');
     $routes->get('api/content/getlist', 'ContentController::list');
     $routes->get(from: 'api/content/(:any)', to: 'ContentController::getContentData/$1');
 
     // Content API - Create/Update/Delete
     $routes->post('api/qrart/process', 'QrArtController::processQrArtContent');
     $routes->post('api/content/update/(:any)', 'ContentController::updateContent/$1');
-    $routes->put('api/content/update/(:any)', 'ContentController::updateHtmlContent/$1');
     $routes->delete('api/content/delete/(:num)', 'ContentController::deleteContent/$1');
 
     // Content API - File Management
@@ -33,6 +31,17 @@ use CodeIgniter\Router\RouteCollection;
     $routes->get('media/audio/(:any)', 'MediaController::serveAudio/$1');
     $routes->get('content/html/(:num)/(:alpha)', 'ContentController::getHtmlContent/$1/$2');
     $routes->get('analytics/overview', 'AnalyticsController::overview');
+
+    // Analytics API - New endpoints
+    $routes->get('api/analytics/health', 'AnalyticsController::health');
+    $routes->post('api/analytics/track', 'AnalyticsController::trackEvent');
+    $routes->get('api/analytics/stats/overview', 'AnalyticsController::getStatsOverview');
+    $routes->get('api/analytics/stats', 'AnalyticsController::getStats');
+    $routes->get('api/analytics/metrics', 'AnalyticsController::getMetrics');
+    $routes->get('api/analytics/sessions', 'AnalyticsController::getSessions');
+    $routes->get('api/analytics/content/(:num)', 'AnalyticsController::getContentStats/$1');
+    $routes->get('api/analytics/content/(:num)/events', 'AnalyticsController::getContentEvents/$1');
+    $routes->get('analytics/dashboard', 'AnalyticsController::dashboard');
 // Rotte per l'applicazione principale
  
         // Rotte specifiche per AngularJS
@@ -47,14 +56,18 @@ use CodeIgniter\Router\RouteCollection;
 // Funzione per verificare l'user agent (considera di spostarla in un helper o in un middleware)
     function isAllowedUserAgent()
     {
-        $agent = service('request')->getUserAgent();
-        $userAgentString = $agent->getAgentString();
-        
-        #log_message('debug', 'User Agent String: ' . $userAgentString);
-        
-        $isAllowed = (strpos($userAgentString, 'force-ws05') !== false);
-        
-        #log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
-        
-        return true;#$isAllowed;
+        try {
+            $request = service('request');
+            $userAgentString = $request->getServer('HTTP_USER_AGENT') ?? '';
+
+            #log_message('debug', 'User Agent String: ' . $userAgentString);
+
+            $isAllowed = (strpos($userAgentString, 'force-ws05') !== false);
+
+            #log_message('debug', 'Is Allowed: ' . ($isAllowed ? 'true' : 'false'));
+
+            return true;#$isAllowed;
+        } catch (\Exception $e) {
+            return true;
+        }
     }

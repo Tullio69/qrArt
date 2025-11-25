@@ -18,24 +18,24 @@ class Database extends Config
      * Lets you choose which connection group to use if no other is specified.
      */
     public string $defaultGroup = 'default';
-    
+
     public array $default = [
-        'DSN'          => '',
+        'DSN'      => '',
         'hostname'     => 'localhost',
         'username'     => '',
         'password'     => '',
         'database'     => '',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
-        'pConnect'     => false,
+        'pConnect' => false,
         'DBDebug'      => true,
         'charset'      => 'utf8mb4',
         'DBCollat'     => 'utf8mb4_general_ci',
-        'swapPre'      => '',
-        'encrypt'      => false,
-        'compress'     => false,
+        'swapPre'  => '',
+        'encrypt'  => false,
+        'compress' => false,
         'strictOn'     => false,
-        'failover'     => [],
+        'failover' => [],
         'port'         => 3306,
         'numberNative' => false,
     ];

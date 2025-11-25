@@ -143,8 +143,7 @@
                         'description' => $variant['description'] ?? '',
                         'html_content' => $variant['htmlContent'] ?? null  // Salva sempre l'HTML content se presente
                     ];
-                    
-                    $contentMetadataModel = new ContentMetadataModel();
+
                     $metadataId = $contentMetadataModel->insert($metadataData);
 
                     if (!$metadataId) {

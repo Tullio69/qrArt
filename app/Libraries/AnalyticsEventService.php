@@ -35,7 +35,7 @@ class AnalyticsEventService
             'session_id' => $sessionId,
             'language' => $data['language'] ?? null,
             'ip_address' => $this->request->getIPAddress(),
-            'user_agent' => $this->request->getUserAgent()->getAgentString(),
+            'user_agent' => $this->request->getServer('HTTP_USER_AGENT') ?? 'Unknown',
             'device_type' => $deviceInfo['device_type'],
             'browser' => $deviceInfo['browser'],
             'os' => $deviceInfo['os'],
@@ -125,7 +125,7 @@ class AnalyticsEventService
                 'first_seen' => date('Y-m-d H:i:s'),
                 'last_seen' => date('Y-m-d H:i:s'),
                 'ip_address' => $this->request->getIPAddress(),
-                'user_agent' => $this->request->getUserAgent()->getAgentString(),
+                'user_agent' => $this->request->getServer('HTTP_USER_AGENT') ?? 'Unknown',
                 'device_type' => $deviceInfo['device_type'],
                 'total_events' => 1,
                 'contents_viewed' => $contentId ? json_encode([$contentId]) : json_encode([]),
@@ -229,22 +229,51 @@ class AnalyticsEventService
         }
     }
 
-   
- /**
- * Analizza le informazioni dello User Agent
- *
- * @return array
- */
-protected function parseUserAgent(): array
-{
-    $agent = $this->request->getUserAgent();
+    /**
+     * Analizza lo user agent per estrarre informazioni dispositivo
+     * Versione semplificata che non richiede parsing complesso
+     *
+     * @return array
+     */
+    protected function parseUserAgent(): array
+    {
+        try {
+            $userAgentString = $this->request->getServer('HTTP_USER_AGENT') ?? 'Unknown';
 
-    return [
-        'device_type' => $agent->isMobile() ? 'mobile' : 'desktop',
-        'browser' => $agent->getBrowser(),
-        'os' => $agent->getPlatform(),
-    ];
-}
+            // Simple detection based on user agent string
+            $isMobile = preg_match('/(android|iphone|ipad|mobile)/i', $userAgentString);
+            $isTablet = preg_match('/(ipad|tablet)/i', $userAgentString);
+
+            // Simple OS detection
+            $os = 'Unknown';
+            if (preg_match('/windows/i', $userAgentString)) $os = 'Windows';
+            elseif (preg_match('/mac os x/i', $userAgentString)) $os = 'Mac OS X';
+            elseif (preg_match('/linux/i', $userAgentString)) $os = 'Linux';
+            elseif (preg_match('/android/i', $userAgentString)) $os = 'Android';
+            elseif (preg_match('/ios|iphone|ipad/i', $userAgentString)) $os = 'iOS';
+
+            // Simple browser detection
+            $browser = 'Unknown';
+            if (preg_match('/edg/i', $userAgentString)) $browser = 'Edge';
+            elseif (preg_match('/chrome/i', $userAgentString)) $browser = 'Chrome';
+            elseif (preg_match('/firefox/i', $userAgentString)) $browser = 'Firefox';
+            elseif (preg_match('/safari/i', $userAgentString)) $browser = 'Safari';
+            elseif (preg_match('/opera/i', $userAgentString)) $browser = 'Opera';
+
+            return [
+                'device_type' => $isMobile ? 'mobile' : ($isTablet ? 'tablet' : 'desktop'),
+                'browser' => $browser,
+                'os' => $os,
+            ];
+        } catch (\Exception $e) {
+            // Fallback to unknown values
+            return [
+                'device_type' => 'unknown',
+                'browser' => 'unknown',
+                'os' => 'unknown',
+            ];
+        }
+    }
 
     /**
      * Ottiene statistiche per un contenuto specifico

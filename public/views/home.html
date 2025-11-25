@@ -1,944 +1,108 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>QrArt - Contenuti multimediali multilingua tramite QR code</title>
-	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-	<link href="/favicon.ico" rel="shortcut icon"/>
-	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-	<meta name="apple-mobile-web-app-title" content="QrArt" />
-	
-	<style>
-		:root {
-			--primary: #0A2342;
-			--primary-light: #1a3a5c;
-			--secondary: #D4A94F;
-			--accent: #C57B57;
-			--background: #F7F6F2;
-			--text-dark: #0A2342;
-			--text-light: #4a5568;
-			--gradient-start: #0A2342;
-			--gradient-end: #1a3a5c;
-		}
-		
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		
-		body {
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-			line-height: 1.6;
-			color: var(--text-dark);
-			overflow-x: hidden;
-			background: var(--background);
-			margin: 0;
-			padding: 0;
-		}
-		
-		/* Header */
-		header {
-			position: fixed;
-			top: 0;
-			width: 100%;
-			background: rgba(255, 255, 255, 0.98);
-			backdrop-filter: blur(10px);
-			box-shadow: 0 2px 20px rgba(10, 35, 66, 0.08);
-			z-index: 1000;
-			padding: 1rem 0;
-		}
-		
-		nav {
-			max-width: 1200px;
-			margin: 0 auto;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 0 2rem;
-		}
-		
-		.logo {
-			font-size: 1.8rem;
-			font-weight: 700;
-			color: var(--primary);
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-		}
-		
-		.logo-icon {
-			width: 35px;
-			height: 35px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			position: relative;
-		}
-		
-		.logo-icon svg {
-			width: 100%;
-			height: 100%;
-		}
-		
-		.nav-links {
-			display: flex;
-			gap: 2rem;
-			list-style: none;
-		}
-		
-		.nav-links a {
-			text-decoration: none;
-			color: var(--text-light);
-			font-weight: 600;
-			transition: color 0.3s;
-			font-size: 0.95rem;
-		}
-		
-		.nav-links a:hover {
-			color: var(--primary);
-		}
-		
-		/* Hero Section */
-		.hero {
-			margin-top: 80px;
-			min-height: 90vh;
-			display: flex;
-			align-items: center;
-			background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-			position: relative;
-			overflow: hidden;
-			width: 100%;
-		}
-		
-		.hero::before {
-			content: '';
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			background-image:
-					radial-gradient(circle at 20% 50%, rgba(212, 169, 79, 0.08) 0%, transparent 50%),
-					radial-gradient(circle at 80% 80%, rgba(197, 123, 87, 0.08) 0%, transparent 50%);
-		}
-		
-		.hero::after {
-			content: '';
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			background-image:
-				/* Pattern QR principale - quadrati grandi */
-					linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, 0.05) 75%, rgba(255, 255, 255, 0.05) 76%, transparent 77%, transparent),
-					linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, 0.05) 75%, rgba(255, 255, 255, 0.05) 76%, transparent 77%, transparent);
-			background-size: 80px 80px;
-			background-position: 0 0, 0 0;
-			opacity: 0.3;
-		}
-		
-		.hero .qr-pattern {
-			content: '';
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			background-image:
-				/* Quadrati QR sparsi */
-					radial-gradient(circle, rgba(255, 255, 255, 0.15) 20%, transparent 20%),
-					radial-gradient(circle, rgba(255, 255, 255, 0.1) 20%, transparent 20%),
-					radial-gradient(circle, rgba(212, 169, 79, 0.12) 15%, transparent 15%),
-					radial-gradient(circle, rgba(255, 255, 255, 0.08) 25%, transparent 25%);
-			background-size: 15px 15px, 20px 20px, 12px 12px, 18px 18px;
-			background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
-			pointer-events: none;
-			z-index: 1;
-		}
-		
-		@keyframes move {
-			0% { transform: translate(0, 0); }
-			100% { transform: translate(50px, 50px); }
-		}
-		
-		.hero-content {
-			max-width: 1200px;
-			margin: 0 auto;
-			padding: 4rem 2rem;
-			text-align: center;
-			color: white;
-			position: relative;
-			z-index: 1;
-		}
-		
-		.hero h1 {
-			font-size: 3.5rem;
-			font-weight: 800;
-			margin-bottom: 1.5rem;
-			line-height: 1.2;
-			animation: fadeInUp 0.8s ease;
-		}
-		
-		.hero p {
-			font-size: 1.3rem;
-			margin-bottom: 2.5rem;
-			opacity: 0.95;
-			animation: fadeInUp 0.8s ease 0.2s backwards;
-			max-width: 900px;
-			margin-left: auto;
-			margin-right: auto;
-		}
-		
-		@keyframes fadeInUp {
-			from {
-				opacity: 0;
-				transform: translateY(30px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-		
-		.cta-buttons {
-			display: flex;
-			gap: 1.5rem;
-			justify-content: center;
-			flex-wrap: wrap;
-			animation: fadeInUp 0.8s ease 0.4s backwards;
-		}
-		
-		.btn {
-			padding: 1rem 2.5rem;
-			border: none;
-			border-radius: 50px;
-			font-size: 1.1rem;
-			font-weight: 600;
-			cursor: pointer;
-			transition: all 0.3s;
-			text-decoration: none;
-			display: inline-block;
-		}
-		
-		.btn-primary {
-			background: var(--secondary);
-			color: var(--primary);
-			box-shadow: 0 10px 30px rgba(212, 169, 79, 0.3);
-		}
-		
-		.btn-primary:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 15px 40px rgba(212, 169, 79, 0.4);
-		}
-		
-		.btn-secondary {
-			background: transparent;
-			color: white;
-			border: 2px solid white;
-		}
-		
-		.btn-secondary:hover {
-			background: white;
-			color: var(--primary);
-			transform: translateY(-3px);
-		}
-		
-		/* Sections */
-		section:not(.hero):not(.final-cta):not(.features):not(.how-it-works):not(.benefits):not(.contact) {
-			padding: 5rem 2rem;
-			max-width: 1200px;
-			margin: 0 auto;
-		}
-		
-		section#target,
-		section#how,
-		section.benefits {
-			padding: 5rem 2rem;
-			max-width: 1200px;
-			margin: 0 auto;
-		}
-		
-		section.features,
-		section.how-it-works,
-		section.contact {
-			padding: 5rem 2rem;
-		}
-		
-		section.features > *:not(.section-title),
-		section.how-it-works > *:not(.section-title),
-		section.contact > *:not(.section-title) {
-			max-width: 1200px;
-			margin-left: auto;
-			margin-right: auto;
-		}
-		
-		.section-title {
-			font-size: 2.5rem;
-			font-weight: 700;
-			text-align: center;
-			margin-bottom: 3rem;
-			color: var(--text-dark);
-		}
-		
-		.section-title::after {
-			content: '';
-			display: block;
-			width: 80px;
-			height: 4px;
-			background: linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%);
-			margin: 1rem auto;
-			border-radius: 2px;
-		}
-		
-		/* Target Grid */
-		.target-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-			gap: 2rem;
-			margin-top: 3rem;
-		}
-		
-		.target-card {
-			padding: 2rem;
-			background: white;
-			border-radius: 20px;
-			box-shadow: 0 5px 20px rgba(10, 35, 66, 0.08);
-			transition: all 0.3s;
-			border: 2px solid transparent;
-		}
-		
-		.target-card:hover {
-			transform: translateY(-10px);
-			box-shadow: 0 15px 40px rgba(10, 35, 66, 0.15);
-			border-color: var(--secondary);
-		}
-		
-		.target-card h3 {
-			font-size: 1.5rem;
-			color: var(--primary);
-			margin-bottom: 1rem;
-		}
-		
-		.target-card p {
-			color: var(--text-light);
-			line-height: 1.7;
-		}
-		
-		/* Features */
-		.features {
-			background: white;
-		}
-		
-		.features-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-			gap: 2rem;
-		}
-		
-		.feature-card {
-			background: var(--background);
-			padding: 2.5rem;
-			border-radius: 20px;
-			text-align: center;
-			box-shadow: 0 5px 20px rgba(10, 35, 66, 0.05);
-			transition: all 0.3s;
-			border: 2px solid transparent;
-		}
-		
-		.feature-card:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 10px 30px rgba(10, 35, 66, 0.12);
-			border-color: var(--accent);
-		}
-		
-		.feature-icon {
-			width: 80px;
-			height: 80px;
-			margin: 0 auto 1.5rem;
-			background: var(--primary);
-			border-radius: 20px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 2.5rem;
-			box-shadow: 0 8px 20px rgba(10, 35, 66, 0.2);
-			filter: grayscale(0%) brightness(100%) contrast(100%);
-		}
-		
-		.feature-card h3 {
-			font-size: 1.3rem;
-			margin-bottom: 1rem;
-			color: var(--text-dark);
-		}
-		
-		.feature-card p {
-			color: var(--text-light);
-			line-height: 1.7;
-		}
-		
-		/* How it works */
-		.how-it-works {
-			background: var(--background);
-		}
-		
-		.steps {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-			gap: 2rem;
-			margin-top: 3rem;
-		}
-		
-		.step {
-			text-align: center;
-			position: relative;
-			background: white;
-			padding: 2rem;
-			border-radius: 20px;
-			box-shadow: 0 5px 20px rgba(10, 35, 66, 0.08);
-			transition: all 0.3s;
-		}
-		
-		.step:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 10px 30px rgba(10, 35, 66, 0.15);
-		}
-		
-		.step-number {
-			width: 60px;
-			height: 60px;
-			background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
-			color: var(--primary);
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 1.5rem;
-			font-weight: 700;
-			margin: 0 auto 1.5rem;
-			box-shadow: 0 5px 15px rgba(212, 169, 79, 0.4);
-		}
-		
-		.step h3 {
-			font-size: 1.3rem;
-			margin-bottom: 1rem;
-			color: var(--text-dark);
-		}
-		
-		.step p {
-			color: var(--text-light);
-			line-height: 1.7;
-		}
-		
-		/* Why QrArt */
-		.benefits {
-			background: white;
-		}
-		
-		.benefits-list {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-			gap: 1.5rem;
-			list-style: none;
-			margin-top: 2rem;
-		}
-		
-		.benefits-list li {
-			padding: 1.5rem;
-			background: var(--background);
-			border-radius: 15px;
-			font-size: 1.1rem;
-			color: var(--text-dark);
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-			transition: all 0.3s;
-			border: 2px solid transparent;
-		}
-		
-		.benefits-list li:hover {
-			transform: translateX(10px);
-			box-shadow: 0 5px 15px rgba(10, 35, 66, 0.1);
-			border-color: var(--accent);
-		}
-		
-		.benefits-list li::before {
-			content: '✓';
-			background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
-			color: var(--primary);
-			width: 35px;
-			height: 35px;
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-shrink: 0;
-			font-weight: 700;
-			box-shadow: 0 3px 10px rgba(212, 169, 79, 0.3);
-		}
-		
-		/* Contact Form */
-		.contact {
-			background: var(--background);
-		}
-		
-		.contact-container {
-			max-width: 700px;
-			margin: 0 auto;
-			background: white;
-			padding: 3rem;
-			border-radius: 30px;
-			box-shadow: 0 10px 40px rgba(10, 35, 66, 0.12);
-		}
-		
-		.contact-intro {
-			text-align: center;
-			margin-bottom: 3rem;
-			color: var(--text-light);
-			font-size: 1.1rem;
-		}
-		
-		.form-group {
-			margin-bottom: 1.5rem;
-		}
-		
-		.form-group label {
-			display: block;
-			margin-bottom: 0.5rem;
-			font-weight: 600;
-			color: var(--text-dark);
-		}
-		
-		.form-group input,
-		.form-group select,
-		.form-group textarea {
-			width: 100%;
-			padding: 1rem;
-			border: 2px solid #e2e8f0;
-			border-radius: 12px;
-			font-size: 1rem;
-			font-family: inherit;
-			transition: all 0.3s;
-			background: var(--background);
-		}
-		
-		.form-group input:focus,
-		.form-group select:focus,
-		.form-group textarea:focus {
-			outline: none;
-			border-color: var(--secondary);
-			box-shadow: 0 0 0 3px rgba(212, 169, 79, 0.1);
-			background: white;
-		}
-		
-		.form-group textarea {
-			resize: vertical;
-			min-height: 150px;
-		}
-		
-		.form-row {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 1.5rem;
-		}
-		
-		.form-submit {
-			text-align: center;
-			margin-top: 2rem;
-		}
-		
-		.form-submit .btn {
-			width: 100%;
-			max-width: 300px;
-			background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-			color: white;
-			border: none;
-		}
-		
-		.form-submit .btn:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 10px 30px rgba(10, 35, 66, 0.3);
-		}
-		
-		/* Final CTA */
-		.final-cta {
-			background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-			color: white;
-			text-align: center;
-			padding: 5rem 2rem;
-			position: relative;
-			overflow: hidden;
-			width: 100%;
-		}
-		
-		.final-cta::before {
-			content: '';
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			background-image:
-					radial-gradient(circle at 30% 50%, rgba(212, 169, 79, 0.15) 0%, transparent 50%);
-		}
-		
-		.final-cta-content {
-			position: relative;
-			z-index: 1;
-		}
-		
-		.final-cta h2 {
-			font-size: 2.5rem;
-			margin-bottom: 1rem;
-		}
-		
-		.final-cta p {
-			font-size: 1.3rem;
-			margin-bottom: 2.5rem;
-			opacity: 0.95;
-		}
-		
-		/* Footer */
-		footer {
-			background: var(--primary);
-			color: white;
-			text-align: center;
-			padding: 2rem;
-			width: 100%;
-		}
-		
-		footer p {
-			opacity: 0.8;
-		}
-		
-		/* Responsive */
-		@media (max-width: 768px) {
-			.hero h1 {
-				font-size: 2.2rem;
-			}
-			
-			.hero p {
-				font-size: 1.1rem;
-			}
-			
-			.section-title {
-				font-size: 2rem;
-			}
-			
-			.nav-links {
-				display: none;
-			}
-			
-			.cta-buttons {
-				flex-direction: column;
-				align-items: center;
-			}
-			
-			.btn {
-				width: 100%;
-				max-width: 300px;
-			}
-			
-			.form-row {
-				grid-template-columns: 1fr;
-			}
-			
-			.contact-container {
-				padding: 2rem 1.5rem;
-			}
-		}
-	</style>
-</head>
-<body>
-<!-- Header -->
-<header>
-	<nav>
-		<div class="logo">
-			<div class="logo-icon">
-				<svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<rect x="5" y="5" width="16" height="16" rx="2" stroke="#0A2342" stroke-width="3"/>
-					<rect x="8" y="8" width="6" height="6" fill="#0A2342"/>
-					
-					<rect x="29" y="5" width="16" height="16" rx="2" stroke="#0A2342" stroke-width="3"/>
-					<rect x="32" y="8" width="6" height="6" fill="#0A2342"/>
-					
-					<rect x="5" y="29" width="16" height="16" rx="2" stroke="#0A2342" stroke-width="3"/>
-					<rect x="8" y="32" width="6" height="6" fill="#0A2342"/>
-					
-					<rect x="30" y="30" width="6" height="6" fill="#0A2342"/>
-					<rect x="38" y="30" width="6" height="6" fill="#0A2342"/>
-					<rect x="30" y="38" width="6" height="6" fill="#0A2342"/>
-				</svg>
-			</div>
-			<span>QrArt</span>
+<div  ng-cloak class="min-h-screen bg-gradient-to-b from-primary-50 to-white text-gray-900">
+<header class="py-6 px-4 sm:px-6 lg:px-8 relative">
+	<nav class="flex items-center justify-between">
+		<div class="flex items-center">
+			<i data-lucide="qr-code" class="h-8 w-8 text-primary-600"></i>
+			<span class="ml-2 text-2xl font-bold text-primary-600">QrArt</span>
 		</div>
-		<ul class="nav-links">
-			<li><a href="#target">Chi siamo</a></li>
-			<li><a href="#features">Funzionalità</a></li>
-			<li><a href="#how">Come funziona</a></li>
-			<li><a href="#contact">Contatti</a></li>
-		</ul>
+		<div class="hidden md:flex space-x-4">
+			<a ng-repeat="item in navItems" href="{{item.url}}" class="text-gray-600 hover:text-primary-600">{{item.label}}</a>
+		</div>
+		<div class="flex items-center">
+			<button class="btn-primary hidden md:block">Inizia Ora</button>
+			<button class="md:hidden p-2" ng-click="toggleMenu()">
+				<i data-lucide="menu" class="h-6 w-6 text-primary-600"></i>
+			</button>
+		</div>
 	</nav>
+	
+	<!-- Menu mobile -->
+	<div ng-show="isMenuOpen" class="absolute top-full left-0 right-0 bg-white shadow-md rounded-b-lg md:hidden z-50">
+		<div class="py-2 px-4">
+			<a ng-repeat="item in navItems" href="{{item.url}}" class="block py-2 text-gray-600 hover:text-primary-600">{{item.label}}</a>
+			<button class="btn-primary w-full mt-2">Inizia Ora</button>
+		</div>
+	</div>
 </header>
 
-<!-- Hero Section -->
-<section class="hero">
-	<div class="hero-content">
-		<h1>QrArt dà vita ai contenuti: un QR code, infinite esperienze multimediali, in ogni lingua</h1>
-		<p>Audio, video, testi e lingue diverse prendono vita in un istante: basta inquadrare un QR code</p>
-		<div class="cta-buttons">
-			<a href="#contact" class="btn btn-primary">Inizia ora</a>
-			<a href="#how" class="btn btn-secondary">Scopri come funziona</a>
+<main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+	<section class="text-center">
+		<h1 class="text-4xl font-extrabold text-primary-600 sm:text-5xl md:text-6xl">
+			Crea Esperienze QR Interattive
+		</h1>
+		<p class="mt-3 max-w-md mx-auto text-xl text-gray-600 sm:text-2xl md:mt-5 md:max-w-3xl">
+			Trasforma i codici QR statici in contenuti dinamici e coinvolgenti con QrArt.
+		</p>
+		<div class="mt-10 flex justify-center items-center">
+			<button class="btn-lg btn-primary mr-4">Inizia a Creare</button>
+			<button class="btn-lg btn-outline mr-4">Scopri di Più</button>
+		</div>
+	</section>
+	
+	<section class="mt-20" ng-controller="TabsController">
+		<h2 class="text-3xl font-bold text-center text-primary-600 mb-10">Le Nostre Funzionalità</h2>
+		<div class="flex justify-center mb-8">
+			<button ng-repeat="tab in tabs"
+					ng-click="setActiveTab(tab.value)"
+					ng-class="{'bg-primary-600 text-white': activeTab === tab.value, 'bg-gray-200 text-gray-700': activeTab !== tab.value}"
+					class="px-4 py-2 rounded-lg mr-2">
+				{{tab.label}}
+			</button>
+		</div>
+		<div class="card" ng-repeat="tab in tabs" ng-show="activeTab === tab.value">
+			<div class="card-header">
+				<h3 class="card-title">{{tab.title}}</h3>
+				<p class="card-description">{{tab.description}}</p>
+			</div>
+			<div class="card-content">
+				<i data-lucide="{{tab.icon}}" class="h-16 w-16 text-primary-600 mx-auto"></i>
+				<p class="text-center mt-4">{{tab.content}}</p>
+			</div>
+		</div>
+	</section>
+	
+	<section class="mt-20">
+		<div class="card">
+			<div class="card-header">
+				<h2 class="text-2xl font-bold text-center">Rimani Aggiornato</h2>
+				<p class="text-center text-gray-600">Iscriviti alla nostra newsletter per le ultime novità e funzionalità di QrArt.</p>
+			</div>
+			<div class="card-content">
+				<form ng-submit="subscribe()" class="flex flex-col sm:flex-row gap-4 justify-center">
+					<input type="email"
+						   ng-model="email"
+						   placeholder="Inserisci la tua email"
+						   class="input max-w-sm"
+						   required>
+					<button type="submit" class="btn-primary">Iscriviti</button>
+				</form>
+			</div>
+		</div>
+	</section>
+</main>
+
+<footer class="bg-primary-50 mt-20 py-8 px-4 sm:px-6 lg:px-8">
+	<div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+		<div class="flex items-center mb-4 sm:mb-0">
+			<i data-lucide="qr-code" class="h-6 w-6 text-primary-600"></i>
+			<span class="ml-2 text-xl font-semibold text-primary-600">QrArt</span>
+		</div>
+		<div class="flex space-x-6">
+			<a href="#" class="text-gray-600 hover:text-primary-600">Informativa sulla Privacy</a>
+			<a href="#" class="text-gray-600 hover:text-primary-600">Termini di Servizio</a>
+			<a href="#" class="text-gray-600 hover:text-primary-600">Contattaci</a>
 		</div>
 	</div>
-</section>
-
-<!-- Target Audience -->
-<section id="target">
-	<h2 class="section-title">Per chi è pensato QrArt</h2>
-	<div class="target-grid">
-		<div class="target-card">
-			<h3>🏛️ Musei e spazi culturali</h3>
-			<p>Dai vita alle opere con audio, video e contenuti multilingua fruibili con un gesto.</p>
-		</div>
-		<div class="target-card">
-			<h3>🏛️ Comuni e enti turistici</h3>
-			<p>Valorizza percorsi, monumenti e luoghi storici con esperienze digitali sempre disponibili.</p>
-		</div>
-		<div class="target-card">
-			<h3>🍽️ Ristoranti e locali</h3>
-			<p>Menu digitali eleganti, multilingua e aggiornabili in tempo reale.</p>
-		</div>
-		<div class="target-card">
-			<h3>🏢 Aziende e artigiani</h3>
-			<p>Trasforma ogni prodotto in una scheda interattiva con media e descrizioni multilingua.</p>
-		</div>
-		<div class="target-card">
-			<h3>🎭 Eventi e installazioni</h3>
-			<p>Arricchisci mostre, festival e percorsi stagionali con contenuti dinamici e immersivi.</p>
-		</div>
-		<div class="target-card">
-			<h3>📚 Scuole e formatori</h3>
-			<p>Materiale didattico, audiolezioni e contenuti speciali accessibili tramite QR personalizzati.</p>
-		</div>
+	<div class="mt-4 text-center text-sm  text-gray-600">
+		© {{currentYear}} QrArt. Tutti i diritti riservati.
 	</div>
-</section>
-
-<!-- Features -->
-<section id="features" class="features">
-	<h2 class="section-title">Funzionalità chiave</h2>
-	<div class="features-grid">
-		<div class="feature-card">
-			<div class="feature-icon">
-				<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<circle cx="20" cy="20" r="18" stroke="#D4A94F" stroke-width="2.5"/>
-					<path d="M12 20C12 15.5817 15.5817 12 20 12C24.4183 12 28 15.5817 28 20" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-					<path d="M16 20C16 17.7909 17.7909 16 20 16C22.2091 16 24 17.7909 24 20" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-					<circle cx="20" cy="26" r="2" fill="#D4A94F"/>
-				</svg>
-			</div>
-			<h3>Contenuti multimediali e multilingua</h3>
-			<p>Gestione di audio, video, testi, contenuti per audiolesi e traduzioni per ogni lingua.</p>
-		</div>
-		<div class="feature-card">
-			<div class="feature-icon">
-				<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<rect x="12" y="6" width="16" height="28" rx="2" stroke="#D4A94F" stroke-width="2.5"/>
-					<path d="M17 30H23" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-					<rect x="15" y="10" width="10" height="16" stroke="#D4A94F" stroke-width="2"/>
-				</svg>
-			</div>
-			<h3>Accesso immediato tramite QR code</h3>
-			<p>Ogni contenuto è disponibile con un solo gesto, senza app da installare.</p>
-		</div>
-		<div class="feature-card">
-			<div class="feature-icon">
-				<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<circle cx="20" cy="20" r="12" stroke="#D4A94F" stroke-width="2.5"/>
-					<path d="M20 14V20L24 22" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-					<path d="M32 14L28 10M8 14L12 10M8 26L12 30M32 26L28 30" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-				</svg>
-			</div>
-			<h3>Pannello di gestione intuitivo</h3>
-			<p>Organizza contenuti, formati, lingue e media con un'interfaccia semplice e potente.</p>
-		</div>
-		<div class="feature-card">
-			<div class="feature-icon">
-				<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M8 28L14 18L20 24L26 14L32 20" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-					<path d="M8 32H32M8 32V12M32 32V8" stroke="#D4A94F" stroke-width="2.5" stroke-linecap="round"/>
-				</svg>
-			</div>
-			<h3>Analytics integrati</h3>
-			<p>Visualizzazioni, lingue utilizzate e performance dei contenuti per capire cosa funziona.</p>
-		</div>
-	</div>
-</section>
-
-<!-- How it works -->
-<section id="how" class="how-it-works">
-	<h2 class="section-title">Come funziona QrArt</h2>
-	<div class="steps">
-		<div class="step">
-			<div class="step-number">1</div>
-			<h3>Crea il contenuto</h3>
-			<p>Carica audio, video, testi o simulazioni e scegli le lingue disponibili.</p>
-		</div>
-		<div class="step">
-			<div class="step-number">2</div>
-			<h3>Genera il QR code</h3>
-			<p>Ogni contenuto ottiene un QR unico, pronto da stampare o condividere.</p>
-		</div>
-		<div class="step">
-			<div class="step-number">3</div>
-			<h3>Inquadra e vivi l'esperienza</h3>
-			<p>L'utente apre il contenuto ottimizzato per smartphone in un attimo.</p>
-		</div>
-		<div class="step">
-			<div class="step-number">4</div>
-			<h3>Analizza le interazioni</h3>
-			<p>Scopri quante persone hanno visualizzato il contenuto e in quali lingue.</p>
-		</div>
-	</div>
-</section>
-
-<!-- Why QrArt -->
-<section class="benefits">
-	<h2 class="section-title">Perché scegliere QrArt</h2>
-	<ul class="benefits-list">
-		<li>Nessuna app da installare</li>
-		<li>Accessibilità per audiolesi</li>
-		<li>Multilingua completo</li>
-		<li>Gestione centralizzata e aggiornamenti immediati</li>
-		<li>Esperienze ottimizzate per smartphone</li>
-		<li>Ideale per turismo, cultura, formazione e aziende</li>
-	</ul>
-</section>
-
-<!-- Contact Form -->
-<section id="contact" class="contact">
-	<h2 class="section-title">Contattaci</h2>
-	<div class="contact-container">
-		<p class="contact-intro">Sei interessato a QrArt? Compila il modulo e ti risponderemo il prima possibile per organizzare una demo personalizzata.</p>
-		
-		<form id="contactForm">
-			<div class="form-row">
-				<div class="form-group">
-					<label for="name">Nome *</label>
-					<input type="text" id="name" name="name" required>
-				</div>
-				<div class="form-group">
-					<label for="surname">Cognome *</label>
-					<input type="text" id="surname" name="surname" required>
-				</div>
-			</div>
-			
-			<div class="form-row">
-				<div class="form-group">
-					<label for="email">Email *</label>
-					<input type="email" id="email" name="email" required>
-				</div>
-				<div class="form-group">
-					<label for="phone">Telefono</label>
-					<input type="tel" id="phone" name="phone">
-				</div>
-			</div>
-			
-			<div class="form-group">
-				<label for="organization">Organizzazione *</label>
-				<input type="text" id="organization" name="organization" required>
-			</div>
-			
-			<div class="form-group">
-				<label for="type">Tipo di organizzazione *</label>
-				<select id="type" name="type" required>
-					<option value="">Seleziona...</option>
-					<option value="museo">Museo o spazio culturale</option>
-					<option value="pa">Comune o ente pubblico</option>
-					<option value="ristorante">Ristorante o locale</option>
-					<option value="azienda">Azienda o artigiano</option>
-					<option value="scuola">Scuola o formazione</option>
-					<option value="altro">Altro</option>
-				</select>
-			</div>
-			
-			<div class="form-group">
-				<label for="message">Messaggio *</label>
-				<textarea id="message" name="message" placeholder="Raccontaci del tuo progetto e di come QrArt potrebbe aiutarti..." required></textarea>
-			</div>
-			
-			<div class="form-submit">
-				<button type="submit" class="btn">Invia richiesta</button>
-			</div>
-		</form>
-	</div>
-</section>
-
-<!-- Final CTA -->
-<section class="final-cta">
-	<div class="final-cta-content">
-		<h2>Porta i tuoi contenuti nel mondo</h2>
-		<p>Inizia subito con QrArt</p>
-		<div class="cta-buttons">
-			<a href="#contact" class="btn btn-primary">Contattaci</a>
-		</div>
-	</div>
-</section>
-
-<!-- Footer -->
-<footer>
-	<p>&copy; 2025 QrArt.it - Tutti i diritti riservati</p>
 </footer>
 
 <script>
-	// Form handling
-	document.getElementById('contactForm').addEventListener('submit', function(e) {
-		e.preventDefault();
-		
-		const formData = new FormData(this);
-		const data = Object.fromEntries(formData);
-		
-		console.log('Form data:', data);
-		
-		// Qui puoi aggiungere l'integrazione con il tuo backend
-		// Esempio: fetch('/api/contact', { method: 'POST', body: JSON.stringify(data) })
-		
-		// Mostra messaggio di successo
-		alert('Grazie per averci contattato! Ti risponderemo al più presto.');
-		this.reset();
-	});
-	
-	// Smooth scroll per i link di navigazione
-	document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-		anchor.addEventListener('click', function (e) {
-			e.preventDefault();
-			const target = document.querySelector(this.getAttribute('href'));
-			if (target) {
-				target.scrollIntoView({
-					behavior: 'smooth',
-					block: 'start'
-				});
-			}
-		});
-	});
-	
-	// Intersection Observer per animazioni on scroll
-	const observerOptions = {
-		threshold: 0.1,
-		rootMargin: '0px 0px -50px 0px'
-	};
-	
-	const observer = new IntersectionObserver((entries) => {
-		entries.forEach(entry => {
-			if (entry.isIntersecting) {
-				entry.target.style.opacity = '1';
-				entry.target.style.transform = 'translateY(0)';
-			}
-		});
-	}, observerOptions);
-	
-	// Applica animazioni agli elementi
-	document.querySelectorAll('.target-card, .feature-card, .step').forEach(el => {
-		el.style.opacity = '0';
-		el.style.transform = 'translateY(30px)';
-		el.style.transition = 'all 0.6s ease';
-		observer.observe(el);
+	document.addEventListener('DOMContentLoaded', function() {
+		if (typeof lucide !== 'undefined' && lucide.createIcons) {
+			lucide.createIcons();
+		}
 	});
 </script>
-</body>
-</html>
+</div>
